@@ -22,7 +22,7 @@ class ChatMessageRequest(BaseModel):
     text: str
 
 
-# WebSocket Connection Manager for Chat
+# WebSocket Connection Manager for Chat (kept for backward compatibility)
 class ChatConnectionManager:
     def __init__(self):
         self.active_connections: Dict[str, Dict[str, WebSocket]] = {}
@@ -55,6 +55,14 @@ class ChatConnectionManager:
 chat_manager = ChatConnectionManager()
 
 
+# Import socket manager for real-time notifications
+try:
+    from app.socket_manager import send_notification_to_user, sio
+    SOCKET_ENABLED = True
+except ImportError:
+    SOCKET_ENABLED = False
+    logger.warning("Socket manager not available, real-time features disabled")
+
 @router.post("/create")
 async def create_or_get_chat(data: ChatCreateRequest, current_user_id: str = Depends(get_current_user)):
     """Create a chat or get existing one between two users"""
@@ -66,9 +74,16 @@ async def create_or_get_chat(data: ChatCreateRequest, current_user_id: str = Dep
             raise HTTPException(status_code=400, detail="Cannot chat with yourself")
 
         # Check receiver exists
-        receiver = db.table('users').select('id, username, full_name, profile_photo').eq('id', receiver_id).execute()
+        receiver = db.table('users').select('id, username, full_name, profile_photo, avatar_url').eq('id', receiver_id).execute()
         if not receiver.data:
             raise HTTPException(status_code=404, detail="User not found")
+        
+        receiver_info = receiver.data[0]
+
+        # Get sender info
+        sender = db.table('users').select('id, username, full_name, profile_photo, avatar_url').eq('id', current_user_id).execute()
+        sender_info = sender.data[0] if sender.data else {}
+        sender_name = sender_info.get('full_name') or sender_info.get('username', 'Someone')
 
         # Check if chat already exists between the two users
         sorted_ids = sorted([current_user_id, receiver_id])
@@ -82,7 +97,11 @@ async def create_or_get_chat(data: ChatCreateRequest, current_user_id: str = Dep
             logger.warning(f"chat_history table query failed: {e}")
 
         if existing and existing.data:
-            return {"chat": existing.data[0], "created": False}
+            return {
+                "chat": existing.data[0], 
+                "created": False,
+                "other_user": receiver_info
+            }
 
         # Create new chat in chat_history table
         new_chat = {
@@ -102,10 +121,12 @@ async def create_or_get_chat(data: ChatCreateRequest, current_user_id: str = Dep
         if not result.data:
             raise HTTPException(status_code=500, detail="Failed to create chat")
 
+        chat_id = result.data[0]['id']
+        
         # Send initial message if provided
         if data.message:
             msg = {
-                'chat_id': result.data[0]['id'],
+                'chat_id': chat_id,
                 'sender_id': current_user_id,
                 'text': data.message,
             }
@@ -114,13 +135,36 @@ async def create_or_get_chat(data: ChatCreateRequest, current_user_id: str = Dep
             except Exception as e:
                 logger.warning(f"Failed to insert initial message: {e}")
 
-        return {"chat": result.data[0], "created": True}
+        # Create notification for receiver about new chat
+        try:
+            db.table('notifications').insert({
+                'user_id': receiver_id,
+                'title': 'New Chat Started',
+                'message': f'{sender_name} started a conversation with you',
+                'notification_type': 'chat',
+                'reference_id': chat_id,
+                'reference_type': 'chat'
+            }).execute()
+            
+            # Send real-time notification via Socket.IO
+            if SOCKET_ENABLED:
+                import asyncio
+                asyncio.create_task(send_notification_to_user(receiver_id, {
+                    'type': 'new_chat',
+                    'title': 'New Chat Started',
+                    'message': f'{sender_name} started a conversation with you',
+                    'chat_id': chat_id,
+                    'sender_id': current_user_id,
+                    'sender_name': sender_name
+                }))
+        except Exception as e:
+            logger.warning(f"Failed to create chat notification: {e}")
 
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error creating chat: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return {
+            "chat": result.data[0], 
+            "created": True,
+            "other_user": receiver_info
+        }
 
 
 @router.get("/my-chats")
@@ -243,6 +287,7 @@ async def send_message(chat_id: str, msg: ChatMessageRequest, current_user_id: s
         logger.error(f"Error sending message: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.websocket("/ws/{chat_id}")
 async def chat_websocket(websocket: WebSocket, chat_id: str, token: str = Query(...)):
     """WebSocket endpoint for real-time chat"""
@@ -287,7 +332,7 @@ async def chat_websocket(websocket: WebSocket, chat_id: str, token: str = Query(
             }
 
             try:
-                result = db.table('realtime_messages').insert(msg_data).execute()  # Fixed indentation
+                result = db.table('realtime_messages').insert(msg_data).execute()
                 msg_data = result.data[0] if result.data else msg_data
             except Exception as e:
                 logger.warning(f"Failed to persist chat message: {e}")

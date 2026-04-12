@@ -77,8 +77,13 @@ const Matches = () => {
         { receiver_id: match.user_id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      // Navigate to messages page
-      navigate('/messages');
+      // Navigate to messages page with chat ID to auto-open the conversation
+      const chatId = response.data.chat?.id;
+      if (chatId) {
+        navigate(`/messages?chat=${chatId}`);
+      } else {
+        navigate('/messages');
+      }
     } catch (error) {
       console.error('Error creating chat:', error);
       alert('Error creating chat. Please try again.');

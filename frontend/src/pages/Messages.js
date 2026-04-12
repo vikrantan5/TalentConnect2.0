@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
+import { useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { 
   MessageCircle, 
@@ -9,7 +11,7 @@ import {
   Loader2,
   X,
   ArrowLeft,
-   Circle,
+  Circle,
   Check,
   XCircle,
   Video,
@@ -21,6 +23,9 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const Messages = () => {
   const { user, darkMode } = useAuth();
+  const { socket, isConnected, joinChat, leaveChat, sendMessage: socketSendMessage, sendTypingIndicator } = useSocket();
+  const [searchParams] = useSearchParams();
+  
   const [chats, setChats] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -28,24 +33,82 @@ const Messages = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [ws, setWs] = useState(null);
+  const [typingUser, setTypingUser] = useState(null);
+  const [meetingLink, setMeetingLink] = useState('');
+  const [showMeetingInput, setShowMeetingInput] = useState({});
   const messagesEndRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
+  // Load chats on mount
   useEffect(() => {
     loadChats();
   }, []);
 
+  // Handle chat query parameter
   useEffect(() => {
-    if (activeChat) {
-      loadMessages(activeChat.chat.id);
-      connectWebSocket(activeChat.chat.id);
+    const chatIdFromUrl = searchParams.get('chat');
+    if (chatIdFromUrl && chats.length > 0) {
+      const chatToOpen = chats.find(c => c.chat.id === chatIdFromUrl);
+      if (chatToOpen) {
+        setActiveChat(chatToOpen);
+      }
     }
-    return () => {
-      if (ws) {
-        ws.close();
+  }, [searchParams, chats]);
+
+  // Handle Socket.io events for messages
+  useEffect(() => {
+    const handleNewMessage = (event) => {
+      const data = event.detail;
+      if (activeChat && data.chat_id === activeChat.chat.id) {
+        setMessages(prev => {
+          // Check if message already exists
+          const exists = prev.some(m => m.id === data.message.id);
+          if (exists) return prev;
+          return [...prev, {
+            id: data.message.id,
+            sender_id: data.message.sender_id,
+            text: data.message.text,
+            created_at: data.message.created_at
+          }];
+        });
+      }
+      // Update chat list with last message
+      loadChats();
+    };
+
+    const handleTyping = (event) => {
+      const data = event.detail;
+      if (activeChat && data.chat_id === activeChat.chat.id && data.user_id !== user?.id) {
+        setTypingUser(data.is_typing ? data.user_id : null);
+        // Clear typing indicator after 3 seconds
+        if (data.is_typing) {
+          setTimeout(() => setTypingUser(null), 3000);
+        }
       }
     };
-  }, [activeChat]);
+
+    window.addEventListener('new-message', handleNewMessage);
+    window.addEventListener('user-typing', handleTyping);
+
+    return () => {
+      window.removeEventListener('new-message', handleNewMessage);
+      window.removeEventListener('user-typing', handleTyping);
+    };
+  }, [activeChat, user]);
+
+  // Join/leave chat room on active chat change
+  useEffect(() => {
+    if (activeChat && isConnected) {
+      joinChat(activeChat.chat.id);
+      loadMessages(activeChat.chat.id);
+    }
+
+    return () => {
+      if (activeChat) {
+        leaveChat(activeChat.chat.id);
+      }
+    };
+  }, [activeChat, isConnected, joinChat, leaveChat]);
 
   useEffect(() => {
     scrollToBottom();
@@ -82,43 +145,23 @@ const Messages = () => {
     }
   };
 
-  const connectWebSocket = (chatId) => {
-    if (ws) {
-      ws.close();
-    }
-
-    const token = localStorage.getItem('token');
-    const wsUrl = BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://');
-    const websocket = new WebSocket(`${wsUrl}/api/chat/ws/${chatId}?token=${token}`);
-
-    websocket.onopen = () => {
-      console.log('WebSocket connected');
-    };
-
-    websocket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'message') {
-          setMessages(prev => [...prev, {
-            sender_id: data.sender_id,
-            text: data.text,
-            created_at: data.created_at
-          }]);
-        }
-      } catch (error) {
-        console.error('WebSocket message error:', error);
+  const handleMessageChange = (e) => {
+    setMessageText(e.target.value);
+    
+    // Send typing indicator
+    if (activeChat && isConnected) {
+      sendTypingIndicator(activeChat.chat.id, true);
+      
+      // Clear previous timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
       }
-    };
-
-    websocket.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
-
-    websocket.onclose = () => {
-      console.log('WebSocket disconnected');
-    };
-
-    setWs(websocket);
+      
+      // Stop typing indicator after 2 seconds of no input
+      typingTimeoutRef.current = setTimeout(() => {
+        sendTypingIndicator(activeChat.chat.id, false);
+      }, 2000);
+    }
   };
 
   const handleSendMessage = async (e) => {
@@ -126,23 +169,36 @@ const Messages = () => {
     if (!messageText.trim() || !activeChat) return;
 
     setSending(true);
+    const textToSend = messageText.trim();
+    setMessageText('');
+
     try {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ text: messageText }));
-        setMessageText('');
+      // Try Socket.io first for real-time
+      if (isConnected && socket) {
+        socketSendMessage(activeChat.chat.id, textToSend);
+        // Optimistically add message
+        setMessages(prev => [...prev, {
+          sender_id: user?.id,
+          text: textToSend,
+          created_at: new Date().toISOString()
+        }]);
       } else {
-        // Fallback to REST API if WebSocket is not connected
+        // Fallback to REST API
         const token = localStorage.getItem('token');
         await axios.post(
           `${BACKEND_URL}/api/chat/${activeChat.chat.id}/send`,
-          { text: messageText },
+          { text: textToSend },
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        setMessageText('');
         await loadMessages(activeChat.chat.id);
       }
+      
+      // Stop typing indicator
+      sendTypingIndicator(activeChat.chat.id, false);
     } catch (error) {
       console.error('Error sending message:', error);
+      // Restore message if failed
+      setMessageText(textToSend);
     } finally {
       setSending(false);
     }
@@ -169,7 +225,6 @@ const Messages = () => {
     }
   };
 
-  
   const handleSessionAction = async (sessionId, action) => {
     try {
       const token = localStorage.getItem('token');
@@ -267,9 +322,17 @@ const Messages = () => {
               {/* Conversations List */}
               <div className={`border-r border-gray-200 dark:border-gray-700 ${activeChat && 'hidden md:block'}`}>
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                  <h2 className="text-2xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-4">
-                    Messages
-                  </h2>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                      Messages
+                    </h2>
+                    {isConnected && (
+                      <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                        <Circle className="w-2 h-2 fill-green-500" />
+                        Live
+                      </span>
+                    )}
+                  </div>
                   
                   {/* Search */}
                   <div className="relative">
@@ -279,6 +342,7 @@ const Messages = () => {
                       placeholder="Search conversations..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
+                      data-testid="search-conversations"
                       className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 dark:text-white"
                     />
                   </div>
@@ -304,6 +368,7 @@ const Messages = () => {
                         <div
                           key={chatItem.chat.id}
                           onClick={() => setActiveChat(chatItem)}
+                          data-testid={`chat-item-${chatItem.chat.id}`}
                           className={`p-4 border-b border-gray-100 dark:border-gray-700 cursor-pointer transition-all ${
                             isActive 
                               ? 'bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border-l-4 border-l-indigo-600' 
@@ -383,13 +448,13 @@ const Messages = () => {
                           </h3>
                           <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
                             <Circle className="w-2 h-2 fill-green-500" />
-                            Online
+                            {typingUser ? 'Typing...' : 'Online'}
                           </p>
                         </div>
                       </div>
                     </div>
 
-                                   {/* Messages */}
+                    {/* Messages */}
                     <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
                       {messages.map((message, idx) => {
                         const isMe = message.sender_id === user?.id;
@@ -401,7 +466,7 @@ const Messages = () => {
 
                         return (
                           <div
-                            key={idx}
+                            key={message.id || idx}
                             className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
                           >
                             <div
@@ -423,6 +488,7 @@ const Messages = () => {
                                 <div className="mt-3 flex gap-2">
                                   <button
                                     onClick={() => handleSessionAction(sessionId, 'accepted')}
+                                    data-testid={`accept-session-${sessionId}`}
                                     className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all"
                                   >
                                     <Check className="w-4 h-4" />
@@ -430,6 +496,7 @@ const Messages = () => {
                                   </button>
                                   <button
                                     onClick={() => handleSessionAction(sessionId, 'rejected')}
+                                    data-testid={`reject-session-${sessionId}`}
                                     className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all"
                                   >
                                     <XCircle className="w-4 h-4" />
@@ -496,6 +563,20 @@ const Messages = () => {
                           </div>
                         );
                       })}
+                      
+                      {/* Typing indicator */}
+                      {typingUser && (
+                        <div className="flex justify-start">
+                          <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 shadow-md rounded-bl-none">
+                            <div className="flex items-center gap-1">
+                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
                       <div ref={messagesEndRef} />
                     </div>
 
@@ -505,13 +586,15 @@ const Messages = () => {
                         <input
                           type="text"
                           value={messageText}
-                          onChange={(e) => setMessageText(e.target.value)}
+                          onChange={handleMessageChange}
                           placeholder="Type a message..."
+                          data-testid="message-input"
                           className="flex-1 px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 dark:text-white"
                         />
                         <button
                           type="submit"
                           disabled={!messageText.trim() || sending}
+                          data-testid="send-message-btn"
                           className="p-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl transition-all transform hover:scale-105 shadow-lg"
                         >
                           {sending ? (

@@ -23,6 +23,8 @@ import Matches from './pages/Matches';
 import Messages from './pages/Messages';
 // Auth context
 import { AuthProvider, useAuth } from './context/AuthContext';
+// Socket context for real-time features
+import { SocketProvider } from './context/SocketContext';
 
 // Protected Route Component - redirects admin users to /admin
 const ProtectedRoute = ({ children }) => {
@@ -69,6 +71,7 @@ const AdminRoute = ({ children }) => {
 function App() {
   return (
     <AuthProvider>
+      <SocketProvider>
       <Router>
         <Routes>
           <Route path="/" element={<LandingPage />} />
@@ -195,6 +198,7 @@ function App() {
           />
         </Routes>
       </Router>
+      </SocketProvider>
     </AuthProvider>
   );
 }

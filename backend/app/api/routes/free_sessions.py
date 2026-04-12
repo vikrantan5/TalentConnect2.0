@@ -11,6 +11,15 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/free-sessions", tags=["Free Sessions"])
 
 
+
+# Import socket manager for real-time notifications
+try:
+    from app.socket_manager import send_notification_to_user, send_session_notification
+    SOCKET_ENABLED = True
+except ImportError:
+    SOCKET_ENABLED = False
+    logger.warning("Socket manager not available, real-time features disabled")
+
 class FreeSessionCreate(BaseModel):
     receiver_id: str
     session_type: str = "mentor"  # "mentor" or "exchange"
@@ -118,6 +127,19 @@ async def book_free_session(data: FreeSessionCreate, current_user_id: str = Depe
             'reference_type': 'learning_session'
         }).execute()
 
+
+
+        # Send real-time notification via Socket.IO
+        if SOCKET_ENABLED:
+            import asyncio
+            asyncio.create_task(send_session_notification(data.receiver_id, {
+                'title': 'New Session Request',
+                'message': f'{sender_name} requested a {data.session_type} session{skill_info}',
+                'session_id': session_id,
+                'sender_id': current_user_id
+            }, 'session_request'))
+
+
         return {"message": "Session request sent!", "session": result.data[0], "chat_id": chat_id}
 
     except HTTPException:
@@ -210,6 +232,17 @@ async def update_free_session(session_id: str, data: FreeSessionUpdate, current_
                 'reference_id': session_id,
                 'reference_type': 'learning_session'
             }).execute()
+
+
+             # Send real-time notification via Socket.IO
+            if SOCKET_ENABLED:
+                import asyncio
+                asyncio.create_task(send_session_notification(learner_id, {
+                    'title': f'Session {data.status.title()}',
+                    'message': f'{receiver_name} has {data.status} your session request',
+                    'session_id': session_id,
+                    'sender_id': current_user_id
+                }, f'session_{data.status}'))
 
         return {"message": f"Session {data.status}", "session_id": session_id}
 

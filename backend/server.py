@@ -2,6 +2,7 @@ from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 import logging
+import socketio
 
 # Configure logging
 logging.basicConfig(
@@ -86,6 +87,12 @@ async def health_check():
 async def health_head():
     return
 
+# Import Socket.IO server and create ASGI app
+from app.socket_manager import sio
+
+# Create combined ASGI app with Socket.IO
+socket_app = socketio.ASGIApp(sio, app)
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    uvicorn.run(socket_app, host="0.0.0.0", port=8000)
