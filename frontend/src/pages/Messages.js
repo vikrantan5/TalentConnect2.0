@@ -9,7 +9,11 @@ import {
   Loader2,
   X,
   ArrowLeft,
-  Circle
+   Circle,
+  Check,
+  XCircle,
+  Video,
+  Calendar
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -163,6 +167,66 @@ const Messages = () => {
     } else {
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
+  };
+
+  
+  const handleSessionAction = async (sessionId, action) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.patch(
+        `${BACKEND_URL}/api/free-sessions/${sessionId}`,
+        { status: action },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      // Reload messages to show updated status
+      if (activeChat) {
+        await loadMessages(activeChat.chat.id);
+      }
+      alert(`Session ${action}!`);
+    } catch (error) {
+      console.error('Error updating session:', error);
+      alert('Failed to update session. Please try again.');
+    }
+  };
+
+  const handleAddMeetingLink = async (sessionId) => {
+    if (!meetingLink.trim()) {
+      alert('Please enter a valid meeting link');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.patch(
+        `${BACKEND_URL}/api/free-sessions/${sessionId}/meeting-link`,
+        { meeting_link: meetingLink },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      setMeetingLink('');
+      setShowMeetingInput({});
+      
+      // Reload messages to show the link
+      if (activeChat) {
+        await loadMessages(activeChat.chat.id);
+      }
+      
+      alert('Meeting link added successfully!');
+    } catch (error) {
+      console.error('Error adding meeting link:', error);
+      alert('Failed to add meeting link. Please try again.');
+    }
+  };
+
+  const extractSessionId = (text) => {
+    const match = text.match(/\[Session ID: ([^\]]+)\]/);
+    return match ? match[1] : null;
+  };
+
+  const isSessionMessage = (message) => {
+    return message.message_type === 'session_request' || 
+           message.message_type === 'session_update' || 
+           message.message_type === 'meeting_link';
   };
 
   const filteredChats = chats.filter(chat => {
@@ -325,26 +389,109 @@ const Messages = () => {
                       </div>
                     </div>
 
-                    {/* Messages */}
+                                   {/* Messages */}
                     <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
                       {messages.map((message, idx) => {
                         const isMe = message.sender_id === user?.id;
+                        const sessionId = extractSessionId(message.text);
+                        const isSessionRequest = message.message_type === 'session_request';
+                        const isSessionUpdate = message.message_type === 'session_update';
+                        const isMeetingLink = message.message_type === 'meeting_link';
+                        const isSessionMsg = isSessionMessage(message);
+
                         return (
                           <div
                             key={idx}
                             className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
                           >
                             <div
-                              className={`max-w-[70%] rounded-2xl px-4 py-2 ${
-                                isMe
+                              className={`max-w-[70%] rounded-2xl px-4 py-3 ${
+                                isSessionMsg
+                                  ? 'bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-2 border-blue-200 dark:border-blue-700 text-gray-900 dark:text-white'
+                                  : isMe
                                   ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-br-none'
                                   : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-bl-none shadow-md'
                               }`}
                             >
-                              <p className="text-sm break-words">{message.text}</p>
-                              <p className={`text-xs mt-1 ${isMe ? 'text-indigo-100' : 'text-gray-500 dark:text-gray-400'}`}>
+                              <p className="text-sm break-words whitespace-pre-line">{message.text}</p>
+                              <p className={`text-xs mt-1 ${isSessionMsg ? 'text-gray-600 dark:text-gray-400' : isMe ? 'text-indigo-100' : 'text-gray-500 dark:text-gray-400'}`}>
                                 {formatTime(message.created_at)}
                               </p>
+
+                              {/* Session Request Actions - Only for receiver */}
+                              {isSessionRequest && !isMe && sessionId && (
+                                <div className="mt-3 flex gap-2">
+                                  <button
+                                    onClick={() => handleSessionAction(sessionId, 'accepted')}
+                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all"
+                                  >
+                                    <Check className="w-4 h-4" />
+                                    Accept
+                                  </button>
+                                  <button
+                                    onClick={() => handleSessionAction(sessionId, 'rejected')}
+                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all"
+                                  >
+                                    <XCircle className="w-4 h-4" />
+                                    Reject
+                                  </button>
+                                </div>
+                              )}
+
+                              {/* Add Meeting Link Button - For accepted sessions */}
+                              {isSessionUpdate && sessionId && message.text.includes('ACCEPTED') && (
+                                <div className="mt-3">
+                                  {showMeetingInput[sessionId] ? (
+                                    <div className="space-y-2">
+                                      <input
+                                        type="url"
+                                        value={meetingLink}
+                                        onChange={(e) => setMeetingLink(e.target.value)}
+                                        placeholder="Enter Google Meet link..."
+                                        className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm"
+                                      />
+                                      <div className="flex gap-2">
+                                        <button
+                                          onClick={() => handleAddMeetingLink(sessionId)}
+                                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold"
+                                        >
+                                          <Video className="w-4 h-4" />
+                                          Add Link
+                                        </button>
+                                        <button
+                                          onClick={() => setShowMeetingInput({})}
+                                          className="px-3 py-2 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-800 dark:text-white rounded-lg text-sm"
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={() => setShowMeetingInput({ [sessionId]: true })}
+                                      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-semibold transition-all"
+                                    >
+                                      <Video className="w-4 h-4" />
+                                      Add Google Meet Link
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Display Meeting Link - Make it clickable */}
+                              {isMeetingLink && (
+                                <div className="mt-3">
+                                  <a
+                                    href={message.text.match(/(https?:\/\/[^\s]+)/)?.[0]}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white rounded-lg font-semibold transition-all"
+                                  >
+                                    <Video className="w-4 h-4" />
+                                    Join Meeting
+                                  </a>
+                                </div>
+                              )}
                             </div>
                           </div>
                         );
