@@ -22,9 +22,9 @@ import WebSocketDebugger from './pages/WebSocketDebugger';
 // Auth context
 import { AuthProvider, useAuth } from './context/AuthContext';
 
-// Protected Route Component
+// Protected Route Component - redirects admin users to /admin
 const ProtectedRoute = ({ children }) => {
- const { isAuthenticated, loading } = useAuth();
+ const { isAuthenticated, user, loading } = useAuth();
   
   // Show loading state while checking authentication
   if (loading) {
@@ -37,8 +37,13 @@ const ProtectedRoute = ({ children }) => {
       </div>
     );
   }
+
+  if (!isAuthenticated) return <Navigate to="/login" />;
   
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  // Admin users should only see the admin dashboard
+  if (user?.role === 'admin') return <Navigate to="/admin" />;
+  
+  return children;
 };
 
 const AdminRoute = ({ children }) => {

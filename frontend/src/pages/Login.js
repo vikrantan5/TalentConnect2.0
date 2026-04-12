@@ -51,10 +51,15 @@ const Login = () => {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  // Redirect if already logged in
+  // Redirect if already logged in - admin goes to /admin, others go to /dashboard
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard');
+      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+      if (userData.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     }
   }, [isAuthenticated, navigate]);
 
@@ -103,9 +108,16 @@ const Login = () => {
       } else {
         localStorage.removeItem('rememberedEmail');
       }
+         // Check if user is admin and redirect accordingly
+      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+      if (userData.role === 'admin') {
+        setSuccessMessage('Admin login successful! Redirecting to dashboard...');
+        setTimeout(() => navigate('/admin'), 1500);
+      } else {
       
       setSuccessMessage('Login successful! Redirecting...');
       setTimeout(() => navigate('/dashboard'), 1500);
+         }
     } else {
       setError(result.error || 'Invalid email or password');
     }
