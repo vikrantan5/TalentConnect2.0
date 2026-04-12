@@ -19,6 +19,7 @@ import SkillExchangeMarketplace from './pages/SkillExchangeMarketplace';
 import RoadmapPlanner from './pages/RoadmapPlanner';
 import Teams from './pages/Teams';
 import WebSocketDebugger from './pages/WebSocketDebugger';
+import Matches from './pages/Matches';
 // Auth context
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -131,6 +132,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <SessionBooking />
+              </ProtectedRoute>
+            }
+          />
+             <Route
+            path="/matches"
+            element={
+              <ProtectedRoute>
+                <Matches />
               </ProtectedRoute>
             }
           />

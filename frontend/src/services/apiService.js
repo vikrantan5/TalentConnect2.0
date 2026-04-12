@@ -737,3 +737,75 @@ export const reportService = {
     return response.data;
   },
 };
+
+
+
+// ============================================
+// MATCHING SERVICE
+// ============================================
+export const matchingService = {
+  getPerfectMatches: async () => {
+    const response = await api.get('/api/match/perfect');
+    return response.data;
+  },
+
+  getRecommendedMentors: async () => {
+    const response = await api.get('/api/match/mentors');
+    return response.data;
+  },
+
+  getRecommendedLearners: async () => {
+    const response = await api.get('/api/match/learners');
+    return response.data;
+  },
+
+  getAllMatches: async () => {
+    const response = await api.get('/api/match/all');
+    return response.data;
+  },
+};
+
+// ============================================
+// CHAT SERVICE
+// ============================================
+export const chatService = {
+  createChat: async (receiverId) => {
+    const response = await api.post('/api/chat/create', { receiver_id: receiverId });
+    return response.data;
+  },
+
+  getMyChats: async () => {
+    const response = await api.get('/api/chat/my-chats');
+    return response.data;
+  },
+
+  getChatMessages: async (chatId, limit = 100) => {
+    const response = await api.get(`/api/chat/${chatId}/messages?limit=${limit}`);
+    return response.data;
+  },
+
+  sendMessage: async (chatId, text) => {
+    const response = await api.post(`/api/chat/${chatId}/send`, { text });
+    return response.data;
+  },
+};
+
+// ============================================
+// FREE SESSIONS SERVICE
+// ============================================
+export const freeSessionsService = {
+  bookSession: async (sessionData) => {
+    const response = await api.post('/api/free-sessions/book', sessionData);
+    return response.data;
+  },
+
+  getMySessions: async () => {
+    const response = await api.get('/api/free-sessions/my-sessions');
+    return response.data;
+  },
+
+  updateSession: async (sessionId, status) => {
+    const response = await api.patch(`/api/free-sessions/${sessionId}`, { status });
+    return response.data;
+  },
+};

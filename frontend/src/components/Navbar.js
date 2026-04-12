@@ -81,6 +81,7 @@ const Navbar = () => {
 
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, gradient: 'from-cyan-500 to-blue-600' },
+     { path: '/matches', label: 'Matches', icon: Sparkles, gradient: 'from-orange-500 to-red-600' },
     { path: '/skills', label: 'Skills', icon: Code2, gradient: 'from-blue-500 to-indigo-600' },
     { path: '/tasks', label: 'Tasks', icon: Briefcase, gradient: 'from-emerald-500 to-teal-600' },
     { path: '/exchange', label: 'Exchange', icon: ArrowLeftRight, gradient: 'from-teal-500 to-cyan-600' },
