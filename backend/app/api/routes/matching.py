@@ -170,12 +170,24 @@ async def get_perfect_matches(current_user_id: str = Depends(get_current_user)):
         # Get current user's skills
         user_skills = db.table('user_skills').select('*').eq('user_id', current_user_id).execute()
         if not user_skills.data:
-            return {"perfect_matches": []}
+            logger.info(f"No skills found for user {current_user_id}")
+            return {"perfect_matches": [], "debug": {"user_skills": []}}
 
         my_teach = [s['skill_name'] for s in user_skills.data if s['skill_type'] == 'offered']
         my_learn = [s['skill_name'] for s in user_skills.data if s['skill_type'] == 'wanted']
 
+        logger.info(f"User {current_user_id} - Can teach: {my_teach}, Wants to learn: {my_learn}")
+
         if not my_teach or not my_learn:
+            return {
+                "perfect_matches": [], 
+                "debug": {
+                    "user_id": current_user_id,
+                    "my_teach": my_teach,
+                    "my_learn": my_learn,
+                    "message": "Need both offered and wanted skills for perfect matches"
+                }
+            }
             return {"perfect_matches": []}
 
         # Find potential matches - users who want what I teach
@@ -187,9 +199,20 @@ async def get_perfect_matches(current_user_id: str = Depends(get_current_user)):
             if result.data:
                 for entry in result.data:
                     potential_user_ids.add(entry['user_id'])
+                logger.info(f"Found {len(result.data)} users wanting skill '{skill}'")
+
+        logger.info(f"Potential match candidates: {len(potential_user_ids)} users")
 
         if not potential_user_ids:
-            return {"perfect_matches": []}
+            return {
+                "perfect_matches": [], 
+                "debug": {
+                    "my_teach": my_teach,
+                    "my_learn": my_learn,
+                    "potential_users": 0,
+                    "message": "No users found who want what you teach"
+                }
+            }
 
         # Check each potential user for mutual match
         perfect_matches = []
@@ -202,6 +225,8 @@ async def get_perfect_matches(current_user_id: str = Depends(get_current_user)):
             other_learn = [s['skill_name'] for s in other_skills.data if s['skill_type'] == 'wanted']
 
             match_type = get_match_type(my_teach, my_learn, other_teach, other_learn)
+            logger.info(f"Checking user {uid}: their teach={other_teach}, their learn={other_learn}, match_type={match_type}")
+
 
             if match_type == "perfect":
                 # Get user info
@@ -213,6 +238,7 @@ async def get_perfect_matches(current_user_id: str = Depends(get_current_user)):
                 # Find the matching skills in both directions
                 i_teach_they_want = find_matching_skills(my_teach, other_learn)
                 they_teach_i_want = find_matching_skills(other_teach, my_learn)
+                logger.info(f"PERFECT MATCH FOUND with {user_data.get('username')}: I teach {i_teach_they_want}, they teach {they_teach_i_want}")
 
                 perfect_matches.append({
                     "user_id": uid,

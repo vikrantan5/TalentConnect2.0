@@ -229,19 +229,38 @@ const Matches = () => {
                 </div>
               </div>
 
-              {aiSuggestions.length > 0 && (
+                          {aiSuggestions.length > 0 && (
                 <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border-2 border-purple-200 dark:border-purple-800">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-3">
                     <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                     <p className="text-sm font-semibold text-purple-900 dark:text-purple-200">
-                      AI Suggestions: Also consider learning
+                      AI Suggestions: Also consider learning these skills
                     </p>
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="space-y-2">
                     {aiSuggestions.map((skill, idx) => (
-                      <span key={idx} className="px-3 py-1 bg-purple-100 dark:bg-purple-800/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-semibold">
-                        {skill}
-                      </span>
+                      <div key={idx} className="p-3 bg-white dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
+                        <div className="flex items-start gap-3">
+                          <span className="px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full text-xs font-bold">
+                            {skill.skill_name || skill}
+                          </span>
+                          {skill.difficulty && (
+                            <span className="px-2 py-1 bg-purple-100 dark:bg-purple-800/30 text-purple-700 dark:text-purple-300 rounded text-xs">
+                              {skill.difficulty}
+                            </span>
+                          )}
+                          {skill.learning_time_weeks && (
+                            <span className="px-2 py-1 bg-purple-100 dark:bg-purple-800/30 text-purple-700 dark:text-purple-300 rounded text-xs">
+                              ~{skill.learning_time_weeks} weeks
+                            </span>
+                          )}
+                        </div>
+                        {skill.reason && (
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+                            {skill.reason}
+                          </p>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </div>
