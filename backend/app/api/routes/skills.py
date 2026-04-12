@@ -36,14 +36,12 @@ async def add_skill(skill_data: SkillCreate, current_user_id: str = Depends(get_
             'is_verified': False
         }
         
-        # Only add years_experience and hourly_rate for "offered" (Can Teach) skills
+        # Only add years_experience for \"offered\" (Can Teach) skills
         if skill_data.skill_type == 'offered':
             new_skill['years_experience'] = skill_data.years_experience if hasattr(skill_data, 'years_experience') and skill_data.years_experience else None
-            new_skill['hourly_rate'] = skill_data.hourly_rate if hasattr(skill_data, 'hourly_rate') and skill_data.hourly_rate else None
         else:
-            # For "wanted" skills, explicitly set these to None
+            # For \"wanted\" skills, explicitly set these to None
             new_skill['years_experience'] = None
-            new_skill['hourly_rate'] = None
         
         result = db.table('user_skills').insert(new_skill).execute()
         
@@ -192,7 +190,7 @@ async def search_skills(skill_name: str, skill_type: str = "offered"):
         
         # Get user details for each skill
         user_ids = [skill['user_id'] for skill in skills_result.data]
-        users_result = db.table('users').select('id, username, full_name, profile_photo, average_rating, total_ratings, bio').in_('id', user_ids).execute()
+        users_result = db.table('users').select('id, username, full_name, profile_photo, background_photo, average_rating, total_ratings, bio, is_available').in_('id', user_ids).execute()
         
         # Merge skill and user data
         users_dict = {user['id']: user for user in users_result.data}
@@ -269,14 +267,12 @@ async def update_skill(skill_id: str, skill_data: SkillCreate, current_user_id: 
             'description': skill_data.description if hasattr(skill_data, 'description') and skill_data.description else None,
         }
         
-        # Only update years_experience and hourly_rate for "offered" (Can Teach) skills
+        # Only update years_experience for \"offered\" (Can Teach) skills
         if skill_data.skill_type == 'offered':
             update_data['years_experience'] = skill_data.years_experience if hasattr(skill_data, 'years_experience') and skill_data.years_experience else None
-            update_data['hourly_rate'] = skill_data.hourly_rate if hasattr(skill_data, 'hourly_rate') and skill_data.hourly_rate else None
         else:
-            # For "wanted" skills, explicitly set these to None
+            # For \"wanted\" skills, explicitly set these to None
             update_data['years_experience'] = None
-            update_data['hourly_rate'] = None
         
         result = db.table('user_skills').update(update_data).eq('id', skill_id).execute()
         
@@ -463,6 +459,8 @@ async def get_mentor_learner_matches(current_user_id: str = Depends(get_current_
                                     "full_name": user_data.get('full_name', ''),
                                     "email": user_data.get('email', ''),
                                     "bio": user_data.get('bio', ''),
+                                     "profile_photo": user_data.get('profile_photo', ''),
+                                    "background_photo": user_data.get('background_photo', ''),
                                     "avatar_url": user_data.get('avatar_url', ''),
                                     "is_available": user_data.get('is_available', True),
                                     "location": user_data.get('location', ''),
@@ -472,8 +470,7 @@ async def get_mentor_learner_matches(current_user_id: str = Depends(get_current_
                                     "average_rating": round(avg_rating, 2),
                                     "total_sessions": session_count,
                                     "total_reviews": len(ratings),
-                                    "years_experience": mentor_skill.get('years_experience', 0),
-                                    "hourly_rate": mentor_skill.get('hourly_rate', 0)
+                                     "years_experience": mentor_skill.get('years_experience', 0)
                                 }
                             
                             # Add skill to user's matching skills
@@ -505,6 +502,8 @@ async def get_mentor_learner_matches(current_user_id: str = Depends(get_current_
                                     "full_name": user_data.get('full_name', ''),
                                     "email": user_data.get('email', ''),
                                     "bio": user_data.get('bio', ''),
+                                     "profile_photo": user_data.get('profile_photo', ''),
+                                    "background_photo": user_data.get('background_photo', ''),
                                     "avatar_url": user_data.get('avatar_url', ''),
                                     "is_available": user_data.get('is_available', True),
                                     "location": user_data.get('location', ''),

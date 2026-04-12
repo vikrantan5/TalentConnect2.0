@@ -88,7 +88,7 @@ class SkillCreate(BaseModel):
     skill_level: Optional[str] = None  # 'beginner', 'intermediate', 'advanced', 'expert'
     description: Optional[str] = None
     years_experience: Optional[int] = None
-    hourly_rate: Optional[float] = None
+
 
 class SkillResponse(BaseModel):
     id: UUID
@@ -98,7 +98,7 @@ class SkillResponse(BaseModel):
     skill_level: Optional[str] = None
     description: Optional[str] = None
     years_experience: Optional[int] = None
-    hourly_rate: Optional[float] = None
+  
     is_verified: bool
     verification_score: Optional[int] = None
     student_count: Optional[int] = None

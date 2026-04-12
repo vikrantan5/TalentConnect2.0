@@ -64,8 +64,7 @@ const SkillMarketplace = () => {
     skill_type: 'offered',
     skill_level: 'intermediate',
     description: '',
-    years_experience: '',
-    hourly_rate: ''
+years_experience: ''
   });
   const [loading, setLoading] = useState(false);
     const [loadingSuggestions, setLoadingSuggestions] = useState(false);
@@ -105,13 +104,10 @@ const SkillMarketplace = () => {
         description: newSkill.description || undefined
       };
 
-      // Only add years_experience and hourly_rate for \"Can Teach\" (offered) skills
+      // Only add years_experience for \"Can Teach\" (offered) skills
       if (newSkill.skill_type === 'offered') {
         if (newSkill.years_experience) {
           skillData.years_experience = parseInt(newSkill.years_experience);
-        }
-        if (newSkill.hourly_rate) {
-          skillData.hourly_rate = parseFloat(newSkill.hourly_rate);
         }
       }
 
@@ -122,8 +118,7 @@ const SkillMarketplace = () => {
         skill_type: 'offered', 
         skill_level: 'intermediate',
         description: '',
-        years_experience: '',
-        hourly_rate: ''
+        years_experience: ''
       });
       showNotification('Skill added successfully!', 'success');
       loadMySkills();
@@ -137,21 +132,18 @@ const SkillMarketplace = () => {
     e.preventDefault();
     setLoading(true);
     try {
-       // Build skill data object - only include years_experience and hourly_rate for \"offered\" skills
+       // Build skill data object - only include years_experience for \"offered\" skills
       const skillData = {
-        skill_name: editSkill.skill_name,
-        skill_type: editSkill.skill_type,
-        skill_level: editSkill.skill_level,
-        description: editSkill.description || undefined
+        skill_name: newSkill.skill_name,
+        skill_type: newSkill.skill_type,
+        skill_level: newSkill.skill_level,
+        description: newSkill.description || undefined
       };
 
-      // Only add years_experience and hourly_rate for \"Can Teach\" (offered) skills
-      if (editSkill.skill_type === 'offered') {
-        if (editSkill.years_experience) {
-          skillData.years_experience = parseInt(editSkill.years_experience);
-        }
-        if (editSkill.hourly_rate) {
-          skillData.hourly_rate = parseFloat(editSkill.hourly_rate);
+      // Only add years_experience for \"Can Teach\" (offered) skills
+      if (newSkill.skill_type === 'offered') {
+        if (newSkill.years_experience) {
+          skillData.years_experience = parseInt(newSkill.years_experience);
         }
       }
 
