@@ -93,6 +93,9 @@ from app.socket_manager import sio
 # Create combined ASGI app with Socket.IO
 socket_app = socketio.ASGIApp(sio, app)
 
+# Export socket_app as the main app for uvicorn
+app = socket_app
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(socket_app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

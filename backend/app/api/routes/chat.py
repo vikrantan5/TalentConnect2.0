@@ -165,7 +165,11 @@ async def create_or_get_chat(data: ChatCreateRequest, current_user_id: str = Dep
             "created": True,
             "other_user": receiver_info
         }
-
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in create_or_get_chat: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/my-chats")
 async def get_my_chats(current_user_id: str = Depends(get_current_user)):
