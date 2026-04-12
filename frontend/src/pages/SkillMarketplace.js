@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import FindMentorModal from '../components/FindMentorModal';
 import SkillQuizModal from '../components/SkillQuizModal';
+import MentorDetailModal from '../components/MentorDetailModal';
 import { skillService } from '../services/apiService';
 import {
   Search,
@@ -89,6 +90,8 @@ const SkillMarketplace = () => {
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
   const [findMentorModal, setFindMentorModal] = useState({ show: false, skill: '' });
     const [skillQuizModal, setSkillQuizModal] = useState({ show: false, skill: '', level: 'intermediate' });
+   const [selectedMentorDetail, setSelectedMentorDetail] = useState(null);
+  const [showMentorDetailModal, setShowMentorDetailModal] = useState(false);
 
   const handleAddSkill = async (e) => {
     e.preventDefault();
@@ -291,6 +294,27 @@ const SkillMarketplace = () => {
       case 'expert': return Crown;
       default: return Target;
     }
+  };
+   const getInitials = (name) => {
+    if (!name) return '?';
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  const getAvatarColor = (name) => {
+    const colors = [
+      'from-pink-500 to-rose-500',
+      'from-purple-500 to-indigo-500',
+      'from-blue-500 to-cyan-500',
+      'from-green-500 to-emerald-500',
+      'from-yellow-500 to-orange-500',
+      'from-red-500 to-pink-500',
+    ];
+    const index = (name || '').length % colors.length;
+    return colors[index];
   };
 
   const sortMentors = (mentorsList) => {
@@ -776,68 +800,225 @@ const SkillMarketplace = () => {
         {/* ===================================================================================================================================== */}
 
         
- {/* Recommendations Tab */}
+ {/* Recommended Tab - Mentor/Learner Matches */}
         {activeTab === 'recommendations' && (
-          <div className="space-y-6">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-              <div className="flex items-center justify-between mb-4">
+          <div className="space-y-8">
+            {/* 👨‍🏫 RECOMMENDED MENTORS SECTION */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 border-b-2 border-green-200 dark:border-green-800 pb-3">
+                <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                  <GraduationCap className="w-6 h-6 text-green-600 dark:text-green-400" />
+                </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-indigo-600" />
-                    Recommended Skills
-                  </h2>
-                  <p className="text-gray-600 dark:text-gray-400">Based on your current skills</p>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Recommended Mentors</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    People who can teach what you want to learn ({mentorLearnerMatches.recommended_mentors?.length || 0})
+                  </p>
                 </div>
               </div>
 
-              {recommendations.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="w-24 h-24 mx-auto bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mb-4">
-                    <Sparkles className="w-12 h-12 text-indigo-600 dark:text-indigo-400" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Recommendations Yet</h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-                    Add some skills to get personalized recommendations!
+              {(!mentorLearnerMatches.recommended_mentors || mentorLearnerMatches.recommended_mentors.length === 0) ? (
+                <div className="bg-green-50 dark:bg-green-900/10 border-2 border-dashed border-green-200 dark:border-green-800 rounded-xl p-8 text-center">
+                  <Users className="w-12 h-12 text-green-400 mx-auto mb-3" />
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                    No mentor matches yet. Add skills you want to learn to get personalized mentor recommendations!
                   </p>
-                  <button
-                    onClick={() => setActiveTab('my-skills')}
-                    className="inline-flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-medium hover:gap-3 transition-all"
-                  >
-                    Add your first skill
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {recommendations.map((rec, index) => (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {mentorLearnerMatches.recommended_mentors.map((mentor) => (
                     <div
-                      key={index}
-                      className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4 hover:shadow-lg transition-all"
-                      data-testid="recommendation-card"
+                      key={mentor.user_id}
+                      className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-green-200 dark:border-green-800"
+                      data-testid="mentor-card"
                     >
-                      <div className="flex items-start justify-between mb-3">
+                      {/* Header with avatar */}
+                      <div className="relative h-24 bg-gradient-to-r from-green-500 to-emerald-500">
+                        <div className="absolute -bottom-10 left-6">
+                          <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${getAvatarColor(mentor.full_name || mentor.username)} flex items-center justify-center text-white text-2xl font-bold shadow-lg ring-4 ring-white dark:ring-gray-800`}>
+                            {getInitials(mentor.full_name || mentor.username)}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Content */}
+                      <div className="pt-14 p-6 space-y-4">
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{rec.skill_name}</h3>
-                          {rec.category && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400">{rec.category}</p>
+                          <h4 className="text-lg font-bold text-gray-900 dark:text-white">
+                            {mentor.full_name || mentor.username}
+                          </h4>
+                          {mentor.bio && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                              {mentor.bio}
+                            </p>
                           )}
                         </div>
-                        <Sparkles className="w-5 h-5 text-indigo-600" />
+
+                        {/* Skills */}
+                        {mentor.matching_skills && mentor.matching_skills.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {mentor.matching_skills.slice(0, 3).map((skill, idx) => (
+                              <span key={idx} className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                {skill}
+                              </span>
+                            ))}
+                            {mentor.matching_skills.length > 3 && (
+                              <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                                +{mentor.matching_skills.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Stats */}
+                        <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
+                          <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+                            <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                            <span className="font-semibold">{mentor.average_rating?.toFixed(1) || '0.0'}</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+                            <Briefcase className="w-4 h-4" />
+                            <span>{mentor.total_sessions || 0} sessions</span>
+                          </div>
+                          {mentor.is_available && (
+                            <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                              Online
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedMentorDetail(mentor);
+                              setShowMentorDetailModal(true);
+                            }}
+                            className="flex-1 py-2 px-4 bg-green-600 hover:bg-green-700 text-white rounded-lg transition text-sm font-medium"
+                          >
+                            View Profile
+                          </button>
+                          <button
+                            onClick={() => {
+                              /* TODO: Implement connect functionality */
+                              showNotification('Connection request sent!', 'success');
+                            }}
+                            className="py-2 px-4 border border-green-600 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition text-sm font-medium"
+                          >
+                            Connect
+                          </button>
+                        </div>
                       </div>
-                      
-                      {rec.description && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{rec.description}</p>
-                      )}
-                      
-                      <button
-                        onClick={() => handleAddRecommendedSkill(rec.skill_name)}
-                        disabled={loading}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 transition-all text-sm font-medium"
-                        data-testid="add-recommended-skill-button"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Add to My Skills
-                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 🧑‍🎓 RECOMMENDED LEARNERS SECTION */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 border-b-2 border-blue-200 dark:border-blue-800 pb-3">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                  <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Recommended Learners</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    People who want to learn what you can teach ({mentorLearnerMatches.recommended_learners?.length || 0})
+                  </p>
+                </div>
+              </div>
+
+              {(!mentorLearnerMatches.recommended_learners || mentorLearnerMatches.recommended_learners.length === 0) ? (
+                <div className="bg-blue-50 dark:bg-blue-900/10 border-2 border-dashed border-blue-200 dark:border-blue-800 rounded-xl p-8 text-center">
+                  <Users className="w-12 h-12 text-blue-400 mx-auto mb-3" />
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                    No learner matches yet. Add skills you can teach to get personalized learner recommendations!
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {mentorLearnerMatches.recommended_learners.map((learner) => (
+                    <div
+                      key={learner.user_id}
+                      className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-blue-200 dark:border-blue-800"
+                      data-testid="learner-card"
+                    >
+                      {/* Header with avatar */}
+                      <div className="relative h-24 bg-gradient-to-r from-blue-500 to-indigo-500">
+                        <div className="absolute -bottom-10 left-6">
+                          <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${getAvatarColor(learner.full_name || learner.username)} flex items-center justify-center text-white text-2xl font-bold shadow-lg ring-4 ring-white dark:ring-gray-800`}>
+                            {getInitials(learner.full_name || learner.username)}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Content */}
+                      <div className="pt-14 p-6 space-y-4">
+                        <div>
+                          <h4 className="text-lg font-bold text-gray-900 dark:text-white">
+                            {learner.full_name || learner.username}
+                          </h4>
+                          {learner.bio && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                              {learner.bio}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Skills they want to learn */}
+                        {learner.matching_skills && learner.matching_skills.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {learner.matching_skills.slice(0, 3).map((skill, idx) => (
+                              <span key={idx} className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                                {skill}
+                              </span>
+                            ))}
+                            {learner.matching_skills.length > 3 && (
+                              <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                                +{learner.matching_skills.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Stats */}
+                        <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
+                          <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+                            <BookOpen className="w-4 h-4" />
+                            <span>Learning {learner.matching_skills?.length || 0} skill(s)</span>
+                          </div>
+                          {learner.is_available && (
+                            <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                              Online
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedMentorDetail(learner);
+                              setShowMentorDetailModal(true);
+                            }}
+                            className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition text-sm font-medium"
+                          >
+                            View Profile
+                          </button>
+                          <button
+                            onClick={() => {
+                              /* TODO: Implement connect functionality */
+                              showNotification('Connection request sent!', 'success');
+                            }}
+                            className="py-2 px-4 border border-blue-600 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition text-sm font-medium"
+                          >
+                            Connect
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -958,124 +1139,124 @@ const SkillMarketplace = () => {
                   return (
                     <div
                       key={mentor.user_id}
-                      className="group bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
+                      className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-200 dark:border-gray-700"
                       data-testid="mentor-card"
                     >
-                      {/* Card Header */}
-                      <div className="relative h-32 bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
-                        <div className="absolute inset-0 bg-black/20"></div>
-                        <div className="relative flex justify-between items-start">
-                          <span className="px-3 py-1 bg-white/20 backdrop-blur rounded-full text-white text-xs">
-                            Top Mentor
-                          </span>
+                      {/* Header with avatar */}
+                      <div className="relative h-24 bg-gradient-to-r from-indigo-600 to-purple-600">
+                        <div className="absolute top-4 right-4 flex gap-2">
                           {mentor.is_verified && (
-                            <span className="flex items-center gap-1 px-2 py-1 bg-green-500/20 backdrop-blur text-green-400 rounded-full text-xs">
-                              <CheckCircle className="w-3 h-3" />
+                            <span className="flex items-center gap-1 px-2 py-1 bg-green-500/90 backdrop-blur text-white rounded-full text-xs font-medium">
+                              <Shield className="w-3 h-3" />
                               Verified
+                            </span>
+                          )}
+                          {mentor.is_available && (
+                            <span className="flex items-center gap-1 px-2 py-1 bg-green-500/90 backdrop-blur text-white rounded-full text-xs">
+                              <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
+                              Online
                             </span>
                           )}
                         </div>
                         
                         {/* Avatar */}
-                        <div className="relative -mt-8 flex justify-center">
-                          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 p-1">
-                            <div className="w-full h-full rounded-xl bg-white dark:bg-gray-800 flex items-center justify-center">
-                              <span className="text-3xl font-bold text-indigo-600">
-                                {mentor.username?.charAt(0).toUpperCase()}
-                              </span>
-                            </div>
+                        <div className="absolute -bottom-10 left-6">
+                          <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${getAvatarColor(mentor.full_name || mentor.username)} flex items-center justify-center text-white text-2xl font-bold shadow-lg ring-4 ring-white dark:ring-gray-800`}>
+                            {getInitials(mentor.full_name || mentor.username)}
                           </div>
                         </div>
                       </div>
 
-                      {/* Card Body */}
-                      <div className="p-6 pt-2">
-                        <div className="text-center mb-4">
-                          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+                      {/* Content */}
+                      <div className="pt-14 p-6 space-y-4">
+                        <div>
+                          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                             {mentor.full_name || mentor.username}
                           </h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
-                            <MapPin className="w-4 h-4" />
-                            {mentor.location || 'Location not set'}
-                          </p>
+                          {mentor.bio && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                              {mentor.bio}
+                            </p>
+                          )}
                         </div>
 
-                        {/* Skill Info */}
-                        <div className="text-center mb-3">
-                          <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                        {/* Skills */}
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Teaching:</span>
+                          <span className="px-3 py-1 text-xs rounded-full font-medium bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400">
                             {mentor.skill_name}
-                          </p>
+                          </span>
                         </div>
 
-                        {/* Skill Level Badge */}
-                        <div className="flex justify-center mb-4">
-                          <div className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getLevelColor(mentor.skill_level)}`}>
+                        {/* Level Badge */}
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getLevelColor(mentor.skill_level)}`}>
                             <LevelIcon className="w-3 h-3" />
                             <span className="capitalize">{mentor.skill_level || 'Intermediate'}</span>
-                          </div>
+                          </span>
+                          {mentor.years_experience && (
+                            <span className="text-xs text-gray-600 dark:text-gray-400">
+                              {mentor.years_experience}+ yrs exp
+                            </span>
+                          )}
                         </div>
 
                         {/* Stats */}
-                        <div className="grid grid-cols-3 gap-2 mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div className="grid grid-cols-3 gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                           <div className="text-center">
                             <div className="flex items-center justify-center gap-1 text-yellow-500">
                               <Star className="w-4 h-4 fill-current" />
-                              <span className="font-bold text-gray-900 dark:text-white">
+                              <span className="font-bold text-gray-900 dark:text-white text-sm">
                                 {mentor.average_rating?.toFixed(1) || '0.0'}
                               </span>
                             </div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">Rating</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Rating</p>
                           </div>
                           <div className="text-center border-x border-gray-200 dark:border-gray-600">
-                            <div className="font-bold text-gray-900 dark:text-white">
+                            <div className="font-bold text-gray-900 dark:text-white text-sm">
                               {mentor.total_sessions || 0}
                             </div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">Sessions</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Sessions</p>
                           </div>
                           <div className="text-center">
-                            <div className="font-bold text-gray-900 dark:text-white">
+                            <div className="font-bold text-gray-900 dark:text-white text-sm">
                               {mentor.total_students || 0}
                             </div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">Students</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Students</p>
                           </div>
                         </div>
 
                         {/* Hourly Rate */}
                         {mentor.hourly_rate && (
-                          <div className="text-center mb-3">
-                            <span className="text-lg font-bold text-gray-900 dark:text-white">
+                          <div className="flex items-center justify-between p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">Hourly Rate</span>
+                            <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
                               ${mentor.hourly_rate}
                             </span>
-                            <span className="text-sm text-gray-500 dark:text-gray-400"> / hour</span>
                           </div>
                         )}
 
                         {/* Action Buttons */}
-                        <div className="flex gap-2">
-                           <button
-                            onClick={() => setFindMentorModal({ show: true, skill: mentor.skill_name || searchSkill })}
-                            className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-2 px-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all font-medium text-sm flex items-center justify-center gap-2"
-                            data-testid="find-mentor-button"
+                        <div className="flex gap-2 pt-2">
+                          <button
+                            onClick={() => {
+                              setSelectedMentorDetail(mentor);
+                              setShowMentorDetailModal(true);
+                            }}
+                            className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-2.5 px-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all font-medium text-sm"
+                            data-testid="view-profile-button"
                           >
-                            <Search className="w-4 h-4" />
-                            Find Mentor
+                            View Profile
                           </button>
                           <button
                             onClick={() => {
                               setSelectedMentor(mentor);
                               setRequestModal(true);
                             }}
-                            className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md shadow-indigo-600/25 flex items-center justify-center gap-2"
-                            data-testid="request-session-button"
+                            className="py-2.5 px-4 border-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all font-medium text-sm"
+                            data-testid="book-session-button"
                           >
-                            <Calendar className="w-4 h-4" />
-                            Request
-                          </button>
-                          <button className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group">
-                            <MessageSquare className="w-4 h-4 text-gray-600 dark:text-gray-400 group-hover:text-indigo-600" />
-                          </button>
-                          <button className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group">
-                            <Heart className="w-4 h-4 text-gray-600 dark:text-gray-400 group-hover:text-red-500" />
+                            Book
                           </button>
                         </div>
                       </div>
@@ -1176,6 +1357,9 @@ const SkillMarketplace = () => {
                   </select>
                 </div>
 
+                   {/* Only show Years Experience and Hourly Rate for "Can Teach" skills */}
+                {newSkill.skill_type === 'offered' && (
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -1202,6 +1386,7 @@ const SkillMarketplace = () => {
                     />
                   </div>
                 </div>
+                   )}
 
                 <div className="flex gap-3 pt-4">
                   <button
@@ -1321,6 +1506,9 @@ const SkillMarketplace = () => {
                   </select>
                 </div>
 
+
+  {/* Only show Years Experience and Hourly Rate for "Can Teach" skills */}
+                {editSkill.skill_type === 'offered' && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -1345,6 +1533,7 @@ const SkillMarketplace = () => {
                     />
                   </div>
                 </div>
+                    )}
 
                 <div className="flex gap-3 pt-4">
                   <button
@@ -1528,6 +1717,17 @@ const SkillMarketplace = () => {
           loadMySkills();
         }}
       />
+       {/* Mentor Detail Modal */}
+      {showMentorDetailModal && selectedMentorDetail && (
+        <MentorDetailModal
+          isOpen={showMentorDetailModal}
+          onClose={() => {
+            setShowMentorDetailModal(false);
+            setSelectedMentorDetail(null);
+          }}
+          mentor={selectedMentorDetail}
+        />
+      )}
 
       <style jsx>{`
         @keyframes blob {
