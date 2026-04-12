@@ -9,13 +9,11 @@ import {
   Search, 
   User, 
   Loader2,
-  X,
   ArrowLeft,
   Circle,
   Check,
   XCircle,
-  Video,
-  Calendar
+  Video
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -36,43 +34,49 @@ const Messages = () => {
   const [typingUser, setTypingUser] = useState(null);
   const [meetingLink, setMeetingLink] = useState('');
   const [showMeetingInput, setShowMeetingInput] = useState({});
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
+  const [page, setPage] = useState(1);
+  
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const isLoadingMoreRef = useRef(false);
+  const shouldAutoScrollRef = useRef(true);
 
-  // Load chats on mount
+  // Load chats
   useEffect(() => {
     loadChats();
   }, []);
 
-  // Handle chat query parameter
+  // Handle URL chat param
   useEffect(() => {
     const chatIdFromUrl = searchParams.get('chat');
     if (chatIdFromUrl && chats.length > 0) {
       const chatToOpen = chats.find(c => c.chat.id === chatIdFromUrl);
-      if (chatToOpen) {
-        setActiveChat(chatToOpen);
-      }
+      if (chatToOpen) setActiveChat(chatToOpen);
     }
   }, [searchParams, chats]);
 
-  // Handle Socket.io events for messages
+  // Socket events
   useEffect(() => {
     const handleNewMessage = (event) => {
       const data = event.detail;
       if (activeChat && data.chat_id === activeChat.chat.id) {
         setMessages(prev => {
-          // Check if message already exists
           const exists = prev.some(m => m.id === data.message.id);
           if (exists) return prev;
           return [...prev, {
             id: data.message.id,
             sender_id: data.message.sender_id,
             text: data.message.text,
-            created_at: data.message.created_at
+            created_at: data.message.created_at,
+            message_type: data.message.message_type
           }];
         });
+        shouldAutoScrollRef.current = true;
+        scrollToBottom();
       }
-      // Update chat list with last message
       loadChats();
     };
 
@@ -80,10 +84,7 @@ const Messages = () => {
       const data = event.detail;
       if (activeChat && data.chat_id === activeChat.chat.id && data.user_id !== user?.id) {
         setTypingUser(data.is_typing ? data.user_id : null);
-        // Clear typing indicator after 3 seconds
-        if (data.is_typing) {
-          setTimeout(() => setTypingUser(null), 3000);
-        }
+        if (data.is_typing) setTimeout(() => setTypingUser(null), 3000);
       }
     };
 
@@ -96,36 +97,42 @@ const Messages = () => {
     };
   }, [activeChat, user]);
 
-  // Join/leave chat room on active chat change
   useEffect(() => {
     if (activeChat && isConnected) {
       joinChat(activeChat.chat.id);
-      loadMessages(activeChat.chat.id);
+      loadMessages(activeChat.chat.id, 1, true);
     }
-
     return () => {
-      if (activeChat) {
-        leaveChat(activeChat.chat.id);
-      }
+      if (activeChat) leaveChat(activeChat.chat.id);
     };
-  }, [activeChat, isConnected, joinChat, leaveChat]);
+  }, [activeChat, isConnected]);
 
   useEffect(() => {
-    scrollToBottom();
+    if (shouldAutoScrollRef.current) scrollToBottom();
   }, [messages]);
 
+  const handleScroll = useCallback(() => {
+    if (!messagesContainerRef.current || isLoadingMoreRef.current || !hasMoreMessages) return;
+    const { scrollTop } = messagesContainerRef.current;
+    if (scrollTop < 100) loadMoreMessages();
+
+    const isAtBottom = messagesContainerRef.current.scrollHeight - messagesContainerRef.current.scrollTop 
+                       <= messagesContainerRef.current.clientHeight + 100;
+    shouldAutoScrollRef.current = isAtBottom;
+  }, [hasMoreMessages]);
+
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
 
   const loadChats = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${BACKEND_URL}/api/chat/my-chats`, {
+      const res = await axios.get(`${BACKEND_URL}/api/chat/my-chats`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setChats(response.data.chats || []);
+      setChats(res.data.chats || []);
     } catch (error) {
       console.error('Error loading chats:', error);
     } finally {
@@ -133,34 +140,57 @@ const Messages = () => {
     }
   };
 
-  const loadMessages = async (chatId) => {
+  const loadMessages = async (chatId, pageNum = 1, reset = true) => {
     try {
+      if (reset) setLoadingMessages(true);
       const token = localStorage.getItem('token');
       const response = await axios.get(`${BACKEND_URL}/api/chat/${chatId}/messages`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
+        params: { page: pageNum, limit: 50 }
       });
-      setMessages(response.data.messages || []);
+
+      const newMessages = response.data.messages || [];
+
+      if (reset) {
+        setMessages(newMessages);
+        setPage(1);
+        setHasMoreMessages(newMessages.length === 50);
+        shouldAutoScrollRef.current = true;
+        setTimeout(scrollToBottom, 100);
+      } else {
+        setMessages(prev => [...newMessages, ...prev]);
+        setPage(pageNum);
+        setHasMoreMessages(newMessages.length === 50);
+        // Preserve scroll position
+        if (messagesContainerRef.current) {
+          const oldHeight = messagesContainerRef.current.scrollHeight;
+          setTimeout(() => {
+            if (messagesContainerRef.current) {
+              messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight - oldHeight;
+            }
+          }, 50);
+        }
+      }
     } catch (error) {
       console.error('Error loading messages:', error);
+    } finally {
+      if (reset) setLoadingMessages(false);
+      isLoadingMoreRef.current = false;
     }
+  };
+
+  const loadMoreMessages = async () => {
+    if (isLoadingMoreRef.current || !hasMoreMessages || !activeChat) return;
+    isLoadingMoreRef.current = true;
+    await loadMessages(activeChat.chat.id, page + 1, false);
   };
 
   const handleMessageChange = (e) => {
     setMessageText(e.target.value);
-    
-    // Send typing indicator
     if (activeChat && isConnected) {
       sendTypingIndicator(activeChat.chat.id, true);
-      
-      // Clear previous timeout
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-      
-      // Stop typing indicator after 2 seconds of no input
-      typingTimeoutRef.current = setTimeout(() => {
-        sendTypingIndicator(activeChat.chat.id, false);
-      }, 2000);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => sendTypingIndicator(activeChat.chat.id, false), 2000);
     }
   };
 
@@ -173,31 +203,26 @@ const Messages = () => {
     setMessageText('');
 
     try {
-      // Try Socket.io first for real-time
       if (isConnected && socket) {
         socketSendMessage(activeChat.chat.id, textToSend);
-        // Optimistically add message
         setMessages(prev => [...prev, {
           sender_id: user?.id,
           text: textToSend,
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          message_type: 'text'
         }]);
+        shouldAutoScrollRef.current = true;
+        scrollToBottom();
       } else {
-        // Fallback to REST API
         const token = localStorage.getItem('token');
-        await axios.post(
-          `${BACKEND_URL}/api/chat/${activeChat.chat.id}/send`,
-          { text: textToSend },
+        await axios.post(`${BACKEND_URL}/api/chat/${activeChat.chat.id}/send`, 
+          { text: textToSend }, 
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        await loadMessages(activeChat.chat.id);
+        loadMessages(activeChat.chat.id, 1, true);
       }
-      
-      // Stop typing indicator
-      sendTypingIndicator(activeChat.chat.id, false);
     } catch (error) {
-      console.error('Error sending message:', error);
-      // Restore message if failed
+      console.error(error);
       setMessageText(textToSend);
     } finally {
       setSending(false);
@@ -205,8 +230,7 @@ const Messages = () => {
   };
 
   const formatTime = (timestamp) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    return timestamp ? new Date(timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '';
   };
 
   const formatChatDate = (timestamp) => {
@@ -216,82 +240,48 @@ const Messages = () => {
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    if (date.toDateString() === today.toDateString()) {
-      return formatTime(timestamp);
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return 'Yesterday';
-    } else {
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    }
+    if (date.toDateString() === today.toDateString()) return formatTime(timestamp);
+    if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   const handleSessionAction = async (sessionId, action) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(
-        `${BACKEND_URL}/api/free-sessions/${sessionId}`,
-        { status: action },
+      await axios.patch(`${BACKEND_URL}/api/free-sessions/${sessionId}`, 
+        { status: action }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      // Reload messages to show updated status
-      if (activeChat) {
-        await loadMessages(activeChat.chat.id);
-      }
-      alert(`Session ${action}!`);
+      if (activeChat) loadMessages(activeChat.chat.id, 1, true);
     } catch (error) {
-      console.error('Error updating session:', error);
-      alert('Failed to update session. Please try again.');
+      alert('Failed to update session');
     }
   };
 
   const handleAddMeetingLink = async (sessionId) => {
-    if (!meetingLink.trim()) {
-      alert('Please enter a valid meeting link');
-      return;
-    }
-
+    if (!meetingLink.trim()) return alert('Please enter meeting link');
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(
-        `${BACKEND_URL}/api/free-sessions/${sessionId}/meeting-link`,
-        { meeting_link: meetingLink },
+      await axios.patch(`${BACKEND_URL}/api/free-sessions/${sessionId}/meeting-link`, 
+        { meeting_link: meetingLink }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
       setMeetingLink('');
       setShowMeetingInput({});
-      
-      // Reload messages to show the link
-      if (activeChat) {
-        await loadMessages(activeChat.chat.id);
-      }
-      
-      alert('Meeting link added successfully!');
+      if (activeChat) loadMessages(activeChat.chat.id, 1, true);
     } catch (error) {
-      console.error('Error adding meeting link:', error);
-      alert('Failed to add meeting link. Please try again.');
+      alert('Failed to add link');
     }
   };
 
-  const extractSessionId = (text) => {
-    const match = text.match(/\[Session ID: ([^\]]+)\]/);
-    return match ? match[1] : null;
-  };
+  const extractSessionId = (text) => text.match(/\[Session ID: ([^\]]+)\]/)?.[1] || null;
 
-  const isSessionMessage = (message) => {
-    return message.message_type === 'session_request' || 
-           message.message_type === 'session_update' || 
-           message.message_type === 'meeting_link';
-  };
+  const isSessionMessage = (msg) => 
+    ['session_request', 'session_update', 'meeting_link'].includes(msg.message_type);
 
   const filteredChats = chats.filter(chat => {
-    const otherUser = chat.other_user;
-    if (!otherUser) return false;
-    const searchLower = searchQuery.toLowerCase();
-    return (
-      otherUser.full_name?.toLowerCase().includes(searchLower) ||
-      otherUser.username?.toLowerCase().includes(searchLower)
-    );
+    const name = chat.other_user?.full_name || chat.other_user?.username || '';
+    return name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
   if (loading) {
@@ -300,10 +290,7 @@ const Messages = () => {
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
           <Navbar />
           <div className="flex items-center justify-center h-[80vh]">
-            <div className="text-center">
-              <Loader2 className="w-16 h-16 text-indigo-600 animate-spin mx-auto mb-4" />
-              <p className="text-gray-600 dark:text-gray-400">Loading chats...</p>
-            </div>
+            <Loader2 className="w-16 h-16 text-indigo-600 animate-spin" />
           </div>
         </div>
       </div>
@@ -314,27 +301,24 @@ const Messages = () => {
     <div className={`${darkMode ? 'dark' : ''}`}>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <Navbar />
-        
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden" style={{ height: 'calc(100vh - 12rem)' }}>
-            <div className="grid grid-cols-1 md:grid-cols-3 h-full">
-              
-              {/* Conversations List */}
-              <div className={`border-r border-gray-200 dark:border-gray-700 flex flex-col h-full ${activeChat && 'hidden md:flex'}`}>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden h-[calc(100vh-12rem)] flex flex-col">
+
+            <div className="flex h-full overflow-hidden">
+
+              {/* ==================== LEFT: CONVERSATIONS LIST ==================== */}
+              <div className={`w-full lg:w-5/12 xl:w-4/12 border-r border-gray-200 dark:border-gray-700 
+                              flex flex-col overflow-hidden ${activeChat ? 'hidden lg:flex' : 'flex'}`}>
+
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex justify-between items-center mb-4">
                     <h2 className="text-2xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                       Messages
                     </h2>
-                    {isConnected && (
-                      <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
-                        <Circle className="w-2 h-2 fill-green-500" />
-                        Live
-                      </span>
-                    )}
+                    {isConnected && <span className="text-xs text-green-600 flex items-center gap-1"><Circle className="w-2 h-2 fill-current" /> Live</span>}
                   </div>
-                  
-                  {/* Search */}
+
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
@@ -342,71 +326,48 @@ const Messages = () => {
                       placeholder="Search conversations..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      data-testid="search-conversations"
-                      className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 dark:text-white"
+                      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
                 </div>
 
-                {/* Chat List */}
-                <div className="flex-1 overflow-y-auto">
+                {/* Scrollable Chat List */}
+                <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-800">
                   {filteredChats.length === 0 ? (
-                    <div className="p-8 text-center">
-                      <MessageCircle className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                      <p className="text-gray-500 dark:text-gray-400">No conversations yet</p>
-                      <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
-                        Start chatting from the Matches page
-                      </p>
+                    <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                      <MessageCircle className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
+                      <p className="text-gray-500 dark:text-gray-400">No conversations found</p>
                     </div>
                   ) : (
                     filteredChats.map((chatItem) => {
-                      const otherUser = chatItem.other_user;
-                      const lastMessage = chatItem.last_message;
+                      const other = chatItem.other_user;
+                      const lastMsg = chatItem.last_message;
                       const isActive = activeChat?.chat.id === chatItem.chat.id;
 
                       return (
                         <div
                           key={chatItem.chat.id}
                           onClick={() => setActiveChat(chatItem)}
-                          data-testid={`chat-item-${chatItem.chat.id}`}
-                          className={`p-4 border-b border-gray-100 dark:border-gray-700 cursor-pointer transition-all ${
-                            isActive 
-                              ? 'bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border-l-4 border-l-indigo-600' 
-                              : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                          }`}
+                          className={`p-4 border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all ${isActive ? 'bg-indigo-50 dark:bg-indigo-900/20 border-l-4 border-indigo-600' : ''}`}
                         >
                           <div className="flex items-start gap-3">
                             <div className="relative flex-shrink-0">
-                              {otherUser?.profile_photo || otherUser?.avatar_url ? (
-                                <img 
-                                  src={otherUser.profile_photo || otherUser.avatar_url} 
-                                  alt={otherUser.full_name}
-                                  className="w-12 h-12 rounded-full object-cover"
-                                />
+                              {other?.profile_photo ? (
+                                <img src={other.profile_photo} alt="" className="w-12 h-12 rounded-full object-cover" />
                               ) : (
                                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
                                   <User className="w-6 h-6 text-white" />
                                 </div>
                               )}
-                              <Circle className="absolute bottom-0 right-0 w-3 h-3 text-green-500 fill-green-500" />
+                              <Circle className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full" />
                             </div>
-                            
+
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between mb-1">
-                                <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-                                  {otherUser?.full_name || otherUser?.username || 'User'}
-                                </h3>
-                                {lastMessage && (
-                                  <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
-                                    {formatChatDate(lastMessage.created_at)}
-                                  </span>
-                                )}
+                              <div className="flex justify-between">
+                                <h3 className="font-semibold text-gray-900 dark:text-white truncate">{other?.full_name || other?.username}</h3>
+                                {lastMsg && <span className="text-xs text-gray-500">{formatChatDate(lastMsg.created_at)}</span>}
                               </div>
-                              {lastMessage && (
-                                <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                                  {lastMessage.text}
-                                </p>
-                              )}
+                              {lastMsg && <p className="text-sm text-gray-600 dark:text-gray-400 truncate mt-0.5">{lastMsg.text}</p>}
                             </div>
                           </div>
                         </div>
@@ -416,207 +377,115 @@ const Messages = () => {
                 </div>
               </div>
 
-              {/* Chat Window */}
-              <div className={`col-span-2 flex flex-col h-full ${!activeChat && 'hidden md:flex'}`}>
+              {/* ==================== RIGHT: CHAT WINDOW ==================== */}
+              <div className={`flex-1 flex flex-col overflow-hidden ${!activeChat && 'hidden lg:flex'}`}>
+
                 {activeChat ? (
                   <>
-                    {/* Chat Header */}
-                    <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
+                    {/* Header */}
+                    <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center gap-3 flex-shrink-0">
+                      <button onClick={() => setActiveChat(null)} className="lg:hidden p-2 -ml-2">
+                        <ArrowLeft className="w-6 h-6" />
+                      </button>
                       <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => setActiveChat(null)}
-                          className="md:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                          data-testid="back-to-chats-btn"
-                        >
-                          <ArrowLeft className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-                        </button>
-                        
-                        {activeChat.other_user?.profile_photo || activeChat.other_user?.avatar_url ? (
-                          <img 
-                            src={activeChat.other_user.profile_photo || activeChat.other_user.avatar_url} 
-                            alt={activeChat.other_user.full_name}
-                            className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                          />
+                        {activeChat.other_user?.profile_photo ? (
+                          <img src={activeChat.other_user.profile_photo} alt="" className="w-10 h-10 rounded-full" />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
                             <User className="w-5 h-5 text-white" />
                           </div>
                         )}
-                        
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-                            {activeChat.other_user?.full_name || activeChat.other_user?.username || 'User'}
-                          </h3>
-                          <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-                            <Circle className="w-2 h-2 fill-green-500" />
-                            {typingUser ? 'Typing...' : 'Online'}
+                        <div>
+                          <h3 className="font-semibold">{activeChat.other_user?.full_name || activeChat.other_user?.username}</h3>
+                          <p className="text-xs text-green-600 flex items-center gap-1">
+                            <Circle className="w-2 h-2 fill-current" /> {typingUser ? 'Typing...' : 'Online'}
                           </p>
                         </div>
                       </div>
                     </div>
 
-                    {/* Messages */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900" style={{ minHeight: 0 }}>
-                      {messages.map((message, idx) => {
-                        const isMe = message.sender_id === user?.id;
-                        const sessionId = extractSessionId(message.text);
-                        const isSessionRequest = message.message_type === 'session_request';
-                        const isSessionUpdate = message.message_type === 'session_update';
-                        const isMeetingLink = message.message_type === 'meeting_link';
-                        const isSessionMsg = isSessionMessage(message);
+                    {/* Messages - Scrollable Area */}
+                    <div 
+                      ref={messagesContainerRef}
+                      onScroll={handleScroll}
+                      className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900"
+                    >
+                      {messages.map((msg, idx) => {
+                        const isMe = msg.sender_id === user?.id;
+                        const isSessionMsg = isSessionMessage(msg);
+                        const sessionId = extractSessionId(msg.text);
 
                         return (
-                          <div
-                            key={message.id || idx}
-                            className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
-                          >
-                            <div
-                              className={`max-w-[70%] rounded-2xl px-4 py-3 ${
-                                isSessionMsg
-                                  ? 'bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-2 border-blue-200 dark:border-blue-700 text-gray-900 dark:text-white'
-                                  : isMe
-                                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-br-none'
-                                  : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-bl-none shadow-md'
-                              }`}
-                            >
-                              <p className="text-sm break-words whitespace-pre-line">{message.text}</p>
-                              <p className={`text-xs mt-1 ${isSessionMsg ? 'text-gray-600 dark:text-gray-400' : isMe ? 'text-indigo-100' : 'text-gray-500 dark:text-gray-400'}`}>
-                                {formatTime(message.created_at)}
-                              </p>
+                          <div key={msg.id || idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`max-w-[75%] rounded-2xl px-4 py-3 ${isSessionMsg 
+                              ? 'bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800' 
+                              : isMe 
+                                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white' 
+                                : 'bg-white dark:bg-gray-800 shadow'}`}>
+                              <p className="text-sm whitespace-pre-line break-words">{msg.text}</p>
+                              <p className="text-xs mt-1 opacity-70">{formatTime(msg.created_at)}</p>
 
-                              {/* Session Request Actions - Only for receiver */}
-                              {isSessionRequest && !isMe && sessionId && (
-                                <div className="mt-3 flex gap-2">
-                                  <button
-                                    onClick={() => handleSessionAction(sessionId, 'accepted')}
-                                    data-testid={`accept-session-${sessionId}`}
-                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all"
-                                  >
-                                    <Check className="w-4 h-4" />
-                                    Accept
-                                  </button>
-                                  <button
-                                    onClick={() => handleSessionAction(sessionId, 'rejected')}
-                                    data-testid={`reject-session-${sessionId}`}
-                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all"
-                                  >
-                                    <XCircle className="w-4 h-4" />
-                                    Reject
-                                  </button>
+                              {/* Accept/Reject Buttons */}
+                              {msg.message_type === 'session_request' && !isMe && sessionId && (
+                                <div className="flex gap-2 mt-3">
+                                  <button onClick={() => handleSessionAction(sessionId, 'accepted')} className="flex-1 bg-green-600 text-white py-2 rounded-lg font-medium">Accept</button>
+                                  <button onClick={() => handleSessionAction(sessionId, 'rejected')} className="flex-1 bg-red-600 text-white py-2 rounded-lg font-medium">Reject</button>
                                 </div>
                               )}
 
-                              {/* Add Meeting Link Button - For accepted sessions */}
-                              {isSessionUpdate && sessionId && message.text.includes('ACCEPTED') && (
-                                <div className="mt-3">
-                                  {showMeetingInput[sessionId] ? (
-                                    <div className="space-y-2">
-                                      <input
-                                        type="url"
-                                        value={meetingLink}
-                                        onChange={(e) => setMeetingLink(e.target.value)}
-                                        placeholder="Enter Google Meet link..."
-                                        className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm"
-                                      />
-                                      <div className="flex gap-2">
-                                        <button
-                                          onClick={() => handleAddMeetingLink(sessionId)}
-                                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold"
-                                        >
-                                          <Video className="w-4 h-4" />
-                                          Add Link
-                                        </button>
-                                        <button
-                                          onClick={() => setShowMeetingInput({})}
-                                          className="px-3 py-2 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-800 dark:text-white rounded-lg text-sm"
-                                        >
-                                          Cancel
-                                        </button>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <button
-                                      onClick={() => setShowMeetingInput({ [sessionId]: true })}
-                                      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-semibold transition-all"
-                                    >
-                                      <Video className="w-4 h-4" />
-                                      Add Google Meet Link
-                                    </button>
-                                  )}
-                                </div>
-                              )}
-
-                              {/* Display Meeting Link - Make it clickable */}
-                              {isMeetingLink && (
-                                <div className="mt-3">
-                                  <a
-                                    href={message.text.match(/(https?:\/\/[^\s]+)/)?.[0]}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white rounded-lg font-semibold transition-all"
-                                  >
-                                    <Video className="w-4 h-4" />
-                                    Join Meeting
-                                  </a>
-                                </div>
+                              {/* Join Meeting Button */}
+                              {msg.message_type === 'meeting_link' && (
+                                <a href={msg.text.match(/https?:\/\/[^\s]+/)?.[0]} target="_blank" rel="noopener noreferrer" className="block mt-3">
+                                  <button className="w-full bg-green-600 text-white py-2.5 rounded-lg font-medium flex items-center justify-center gap-2">
+                                    <Video className="w-4 h-4" /> Join Meeting
+                                  </button>
+                                </a>
                               )}
                             </div>
                           </div>
                         );
                       })}
-                      
-                      {/* Typing indicator */}
+
                       {typingUser && (
                         <div className="flex justify-start">
-                          <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 shadow-md rounded-bl-none">
-                            <div className="flex items-center gap-1">
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                          <div className="bg-white dark:bg-gray-800 px-4 py-3 rounded-2xl rounded-bl-none">
+                            <div className="flex gap-1">
+                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-150"></div>
+                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-300"></div>
                             </div>
                           </div>
                         </div>
                       )}
-                      
                       <div ref={messagesEndRef} />
                     </div>
 
-                                    {/* Message Input */}
+                    {/* Input Area */}
                     <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
-                      <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+                      <form onSubmit={handleSendMessage} className="flex gap-2">
                         <input
                           type="text"
                           value={messageText}
                           onChange={handleMessageChange}
                           placeholder="Type a message..."
-                          data-testid="message-input"
-                          className="flex-1 px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 dark:text-white"
+                          className="flex-1 px-5 py-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         />
                         <button
                           type="submit"
                           disabled={!messageText.trim() || sending}
-                          data-testid="send-message-btn"
-                          className="p-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl transition-all transform hover:scale-105 shadow-lg flex-shrink-0"
+                          className="px-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl disabled:opacity-50"
                         >
-                          {sending ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                          ) : (
-                            <Send className="w-5 h-5" />
-                          )}
+                          {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                         </button>
                       </form>
                     </div>
                   </>
                 ) : (
-                  <div className="flex-1 flex items-center justify-center">
-                    <div className="text-center">
-                      <MessageCircle className="w-24 h-24 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                        Select a conversation
-                      </h3>
-                      <p className="text-gray-500 dark:text-gray-400">
-                        Choose a chat from the list to start messaging
-                      </p>
+                  <div className="flex-1 flex items-center justify-center text-center p-8">
+                    <div>
+                      <MessageCircle className="w-20 h-20 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                      <h3 className="text-2xl font-bold text-gray-800 dark:text-white">Select a conversation</h3>
+                      <p className="text-gray-500 mt-2">Choose a chat from the list to start messaging</p>
                     </div>
                   </div>
                 )}
