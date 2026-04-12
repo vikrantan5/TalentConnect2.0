@@ -45,20 +45,25 @@ async def book_free_session(data: FreeSessionCreate, current_user_id: str = Depe
         sender_name = sender.data[0].get('full_name') or sender.data[0].get('username') if sender.data else 'Someone'
         receiver_name = receiver.data[0].get('full_name') or receiver.data[0].get('username')
 
+        # Combine date + time into scheduled_at
+        scheduled_at = None
+        if data.date and data.time:
+            try:
+                scheduled_at = f"{data.date}T{data.time}:00+00:00"
+            except Exception:
+                scheduled_at = None
+
         session_data = {
-            'sender_id': current_user_id,
-            'receiver_id': data.receiver_id,
-            'session_type': data.session_type,
-            'skill_teach': data.skill_teach,
-            'skill_learn': data.skill_learn,
-            'session_date': data.date,
-            'session_time': data.time,
+            'mentor_id': data.receiver_id,     # receiver is the mentor
+            'learner_id': current_user_id,      # sender is the learner
+            'skill_name': data.skill_learn or data.skill_teach or 'General',
             'duration_minutes': data.duration,
-            'message': data.message or f"I'd like to have a {'skill exchange' if data.session_type == 'exchange' else 'mentoring'} session with you.",
+            'scheduled_at': scheduled_at,
+            'mentor_notes': data.message or f"I'd like to have a {'skill exchange' if data.session_type == 'exchange' else 'mentoring'} session with you.",
             'status': 'pending',
         }
 
-        # Use learning_sessions table instead of free_sessions
+        # Use learning_sessions table
         result = db.table('learning_sessions').insert(session_data).execute()
         if not result.data:
             raise HTTPException(status_code=500, detail="Failed to book session")
@@ -123,26 +128,27 @@ async def book_free_session(data: FreeSessionCreate, current_user_id: str = Depe
 
 @router.get("/my-sessions")
 async def get_my_free_sessions(current_user_id: str = Depends(get_current_user)):
-    """Get all learning sessions for current user"""
+    """Get all learning sessions for current user (as mentor or learner)"""
     try:
         db = get_db()
 
-        sent = db.table('learning_sessions').select('*').eq('sender_id', current_user_id).order('created_at', desc=True).execute()
-        received = db.table('learning_sessions').select('*').eq('receiver_id', current_user_id).order('created_at', desc=True).execute()
+        as_learner = db.table('learning_sessions').select('*').eq('learner_id', current_user_id).order('created_at', desc=True).execute()
+        as_mentor = db.table('learning_sessions').select('*').eq('mentor_id', current_user_id).order('created_at', desc=True).execute()
 
-        all_sessions = (sent.data or []) + (received.data or [])
+        all_sessions = (as_learner.data or []) + (as_mentor.data or [])
         if not all_sessions:
             return {"sessions": []}
 
         enriched = []
         for session in all_sessions:
-            other_id = session['receiver_id'] if session['sender_id'] == current_user_id else session['sender_id']
+            is_learner = session.get('learner_id') == current_user_id
+            other_id = session.get('mentor_id') if is_learner else session.get('learner_id')
             user_result = db.table('users').select('id, username, full_name, profile_photo').eq('id', other_id).execute()
 
             enriched.append({
                 "session": session,
                 "other_user": user_result.data[0] if user_result.data else None,
-                "role": "sender" if session['sender_id'] == current_user_id else "receiver"
+                "role": "learner" if is_learner else "mentor"
             })
 
         return {"sessions": enriched}
@@ -165,8 +171,8 @@ async def update_free_session(session_id: str, data: FreeSessionUpdate, current_
             raise HTTPException(status_code=404, detail="Session not found")
 
         s = session.data[0]
-        if s['receiver_id'] != current_user_id:
-            raise HTTPException(status_code=403, detail="Only the receiver can accept/reject")
+        if s.get('mentor_id') != current_user_id:
+            raise HTTPException(status_code=403, detail="Only the mentor can accept/reject")
 
         if s['status'] != 'pending':
             raise HTTPException(status_code=400, detail="Session already processed")
@@ -174,32 +180,36 @@ async def update_free_session(session_id: str, data: FreeSessionUpdate, current_
         db.table('learning_sessions').update({'status': data.status}).eq('id', session_id).execute()
 
         # Send message to chat about status update
-        sorted_ids = sorted([s['sender_id'], s['receiver_id']])
-        chat = db.table('chat_history').select('*').eq('user1_id', sorted_ids[0]).eq('user2_id', sorted_ids[1]).execute()
-        
-        if chat and chat.data:
-            chat_id = chat.data[0]['id']
-            status_message = f"✅ Session {data.status.upper()}![Session ID: {session_id}]"
-            db.table('realtime_messages').insert({
-                'chat_id': chat_id,
-                'sender_id': current_user_id,
-                'text': status_message,
-                'message_type': 'session_update',
-                'reference_id': session_id
-            }).execute()
+        learner_id = s.get('learner_id')
+        mentor_id = s.get('mentor_id')
+        if learner_id and mentor_id:
+            sorted_ids = sorted([learner_id, mentor_id])
+            chat = db.table('chat_history').select('*').eq('user1_id', sorted_ids[0]).eq('user2_id', sorted_ids[1]).execute()
+            
+            if chat and chat.data:
+                chat_id = chat.data[0]['id']
+                status_message = f"✅ Session {data.status.upper()}![Session ID: {session_id}]"
+                db.table('realtime_messages').insert({
+                    'chat_id': chat_id,
+                    'sender_id': current_user_id,
+                    'text': status_message,
+                    'message_type': 'session_update',
+                    'reference_id': session_id
+                }).execute()
 
-        # Notify sender
+        # Notify learner
         receiver = db.table('users').select('username, full_name').eq('id', current_user_id).execute()
         receiver_name = receiver.data[0].get('full_name') or receiver.data[0].get('username') if receiver.data else 'Someone'
 
-        db.table('notifications').insert({
-            'user_id': s['sender_id'],
-            'title': f'Session {data.status.title()}',
-            'message': f'{receiver_name} has {data.status} your session request',
-            'notification_type': 'session',
-            'reference_id': session_id,
-            'reference_type': 'learning_session'
-        }).execute()
+        if learner_id:
+            db.table('notifications').insert({
+                'user_id': learner_id,
+                'title': f'Session {data.status.title()}',
+                'message': f'{receiver_name} has {data.status} your session request',
+                'notification_type': 'session',
+                'reference_id': session_id,
+                'reference_type': 'learning_session'
+            }).execute()
 
         return {"message": f"Session {data.status}", "session_id": session_id}
 

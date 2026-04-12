@@ -100,6 +100,10 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
   };
 
+  const [darkMode, setDarkMode] = useState(false);
+
+  const toggleDarkMode = () => setDarkMode(prev => !prev);
+
   const value = {
     user,
     isAuthenticated,
@@ -107,8 +111,9 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    darkMode,
+    toggleDarkMode,
   };
-
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
