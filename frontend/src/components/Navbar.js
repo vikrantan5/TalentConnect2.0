@@ -242,8 +242,12 @@ const Navbar = () => {
                     isAdminPage 
                       ? 'from-cyan-500 to-purple-600' 
                       : 'from-indigo-600 to-purple-600'
-                  } rounded-xl flex items-center justify-center text-white font-black text-base shadow-lg group-hover:shadow-2xl transition-all duration-300 group-hover:scale-110`}>
-                    {user?.username?.charAt(0).toUpperCase()}
+                   } rounded-xl flex items-center justify-center text-white font-black text-base shadow-lg group-hover:shadow-2xl transition-all duration-300 group-hover:scale-110 overflow-hidden`}>
+                    {user?.profile_photo ? (
+                      <img src={user.profile_photo} alt={user.username} className="w-full h-full object-cover" />
+                    ) : (
+                      user?.username?.charAt(0).toUpperCase()
+                    )}
                   </div>
                   {/* Online Indicator */}
                   <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 ${
@@ -273,8 +277,12 @@ const Navbar = () => {
                     <div className="flex items-center gap-3 mb-3">
                       <div className={`w-12 h-12 bg-gradient-to-br ${
                         isAdminPage ? 'from-cyan-500 to-purple-600' : 'from-indigo-600 to-purple-600'
-                      } rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg`}>
-                        {user?.username?.charAt(0).toUpperCase()}
+  } rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg overflow-hidden`}>
+                        {user?.profile_photo ? (
+                          <img src={user.profile_photo} alt={user.username} className="w-full h-full object-cover" />
+                        ) : (
+                          user?.username?.charAt(0).toUpperCase()
+                        )}
                       </div>
                       <div className="flex-1">
                         <p className={`text-sm font-bold ${

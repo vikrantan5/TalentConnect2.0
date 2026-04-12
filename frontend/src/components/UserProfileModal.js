@@ -39,7 +39,10 @@ const UserProfileModal = ({ userId, isOpen, onClose }) => {
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="relative h-32 bg-gradient-to-r bg-gradient-to-br from-yellow-200 via-orange-200 to-teal-200">
+       <div className="relative h-32 bg-gradient-to-r bg-gradient-to-br from-yellow-200 via-orange-200 to-teal-200 overflow-hidden">
+          {profile?.profile_data?.background_photo && (
+            <img src={profile.profile_data.background_photo} alt="Background" className="w-full h-full object-cover absolute inset-0" />
+          )}
           <div className="absolute inset-0 bg-black/20"></div>
           <button
             onClick={onClose}

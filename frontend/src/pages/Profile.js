@@ -220,9 +220,17 @@ const Profile = () => {
         setAvatar(response.data.photo_url);
         // Update profileData with new avatar URL
         setProfileData(prev => ({ ...prev, profile_photo: response.data.photo_url }));
+         // Update localStorage user data so Navbar reflects the change
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        storedUser.profile_photo = response.data.photo_url;
+        localStorage.setItem('user', JSON.stringify(storedUser));
       } else {
         setCoverImage(response.data.photo_url);
         setProfileData(prev => ({ ...prev, background_photo: response.data.photo_url }));
+         // Update localStorage user data for background photo
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        storedUser.background_photo = response.data.photo_url;
+        localStorage.setItem('user', JSON.stringify(storedUser));
       }
       
       alert(response.data.message);
@@ -602,6 +610,19 @@ const Profile = () => {
                 </div>
               </div>
               
+              {/* Avatar file input - MUST be outside conditional menu to persist in DOM */}
+              <input
+                type="file"
+                ref={avatarInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
+                    handleImageUpload('avatar', e.target.files[0]);
+                    setShowAvatarMenu(false);
+                  }
+                }}
+              />
               <div className="absolute -bottom-2 -right-2">
                 <div className="relative">
                   <button 
@@ -614,18 +635,6 @@ const Profile = () => {
                   
                   {showAvatarMenu && (
                     <div className="absolute bottom-full right-0 mb-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-10">
-                      <input
-                        type="file"
-                        ref={avatarInputRef}
-                        className="hidden"
-                        accept="image/*"
-                        onChange={(e) => {
-                          if (e.target.files?.[0]) {
-                            handleImageUpload('avatar', e.target.files[0]);
-                            setShowAvatarMenu(false);
-                          }
-                        }}
-                      />
                       <button 
                         onClick={() => {
                           avatarInputRef.current?.click();

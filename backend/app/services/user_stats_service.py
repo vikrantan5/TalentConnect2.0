@@ -136,6 +136,7 @@ class UserStatsService:
                     'full_name': user.get('full_name'),
                     'bio': user.get('bio'),
                     'profile_photo': user.get('profile_photo'),
+                      'background_photo': user.get('background_photo'),
                     'location': user.get('location'),
                     'is_verified': user.get('is_verified', False)
                 }
