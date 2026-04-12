@@ -435,6 +435,10 @@ export const userService = {
     const response = await api.patch('/api/users/me', updateData);
     return response.data;
   },
+   updateAvailability: async (isAvailable) => {
+    const response = await api.patch(`/api/users/me/availability?is_available=${isAvailable}`);
+    return response.data;
+  },
 };
 
 // ============================================
