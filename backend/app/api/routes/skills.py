@@ -32,11 +32,18 @@ async def add_skill(skill_data: SkillCreate, current_user_id: str = Depends(get_
             'skill_name': skill_data.skill_name,
             'skill_type': skill_data.skill_type,
             'skill_level': skill_data.skill_level,
-            'description': skill_data.description if hasattr(skill_data, 'description') else None,
-            'years_experience': skill_data.years_experience if hasattr(skill_data, 'years_experience') else None,
-            'hourly_rate': skill_data.hourly_rate if hasattr(skill_data, 'hourly_rate') else None,
+            'description': skill_data.description if hasattr(skill_data, 'description') and skill_data.description else None,
             'is_verified': False
         }
+        
+        # Only add years_experience and hourly_rate for "offered" (Can Teach) skills
+        if skill_data.skill_type == 'offered':
+            new_skill['years_experience'] = skill_data.years_experience if hasattr(skill_data, 'years_experience') and skill_data.years_experience else None
+            new_skill['hourly_rate'] = skill_data.hourly_rate if hasattr(skill_data, 'hourly_rate') and skill_data.hourly_rate else None
+        else:
+            # For "wanted" skills, explicitly set these to None
+            new_skill['years_experience'] = None
+            new_skill['hourly_rate'] = None
         
         result = db.table('user_skills').insert(new_skill).execute()
         
@@ -259,10 +266,17 @@ async def update_skill(skill_id: str, skill_data: SkillCreate, current_user_id: 
             'skill_name': skill_data.skill_name,
             'skill_type': skill_data.skill_type,
             'skill_level': skill_data.skill_level,
-            'description': skill_data.description if hasattr(skill_data, 'description') else None,
-            'years_experience': skill_data.years_experience if hasattr(skill_data, 'years_experience') else None,
-            'hourly_rate': skill_data.hourly_rate if hasattr(skill_data, 'hourly_rate') else None,
+            'description': skill_data.description if hasattr(skill_data, 'description') and skill_data.description else None,
         }
+        
+        # Only update years_experience and hourly_rate for "offered" (Can Teach) skills
+        if skill_data.skill_type == 'offered':
+            update_data['years_experience'] = skill_data.years_experience if hasattr(skill_data, 'years_experience') and skill_data.years_experience else None
+            update_data['hourly_rate'] = skill_data.hourly_rate if hasattr(skill_data, 'hourly_rate') and skill_data.hourly_rate else None
+        else:
+            # For "wanted" skills, explicitly set these to None
+            update_data['years_experience'] = None
+            update_data['hourly_rate'] = None
         
         result = db.table('user_skills').update(update_data).eq('id', skill_id).execute()
         
@@ -411,6 +425,8 @@ async def get_mentor_learner_matches(current_user_id: str = Depends(get_current_
         
         recommended_mentors = []
         recommended_learners = []
+        mentor_skills_map = {}  # user_id -> list of skills
+        learner_skills_map = {}  # user_id -> list of skills
         
         # Find mentors (users who offer skills that current user wants to learn)
         if user_wanted_skills:
@@ -424,41 +440,48 @@ async def get_mentor_learner_matches(current_user_id: str = Depends(get_current_
                     for mentor_skill in mentors_result.data:
                         user_data = mentor_skill.get('users')
                         if user_data:
-                            # Get user's rating stats
-                            rating_result = db.table('reviews').select('rating').eq('reviewed_user_id', mentor_skill['user_id']).execute()
+                            user_id = mentor_skill['user_id']
                             
-                            ratings = [r['rating'] for r in rating_result.data] if rating_result.data else []
-                            avg_rating = sum(ratings) / len(ratings) if ratings else 0
+                            # Aggregate skills by user
+                            if user_id not in mentor_skills_map:
+                                # Get user's rating stats
+                                try:
+                                    rating_result = db.table('reviews').select('rating').eq('reviewed_user_id', user_id).execute()
+                                    ratings = [r['rating'] for r in rating_result.data] if rating_result.data else []
+                                    avg_rating = sum(ratings) / len(ratings) if ratings else 0
+                                except Exception as e:
+                                    logger.warning(f"Could not fetch ratings: {str(e)}")
+                                    avg_rating = 0
+                                    ratings = []
+                                
+                                # Session count - set to 0 for now (sessions table may not exist)
+                                session_count = 0
+                                
+                                mentor_skills_map[user_id] = {
+                                    "user_id": user_id,
+                                    "username": user_data.get('username', ''),
+                                    "full_name": user_data.get('full_name', ''),
+                                    "email": user_data.get('email', ''),
+                                    "bio": user_data.get('bio', ''),
+                                    "avatar_url": user_data.get('avatar_url', ''),
+                                    "is_available": user_data.get('is_available', True),
+                                    "location": user_data.get('location', ''),
+                                    "matching_skills": [],
+                                    "skill_level": mentor_skill['skill_level'],
+                                    "is_verified": mentor_skill.get('is_verified', False),
+                                    "average_rating": round(avg_rating, 2),
+                                    "total_sessions": session_count,
+                                    "total_reviews": len(ratings),
+                                    "years_experience": mentor_skill.get('years_experience', 0),
+                                    "hourly_rate": mentor_skill.get('hourly_rate', 0)
+                                }
                             
-                            # Get session count
-                            session_result = db.table('sessions').select('id', count='exact').eq('mentor_id', mentor_skill['user_id']).eq('status', 'completed').execute()
-                            
-                            session_count = session_result.count if hasattr(session_result, 'count') and session_result.count else 0
-                            
-                            mentor_info = {
-                                "user_id": mentor_skill['user_id'],
-                                "username": user_data.get('username', ''),
-                                "full_name": user_data.get('full_name', ''),
-                                "email": user_data.get('email', ''),
-                                "bio": user_data.get('bio', ''),
-                                "avatar_url": user_data.get('avatar_url', ''),
-                                "is_available": user_data.get('is_available', True),
-                                "location": user_data.get('location', ''),
-                                "skill_name": mentor_skill['skill_name'],
-                                "skill_level": mentor_skill['skill_level'],
-                                "skill_id": mentor_skill['id'],
-                                "description": mentor_skill.get('description', ''),
-                                "years_experience": mentor_skill.get('years_experience', 0),
-                                "hourly_rate": mentor_skill.get('hourly_rate', 0),
-                                "is_verified": mentor_skill.get('is_verified', False),
-                                "average_rating": round(avg_rating, 2),
-                                "total_sessions": session_count,
-                                "total_reviews": len(ratings)
-                            }
-                            
-                            # Avoid duplicates
-                            if not any(m['user_id'] == mentor_info['user_id'] and m['skill_name'] == mentor_info['skill_name'] for m in recommended_mentors):
-                                recommended_mentors.append(mentor_info)
+                            # Add skill to user's matching skills
+                            if mentor_skill['skill_name'] not in mentor_skills_map[user_id]['matching_skills']:
+                                mentor_skills_map[user_id]['matching_skills'].append(mentor_skill['skill_name'])
+            
+            recommended_mentors = list(mentor_skills_map.values())
+        
         
         # Find learners (users who want to learn skills that current user offers)
         if user_offered_skills:
@@ -472,24 +495,28 @@ async def get_mentor_learner_matches(current_user_id: str = Depends(get_current_
                     for learner_skill in learners_result.data:
                         user_data = learner_skill.get('users')
                         if user_data:
-                            learner_info = {
-                                "user_id": learner_skill['user_id'],
-                                "username": user_data.get('username', ''),
-                                "full_name": user_data.get('full_name', ''),
-                                "email": user_data.get('email', ''),
-                                "bio": user_data.get('bio', ''),
-                                "avatar_url": user_data.get('avatar_url', ''),
-                                "is_available": user_data.get('is_available', True),
-                                "location": user_data.get('location', ''),
-                                "skill_name": learner_skill['skill_name'],
-                                "skill_level": learner_skill['skill_level'],
-                                "skill_id": learner_skill['id'],
-                                "description": learner_skill.get('description', ''),
-                            }
+                            user_id = learner_skill['user_id']
                             
-                            # Avoid duplicates
-                            if not any(l['user_id'] == learner_info['user_id'] and l['skill_name'] == learner_info['skill_name'] for l in recommended_learners):
-                                recommended_learners.append(learner_info)
+                            # Aggregate skills by user
+                            if user_id not in learner_skills_map:
+                                learner_skills_map[user_id] = {
+                                    "user_id": user_id,
+                                    "username": user_data.get('username', ''),
+                                    "full_name": user_data.get('full_name', ''),
+                                    "email": user_data.get('email', ''),
+                                    "bio": user_data.get('bio', ''),
+                                    "avatar_url": user_data.get('avatar_url', ''),
+                                    "is_available": user_data.get('is_available', True),
+                                    "location": user_data.get('location', ''),
+                                    "matching_skills": [],
+                                    "skill_level": learner_skill['skill_level']
+                                }
+                            
+                            # Add skill to user's matching skills
+                            if learner_skill['skill_name'] not in learner_skills_map[user_id]['matching_skills']:
+                                learner_skills_map[user_id]['matching_skills'].append(learner_skill['skill_name'])
+            
+            recommended_learners = list(learner_skills_map.values())
         
         # Sort mentors by rating and verification status
         recommended_mentors.sort(key=lambda x: (x['is_verified'], x['average_rating'], x['total_sessions']), reverse=True)

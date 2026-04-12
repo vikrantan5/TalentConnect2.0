@@ -97,7 +97,25 @@ const SkillMarketplace = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await skillService.addSkill(newSkill);
+       // Build skill data object - only include years_experience and hourly_rate for \"offered\" skills
+      const skillData = {
+        skill_name: newSkill.skill_name,
+        skill_type: newSkill.skill_type,
+        skill_level: newSkill.skill_level,
+        description: newSkill.description || undefined
+      };
+
+      // Only add years_experience and hourly_rate for \"Can Teach\" (offered) skills
+      if (newSkill.skill_type === 'offered') {
+        if (newSkill.years_experience) {
+          skillData.years_experience = parseInt(newSkill.years_experience);
+        }
+        if (newSkill.hourly_rate) {
+          skillData.hourly_rate = parseFloat(newSkill.hourly_rate);
+        }
+      }
+
+      await skillService.addSkill(skillData);
       setShowAddSkill(false);
       setNewSkill({ 
         skill_name: '', 
@@ -119,7 +137,25 @@ const SkillMarketplace = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await skillService.updateSkill(editSkill.id, editSkill);
+       // Build skill data object - only include years_experience and hourly_rate for \"offered\" skills
+      const skillData = {
+        skill_name: editSkill.skill_name,
+        skill_type: editSkill.skill_type,
+        skill_level: editSkill.skill_level,
+        description: editSkill.description || undefined
+      };
+
+      // Only add years_experience and hourly_rate for \"Can Teach\" (offered) skills
+      if (editSkill.skill_type === 'offered') {
+        if (editSkill.years_experience) {
+          skillData.years_experience = parseInt(editSkill.years_experience);
+        }
+        if (editSkill.hourly_rate) {
+          skillData.hourly_rate = parseFloat(editSkill.hourly_rate);
+        }
+      }
+
+      await skillService.updateSkill(editSkill.id, skillData);
       setShowEditModal(false);
       setEditSkill(null);
       showNotification('Skill updated successfully!', 'success');
