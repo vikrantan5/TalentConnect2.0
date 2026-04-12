@@ -34,7 +34,7 @@ from app.api.routes import (
     auth, skills, sessions, tasks, reviews, payments, ai, admin, 
     notifications, users, reputation, mentors, roadmap, verification,
       realtime, leaderboard, calendar, activities, storage, dashboard, 
-    ratings, wallet, reports, disputes
+ratings, wallet, reports, disputes, matching, chat, free_sessions
 )
 
 
@@ -62,6 +62,9 @@ api_router.include_router(ratings.router)
 api_router.include_router(wallet.router)
 api_router.include_router(reports.router)
 api_router.include_router(disputes.router)
+api_router.include_router(matching.router)
+api_router.include_router(chat.router)
+api_router.include_router(free_sessions.router)
 # Include API router in main app
 app.include_router(api_router)
 
