@@ -96,7 +96,7 @@ years_experience: ''
     e.preventDefault();
     setLoading(true);
     try {
-       // Build skill data object - only include years_experience and hourly_rate for \"offered\" skills
+       // Build skill data object - only include years_experience and hourly_rate for "offered" skills
       const skillData = {
         skill_name: newSkill.skill_name,
         skill_type: newSkill.skill_type,
@@ -104,7 +104,7 @@ years_experience: ''
         description: newSkill.description || undefined
       };
 
-      // Only add years_experience for \"Can Teach\" (offered) skills
+      // Only add years_experience for "Can Teach" (offered) skills
       if (newSkill.skill_type === 'offered') {
         if (newSkill.years_experience) {
           skillData.years_experience = parseInt(newSkill.years_experience);
@@ -132,7 +132,7 @@ years_experience: ''
     e.preventDefault();
     setLoading(true);
     try {
-       // Build skill data object - only include years_experience for \"offered\" skills
+       // Build skill data object - only include years_experience for "offered" skills
       const skillData = {
         skill_name: newSkill.skill_name,
         skill_type: newSkill.skill_type,
@@ -140,7 +140,7 @@ years_experience: ''
         description: newSkill.description || undefined
       };
 
-      // Only add years_experience for \"Can Teach\" (offered) skills
+      // Only add years_experience for "Can Teach" (offered) skills
       if (newSkill.skill_type === 'offered') {
         if (newSkill.years_experience) {
           skillData.years_experience = parseInt(newSkill.years_experience);
@@ -634,11 +634,7 @@ years_experience: ''
         <span>{skill.years_experience} yrs experience</span>
       )}
 
-      {skill.hourly_rate && (
-        <span className="font-semibold text-gray-900 dark:text-white">
-          ${skill.hourly_rate}/hr
-        </span>
-      )}
+
     </div>
 
     {/* Stats */}
@@ -857,16 +853,33 @@ years_experience: ''
                   {mentorLearnerMatches.recommended_mentors.map((mentor) => (
                     <div
                       key={mentor.user_id}
-                      className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-green-200 dark:border-green-800"
+                      className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-green-200 dark:border-green-800 cursor-pointer"
                       data-testid="mentor-card"
+                      onClick={() => {
+                        setSelectedMentorDetail(mentor);
+                        setShowMentorDetailModal(true);
+                      }}
                     >
-                      {/* Header with avatar */}
-                      <div className="relative h-24 bg-gradient-to-r from-green-500 to-emerald-500">
+                      {/* Header with avatar and cover */}
+                      <div className="relative h-24 bg-gradient-to-r from-green-500 to-emerald-500 overflow-hidden">
+                        {mentor.background_photo && (
+                          <img src={mentor.background_photo} alt="cover" className="w-full h-full object-cover absolute inset-0" />
+                        )}
                         <div className="absolute -bottom-10 left-6">
-                          <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${getAvatarColor(mentor.full_name || mentor.username)} flex items-center justify-center text-white text-2xl font-bold shadow-lg ring-4 ring-white dark:ring-gray-800`}>
-                            {getInitials(mentor.full_name || mentor.username)}
-                          </div>
+                          {mentor.profile_photo ? (
+                            <img src={mentor.profile_photo} alt={mentor.full_name || mentor.username} className="w-20 h-20 rounded-full object-cover shadow-lg ring-4 ring-white dark:ring-gray-800" />
+                          ) : (
+                            <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${getAvatarColor(mentor.full_name || mentor.username)} flex items-center justify-center text-white text-2xl font-bold shadow-lg ring-4 ring-white dark:ring-gray-800`}>
+                              {getInitials(mentor.full_name || mentor.username)}
+                            </div>
+                          )}
                         </div>
+                        {mentor.is_available && (
+                          <span className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 bg-green-500/90 backdrop-blur text-white rounded-full text-xs">
+                            <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
+                            Online
+                          </span>
+                        )}
                       </div>
 
                       {/* Content */}
@@ -898,22 +911,14 @@ years_experience: ''
                           </div>
                         )}
 
-                        {/* Stats */}
+
                         <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
-                          <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
-                            <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                            <span className="font-semibold">{mentor.average_rating?.toFixed(1) || '0.0'}</span>
-                          </div>
+                     
                           <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
                             <Briefcase className="w-4 h-4" />
                             <span>{mentor.total_sessions || 0} sessions</span>
                           </div>
-                          {mentor.is_available && (
-                            <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
-                              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                              Online
-                            </span>
-                          )}
+                          
                         </div>
 
                         {/* Actions */}
@@ -968,18 +973,35 @@ years_experience: ''
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {mentorLearnerMatches.recommended_learners.map((learner) => (
-                    <div
+                                      <div
                       key={learner.user_id}
-                      className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-blue-200 dark:border-blue-800"
+                      className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-blue-200 dark:border-blue-800 cursor-pointer"
                       data-testid="learner-card"
+                      onClick={() => {
+                        setSelectedMentorDetail(learner);
+                        setShowMentorDetailModal(true);
+                      }}
                     >
-                      {/* Header with avatar */}
-                      <div className="relative h-24 bg-gradient-to-r from-blue-500 to-indigo-500">
+                      {/* Header with avatar and cover */}
+                      <div className="relative h-24 bg-gradient-to-r from-blue-500 to-indigo-500 overflow-hidden">
+                        {learner.background_photo && (
+                          <img src={learner.background_photo} alt="cover" className="w-full h-full object-cover absolute inset-0" />
+                        )}
                         <div className="absolute -bottom-10 left-6">
-                          <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${getAvatarColor(learner.full_name || learner.username)} flex items-center justify-center text-white text-2xl font-bold shadow-lg ring-4 ring-white dark:ring-gray-800`}>
-                            {getInitials(learner.full_name || learner.username)}
-                          </div>
+                          {learner.profile_photo ? (
+                            <img src={learner.profile_photo} alt={learner.full_name || learner.username} className="w-20 h-20 rounded-full object-cover shadow-lg ring-4 ring-white dark:ring-gray-800" />
+                          ) : (
+                            <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${getAvatarColor(learner.full_name || learner.username)} flex items-center justify-center text-white text-2xl font-bold shadow-lg ring-4 ring-white dark:ring-gray-800`}>
+                              {getInitials(learner.full_name || learner.username)}
+                            </div>
+                          )}
                         </div>
+                        {learner.is_available && (
+                          <span className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 bg-green-500/90 backdrop-blur text-white rounded-full text-xs">
+                            <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
+                            Online
+                          </span>
+                        )}
                       </div>
 
                       {/* Content */}
@@ -1011,18 +1033,13 @@ years_experience: ''
                           </div>
                         )}
 
-                        {/* Stats */}
+                       
                         <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
                           <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
                             <BookOpen className="w-4 h-4" />
                             <span>Learning {learner.matching_skills?.length || 0} skill(s)</span>
                           </div>
-                          {learner.is_available && (
-                            <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
-                              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                              Online
-                            </span>
-                          )}
+                      
                         </div>
 
                         {/* Actions */}
@@ -1170,8 +1187,11 @@ years_experience: ''
                       className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-200 dark:border-gray-700"
                       data-testid="mentor-card"
                     >
-                      {/* Header with avatar */}
-                      <div className="relative h-24 bg-gradient-to-r from-indigo-600 to-purple-600">
+                                      {/* Header with avatar */}
+                      <div className="relative h-24 bg-gradient-to-r from-indigo-600 to-purple-600 overflow-hidden">
+                        {mentor.background_photo && (
+                          <img src={mentor.background_photo} alt="cover" className="w-full h-full object-cover absolute inset-0" />
+                        )}
                         <div className="absolute top-4 right-4 flex gap-2">
                           {mentor.is_verified && (
                             <span className="flex items-center gap-1 px-2 py-1 bg-green-500/90 backdrop-blur text-white rounded-full text-xs font-medium">
@@ -1189,9 +1209,13 @@ years_experience: ''
                         
                         {/* Avatar */}
                         <div className="absolute -bottom-10 left-6">
-                          <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${getAvatarColor(mentor.full_name || mentor.username)} flex items-center justify-center text-white text-2xl font-bold shadow-lg ring-4 ring-white dark:ring-gray-800`}>
-                            {getInitials(mentor.full_name || mentor.username)}
-                          </div>
+                          {mentor.profile_photo ? (
+                            <img src={mentor.profile_photo} alt={mentor.full_name || mentor.username} className="w-20 h-20 rounded-full object-cover shadow-lg ring-4 ring-white dark:ring-gray-800" />
+                          ) : (
+                            <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${getAvatarColor(mentor.full_name || mentor.username)} flex items-center justify-center text-white text-2xl font-bold shadow-lg ring-4 ring-white dark:ring-gray-800`}>
+                              {getInitials(mentor.full_name || mentor.username)}
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -1254,15 +1278,7 @@ years_experience: ''
                           </div>
                         </div>
 
-                        {/* Hourly Rate */}
-                        {mentor.hourly_rate && (
-                          <div className="flex items-center justify-between p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">Hourly Rate</span>
-                            <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
-                              ${mentor.hourly_rate}
-                            </span>
-                          </div>
-                        )}
+   
 
                         {/* Action Buttons */}
                         <div className="flex gap-2 pt-2">
@@ -1384,11 +1400,10 @@ years_experience: ''
                     <option value="expert">👑 Expert</option>
                   </select>
                 </div>
-
-                   {/* Only show Years Experience and Hourly Rate for "Can Teach" skills */}
+                   {/* Only show Years Experience for "Can Teach" skills */}
                 {newSkill.skill_type === 'offered' && (
 
-                <div className="grid grid-cols-2 gap-4">
+                <div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Years Experience
@@ -1399,18 +1414,6 @@ years_experience: ''
                       placeholder="e.g., 5"
                       value={newSkill.years_experience}
                       onChange={(e) => setNewSkill({ ...newSkill, years_experience: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Hourly Rate ($)
-                    </label>
-                    <input
-                      type="number"
-                      className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      placeholder="e.g., 50"
-                      value={newSkill.hourly_rate}
-                      onChange={(e) => setNewSkill({ ...newSkill, hourly_rate: e.target.value })}
                     />
                   </div>
                 </div>
@@ -1535,9 +1538,9 @@ years_experience: ''
                 </div>
 
 
-  {/* Only show Years Experience and Hourly Rate for "Can Teach" skills */}
+  {/* Only show Years Experience for "Can Teach" skills */}
                 {editSkill.skill_type === 'offered' && (
-                <div className="grid grid-cols-2 gap-4">
+                <div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Years Experience
@@ -1547,17 +1550,6 @@ years_experience: ''
                       className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       value={editSkill.years_experience || ''}
                       onChange={(e) => setEditSkill({ ...editSkill, years_experience: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Hourly Rate ($)
-                    </label>
-                    <input
-                      type="number"
-                      className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      value={editSkill.hourly_rate || ''}
-                      onChange={(e) => setEditSkill({ ...editSkill, hourly_rate: e.target.value })}
                     />
                   </div>
                 </div>
@@ -1681,22 +1673,13 @@ years_experience: ''
                     onChange={(e) => setRequestData({ ...requestData, message: e.target.value })}
                   ></textarea>
                 </div>
-
-                {/* Price Summary */}
-                {selectedMentor.hourly_rate && (
-                  <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-600 dark:text-gray-400">Hourly Rate:</span>
-                      <span className="font-bold text-gray-900 dark:text-white">${selectedMentor.hourly_rate}/hr</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm mt-2">
-                      <span className="text-gray-600 dark:text-gray-400">Total for {requestData.duration}min:</span>
-                      <span className="font-bold text-indigo-600 dark:text-indigo-400">
-                        ${((selectedMentor.hourly_rate / 60) * requestData.duration).toFixed(2)}
-                      </span>
-                    </div>
+                {/* Free Session Notice */}
+                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl">
+                  <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400 font-medium">
+                    <CheckCircle className="w-4 h-4" />
+                    This session is completely free!
                   </div>
-                )}
+                </div>
 
                 <div className="flex gap-3 pt-4">
                   <button
