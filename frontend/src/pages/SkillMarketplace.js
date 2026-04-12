@@ -54,6 +54,8 @@ const SkillMarketplace = () => {
   const [mySkills, setMySkills] = useState([]);
   const [mentors, setMentors] = useState([]);
     const [recommendations, setRecommendations] = useState([]);
+    const [skillSuggestions, setSkillSuggestions] = useState([]); // Suggestions for \"Want to Learn\"
+  const [mentorLearnerMatches, setMentorLearnerMatches] = useState({ recommended_mentors: [], recommended_learners: [] }); // Mentor/Learner matches
   const [showAddSkill, setShowAddSkill] = useState(false);
   const [searchSkill, setSearchSkill] = useState('');
   const [newSkill, setNewSkill] = useState({
@@ -204,13 +206,69 @@ const SkillMarketplace = () => {
     setLoading(false);
   };
 
+  // Load skill suggestions for \"Want to Learn\"
+  const loadSkillSuggestions = async () => {
+    setLoadingSuggestions(true);
+    try {
+      const data = await skillService.getSuggestionsForWantToLearn();
+      setSkillSuggestions(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error loading skill suggestions:', error);
+      setSkillSuggestions([]);
+    }
+    setLoadingSuggestions(false);
+  };
+
+  // Load mentor/learner matches
+  const loadMentorLearnerMatches = async () => {
+    setLoading(true);
+    try {
+      const data = await skillService.getMentorLearnerMatches();
+      setMentorLearnerMatches(data || { recommended_mentors: [], recommended_learners: [] });
+    } catch (error) {
+      console.error('Error loading mentor/learner matches:', error);
+      setMentorLearnerMatches({ recommended_mentors: [], recommended_learners: [] });
+    }
+    setLoading(false);
+  };
+
+  // Handle clicking on a suggestion chip (auto-add to \"Want to Learn\")
+  const handleAddSuggestionAsSkill = async (suggestion) => {
+    setLoading(true);
+    try {
+      await skillService.addSkill({
+        skill_name: suggestion.skill_name,
+        skill_type: 'wanted',
+        skill_level: suggestion.difficulty || 'beginner',
+        description: suggestion.description || ''
+      });
+      showNotification(`${suggestion.skill_name} added to \"Want to Learn\"!`, 'success');
+      // Remove from suggestions
+      setSkillSuggestions(skillSuggestions.filter(s => s.skill_name !== suggestion.skill_name));
+      await loadMySkills();
+    } catch (error) {
+      showNotification('Failed to add skill: ' + (error.response?.data?.detail || error.message), 'error');
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
     if (activeTab === 'my-skills') {
       loadMySkills();
-      } else if (activeTab === 'recommendations') {
+    } else if (activeTab === 'recommendations') {
       loadRecommendations();
+    } else if (activeTab === 'matches') {
+      loadMentorLearnerMatches();
     }
   }, [activeTab]);
+
+  // Load suggestions when \"Add Skill\" modal opens and skill type is \"wanted\"
+  useEffect(() => {
+    if (showAddSkill && newSkill.skill_type === 'wanted') {
+      loadSkillSuggestions();
+    }
+  }, [showAddSkill, newSkill.skill_type]);
+
 
   const getLevelColor = (level) => {
     switch(level?.toLowerCase()) {

@@ -66,6 +66,17 @@ export const skillService = {
     });
     return response.data;
   },
+    // Get skill suggestions for \"Want to Learn\" based on \"Can Teach\" skills
+  getSuggestionsForWantToLearn: async () => {
+    const response = await api.get('/api/skills/suggestions');
+    return response.data;
+  },
+
+  // Get mentor and learner matches
+  getMentorLearnerMatches: async () => {
+    const response = await api.get('/api/skills/mentor-learner-matches');
+    return response.data;
+  },
 };
 
 // ============================================

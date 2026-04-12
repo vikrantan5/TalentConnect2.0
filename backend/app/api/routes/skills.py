@@ -3,6 +3,7 @@ from app.models.schemas import SkillCreate, SkillResponse
 from app.utils.auth import get_current_user
 from app.database import get_db
 from app.services.resume_parser import resume_parser
+from app.services.skill_suggestion_service import skill_suggestion_service
 from typing import List
 import logging
 
@@ -296,10 +297,12 @@ async def get_user_skills(user_id: str):
             detail=str(e)
         )
     
-
 @router.get("/recommendations", response_model=List[dict])
 async def get_skill_recommendations(current_user_id: str = Depends(get_current_user)):
-    """Get skill recommendations based on user's existing skills"""
+    """
+    Get skill recommendations based on user's existing skills.
+    Uses both predefined mappings and AI-powered suggestions.
+    """
     try:
         db = get_db()
         
@@ -309,52 +312,71 @@ async def get_skill_recommendations(current_user_id: str = Depends(get_current_u
         if not user_skills_result.data:
             # If no skills, return popular beginner skills
             return [
-                {"skill_name": "HTML", "category": "Web Development", "description": "Foundation of web development"},
-                {"skill_name": "CSS", "category": "Web Development", "description": "Style and layout for websites"},
-                {"skill_name": "Python", "category": "Programming", "description": "Versatile programming language"},
-                {"skill_name": "JavaScript", "category": "Web Development", "description": "Interactive web programming"},
-                {"skill_name": "Git", "category": "Development Tools", "description": "Version control system"}
+                {"skill_name": "HTML", "category": "Web Development", "description": "Foundation of web development", "source": "default"},
+                {"skill_name": "CSS", "category": "Web Development", "description": "Style and layout for websites", "source": "default"},
+                {"skill_name": "Python", "category": "Programming", "description": "Versatile programming language", "source": "default"},
+                {"skill_name": "JavaScript", "category": "Web Development", "description": "Interactive web programming", "source": "default"},
+                {"skill_name": "Git", "category": "Development Tools", "description": "Version control system", "source": "default"}
             ]
         
-        user_skills = [s['skill_name'].lower() for s in user_skills_result.data]
+        # Extract skill names
+        user_skills = [s['skill_name'] for s in user_skills_result.data]
         
-        # Skill recommendation mappings
-        recommendations_map = {
-            'html': ['CSS', 'JavaScript', 'React', 'Tailwind CSS'],
-            'css': ['JavaScript', 'Sass', 'Tailwind CSS', 'Bootstrap'],
-            'javascript': ['React', 'Node.js', 'TypeScript', 'Vue.js'],
-            'python': ['Django', 'Flask', 'Machine Learning', 'Data Science'],
-            'java': ['Spring Boot', 'Android Development', 'Kotlin'],
-            'c': ['C++', 'Data Structures', 'Algorithms'],
-            'c++': ['Data Structures', 'Algorithms', 'Game Development'],
-            'react': ['Next.js', 'Redux', 'TypeScript', 'GraphQL'],
-            'node.js': ['Express.js', 'MongoDB', 'PostgreSQL', 'GraphQL'],
-            'sql': ['PostgreSQL', 'MySQL', 'Database Design'],
-            'git': ['GitHub Actions', 'CI/CD', 'DevOps'],
-        }
+        # Get combined suggestions (predefined + AI)
+        suggestions = skill_suggestion_service.get_combined_suggestions(user_skills, include_ai=True)
         
-        # Collect all recommendations
-        recommended_skills = set()
-        for skill in user_skills:
-            if skill in recommendations_map:
-                recommended_skills.update(recommendations_map[skill])
-        
-        # Remove skills user already has
-        recommended_skills = [s for s in recommended_skills if s.lower() not in user_skills]
-        
-        # Create recommendation objects
-        recommendations = []
-        for skill in list(recommended_skills)[:10]:  # Limit to 10
-            recommendations.append({
-                "skill_name": skill,
-                "category": "Recommended",
-                "description": f"Based on your existing skills"
-            })
-        
-        return recommendations
+        return suggestions
     
     except Exception as e:
         logger.error(f"Error getting recommendations: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+@router.get("/suggestions", response_model=List[dict])
+async def get_skill_suggestions_for_want_to_learn(current_user_id: str = Depends(get_current_user)):
+    """
+    Get skill suggestions specifically for "Want to Learn" based on user's "Can Teach" skills.
+    This endpoint implements the flow shown in the image:
+    - Fetch user's "Can Teach" (offered) skills
+    - Display suggestions at the top of "Want to Learn" form
+    - Return clickable suggestions
+    """
+    try:
+        db = get_db()
+        
+        # Get user's "Can Teach" (offered) skills only
+        offered_skills_result = db.table('user_skills').select('skill_name').eq('user_id', current_user_id).eq('skill_type', 'offered').execute()
+        
+        if not offered_skills_result.data:
+            # If no "Can Teach" skills, return empty or beginner suggestions
+            return [
+                {"skill_name": "Web Development Basics", "category": "Web Development", "description": "Start your learning journey", "source": "default"},
+                {"skill_name": "Programming Fundamentals", "category": "Programming", "description": "Core programming concepts", "source": "default"},
+            ]
+        
+        # Extract "Can Teach" skill names
+        can_teach_skills = [s['skill_name'] for s in offered_skills_result.data]
+        
+        # Get user's "Want to Learn" skills to avoid duplicates
+        wanted_skills_result = db.table('user_skills').select('skill_name').eq('user_id', current_user_id).eq('skill_type', 'wanted').execute()
+        wanted_skills_names = {s['skill_name'].lower() for s in wanted_skills_result.data} if wanted_skills_result.data else set()
+        
+        # Get combined suggestions
+        suggestions = skill_suggestion_service.get_combined_suggestions(can_teach_skills, include_ai=True)
+        
+        # Filter out skills user already wants to learn
+        filtered_suggestions = [
+            s for s in suggestions 
+            if s['skill_name'].lower() not in wanted_skills_names
+        ]
+        
+        return filtered_suggestions[:10]  # Limit to top 10
+    
+    except Exception as e:
+        logger.error(f"Error getting skill suggestions: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
