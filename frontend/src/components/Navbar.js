@@ -31,6 +31,8 @@ import {
   Wallet
 } from 'lucide-react';
 import BrowseUsersModal from './BrowseUsersModal';
+import NotificationsPanel from './NotificationsPanel';
+import api from '../services/api';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -40,7 +42,8 @@ const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-  const [notifications, setNotifications] = useState(3);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [showBrowseUsers, setShowBrowseUsers] = useState(false);
 
   useEffect(() => {
@@ -50,6 +53,23 @@ const Navbar = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Load notification count
+  useEffect(() => {
+    loadNotificationCount();
+    // Poll every 30 seconds
+    const interval = setInterval(loadNotificationCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const loadNotificationCount = async () => {
+    try {
+      const response = await api.get('/api/notifications/count');
+      setNotificationCount(response.data.unread_count || 0);
+    } catch (error) {
+      console.error('Error loading notification count:', error);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -204,19 +224,22 @@ const Navbar = () => {
               <span className="text-sm font-semibold hidden lg:inline">Search</span>
             </button> */}
 
-            {/* Notifications with Glow */}
-            <button className={`relative p-2.5 rounded-xl transition-all duration-300 group ${
-              isAdminPage
-                ? 'glass-card-admin-hover text-slate-300'
-                : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700'
-            }`}>
+                    {/* Notifications with Glow */}
+            <button 
+              onClick={() => setShowNotifications(true)}
+              className={`relative p-2.5 rounded-xl transition-all duration-300 group ${
+                isAdminPage
+                  ? 'glass-card-admin-hover text-slate-300'
+                  : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700'
+              }`}
+            >
               <Bell className="w-5 h-5 group-hover:animate-bounce-subtle" />
-              {notifications > 0 && (
+              {notificationCount > 0 && (
                 <>
                   <span className={`absolute -top-1 -right-1 w-5 h-5 ${
                     isAdminPage ? 'bg-cyan-500' : 'bg-red-500'
                   } text-white text-xs rounded-full flex items-center justify-center font-bold animate-pulse shadow-lg`}>
-                    {notifications}
+                    {notificationCount}
                   </span>
                   {isAdminPage && (
                     <div className="absolute -top-1 -right-1 w-5 h-5 bg-cyan-500 rounded-full animate-ping opacity-75"></div>
@@ -535,6 +558,14 @@ const Navbar = () => {
       <BrowseUsersModal 
         isOpen={showBrowseUsers} 
         onClose={() => setShowBrowseUsers(false)} 
+      />
+            {/* Notifications Panel */}
+      <NotificationsPanel
+        isOpen={showNotifications}
+        onClose={() => {
+          setShowNotifications(false);
+          loadNotificationCount(); // Refresh count when closing
+        }}
       />
     </nav>
   );
