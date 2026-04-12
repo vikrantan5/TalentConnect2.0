@@ -316,12 +316,12 @@ const Messages = () => {
         <Navbar />
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden h-[calc(100vh-12rem)]">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden" style={{ height: 'calc(100vh - 12rem)' }}>
             <div className="grid grid-cols-1 md:grid-cols-3 h-full">
               
               {/* Conversations List */}
-              <div className={`border-r border-gray-200 dark:border-gray-700 ${activeChat && 'hidden md:block'}`}>
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              <div className={`border-r border-gray-200 dark:border-gray-700 flex flex-col h-full ${activeChat && 'hidden md:flex'}`}>
+                <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-2xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                       Messages
@@ -349,7 +349,7 @@ const Messages = () => {
                 </div>
 
                 {/* Chat List */}
-                <div className="overflow-y-auto h-[calc(100%-10rem)]">
+                <div className="flex-1 overflow-y-auto">
                   {filteredChats.length === 0 ? (
                     <div className="p-8 text-center">
                       <MessageCircle className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
@@ -376,7 +376,7 @@ const Messages = () => {
                           }`}
                         >
                           <div className="flex items-start gap-3">
-                            <div className="relative">
+                            <div className="relative flex-shrink-0">
                               {otherUser?.profile_photo || otherUser?.avatar_url ? (
                                 <img 
                                   src={otherUser.profile_photo || otherUser.avatar_url} 
@@ -397,7 +397,7 @@ const Messages = () => {
                                   {otherUser?.full_name || otherUser?.username || 'User'}
                                 </h3>
                                 {lastMessage && (
-                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
                                     {formatChatDate(lastMessage.created_at)}
                                   </span>
                                 )}
@@ -417,33 +417,34 @@ const Messages = () => {
               </div>
 
               {/* Chat Window */}
-              <div className={`col-span-2 flex flex-col ${!activeChat && 'hidden md:flex'}`}>
+              <div className={`col-span-2 flex flex-col h-full ${!activeChat && 'hidden md:flex'}`}>
                 {activeChat ? (
                   <>
                     {/* Chat Header */}
-                    <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                    <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
                       <div className="flex items-center gap-3">
                         <button
                           onClick={() => setActiveChat(null)}
-                          className="md:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                          className="md:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                          data-testid="back-to-chats-btn"
                         >
-                          <ArrowLeft className="w-5 h-5" />
+                          <ArrowLeft className="w-5 h-5 text-gray-700 dark:text-gray-300" />
                         </button>
                         
                         {activeChat.other_user?.profile_photo || activeChat.other_user?.avatar_url ? (
                           <img 
                             src={activeChat.other_user.profile_photo || activeChat.other_user.avatar_url} 
                             alt={activeChat.other_user.full_name}
-                            className="w-10 h-10 rounded-full object-cover"
+                            className="w-10 h-10 rounded-full object-cover flex-shrink-0"
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0">
                             <User className="w-5 h-5 text-white" />
                           </div>
                         )}
                         
-                        <div>
-                          <h3 className="font-semibold text-gray-900 dark:text-white">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-900 dark:text-white truncate">
                             {activeChat.other_user?.full_name || activeChat.other_user?.username || 'User'}
                           </h3>
                           <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
@@ -455,7 +456,7 @@ const Messages = () => {
                     </div>
 
                     {/* Messages */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900" style={{ minHeight: 0 }}>
                       {messages.map((message, idx) => {
                         const isMe = message.sender_id === user?.id;
                         const sessionId = extractSessionId(message.text);
@@ -580,8 +581,8 @@ const Messages = () => {
                       <div ref={messagesEndRef} />
                     </div>
 
-                    {/* Message Input */}
-                    <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                                    {/* Message Input */}
+                    <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
                       <form onSubmit={handleSendMessage} className="flex items-center gap-2">
                         <input
                           type="text"
@@ -595,7 +596,7 @@ const Messages = () => {
                           type="submit"
                           disabled={!messageText.trim() || sending}
                           data-testid="send-message-btn"
-                          className="p-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl transition-all transform hover:scale-105 shadow-lg"
+                          className="p-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl transition-all transform hover:scale-105 shadow-lg flex-shrink-0"
                         >
                           {sending ? (
                             <Loader2 className="w-5 h-5 animate-spin" />

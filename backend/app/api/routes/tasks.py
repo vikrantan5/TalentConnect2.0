@@ -1042,8 +1042,7 @@ async def approve_task_submission(
                         'message': f'Task "{task["title"]}" has been approved by the task owner. Please review and release payment of ₹{task["price"]} to {payee_username}.',
                         'notification_type': 'admin_action_required',
                         'reference_id': payment['id'],
-                        'reference_type': 'payment',
-                        'action_url': f'/admin?tab=escrow&payment_id={payment["id"]}'
+                         'reference_type': 'payment'
                     }
                     db.table('notifications').insert(admin_notification).execute()
                 

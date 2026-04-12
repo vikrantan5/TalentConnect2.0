@@ -425,7 +425,7 @@ years_experience: ''
           {[
             { id: 'my-skills', label: 'My Skills', icon: BookOpen },
             { id: 'recommendations', label: 'Recommended', icon: Sparkles },
-            { id: 'find-mentors', label: 'Find Mentors', icon: Compass },
+            // { id: 'find-mentors', label: 'Find Mentors', icon: Compass },
           ].map((tab) => {
             const Icon = tab.icon;
             return (

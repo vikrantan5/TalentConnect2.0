@@ -81,16 +81,16 @@ const Navbar = () => {
 
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, gradient: 'from-cyan-500 to-blue-600' },
-     { path: '/matches', label: 'Matches', icon: Sparkles, gradient: 'from-orange-500 to-red-600' },
+    { path: '/matches', label: 'Match', icon: Sparkles, gradient: 'from-orange-500 to-red-600' },
     { path: '/skills', label: 'Skills', icon: Code2, gradient: 'from-blue-500 to-indigo-600' },
     { path: '/tasks', label: 'Tasks', icon: Briefcase, gradient: 'from-emerald-500 to-teal-600' },
     { path: '/exchange', label: 'Exchange', icon: ArrowLeftRight, gradient: 'from-teal-500 to-cyan-600' },
     { path: '/sessions', label: 'Sessions', icon: Calendar, gradient: 'from-purple-500 to-pink-600' },
-     { path: '/messages', label: 'Messages', icon: MessageSquare, gradient: 'from-indigo-500 to-purple-600' },
+    { path: '/messages', label: 'Messages', icon: MessageSquare, gradient: 'from-indigo-500 to-purple-600' },
     { path: '/roadmap', label: 'Roadmap', icon: Map, gradient: 'from-orange-500 to-red-600' },
     { path: '/leaderboard', label: 'Leaderboard', icon: Award, gradient: 'from-amber-500 to-yellow-600' },
     { path: '/wallet', label: 'Wallet', icon: Wallet, gradient: 'from-green-500 to-emerald-600' },
-    { path: '/chatbot', label: 'AI Assistant', icon: Bot, gradient: 'from-pink-500 to-purple-600' },
+    { path: '/chatbot', label: 'AI', icon: Bot, gradient: 'from-pink-500 to-purple-600' },
   ];
 
   return (
@@ -122,7 +122,7 @@ const Navbar = () => {
               <div className="absolute -inset-2 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-2xl blur-xl opacity-0 group-hover:opacity-30 transition-opacity duration-500"></div>
               
               <div className="relative">
-                <div className={`w-9 h-9 lg:w-11 lg:h-11 bg-gradient-to-br ${
+                <div className={`w-5 h-5 lg:w-9 lg:h-9 bg-gradient-to-br ${
                   isAdminPage 
                     ? 'from-cyan-500 via-purple-600 to-pink-600' 
                     : 'from-indigo-600 to-purple-600'
@@ -133,7 +133,7 @@ const Navbar = () => {
                 <div className="absolute -top-1 -right-1 w-3 h-3 lg:w-3.5 lg:h-3.5 bg-emerald-400 rounded-full border-2 border-white dark:border-slate-900 animate-pulse shadow-lg"></div>
               </div>
               
-              <span className={`hidden sm:block text-lg lg:text-xl xl:text-2xl font-black bg-gradient-to-r ${
+              <span className={`hidden sm:block text-lg lg:text-xl xl:text-1.5xl font-black bg-gradient-to-r ${
                 isAdminPage 
                   ? 'from-cyan-400 via-purple-400 to-pink-400' 
                   : 'from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400'
@@ -142,91 +142,70 @@ const Navbar = () => {
               </span>
             </Link>
 
-            {/* Desktop Navigation - Premium Style */}
-            <div className="hidden lg:flex items-center gap-1 xl:gap-1.5 overflow-x-auto scrollbar-hide">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isItemActive = isActive(item.path);
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={`relative group px-2.5 xl:px-3 py-2 rounded-xl transition-all duration-300 whitespace-nowrap ${
-                      isItemActive
-                        ? isAdminPage
-                          ? 'glass-card-admin border border-cyan-500/40 text-cyan-300 shadow-neon-cyan'
-                          : 'bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/30 dark:to-purple-900/30 text-indigo-600 dark:text-indigo-400 shadow-md'
-                        : isAdminPage
-                          ? 'text-slate-300 hover:text-cyan-300 hover:bg-slate-800/30'
+            {/* Desktop Navigation - Premium Style - Hidden on Admin Page */}
+            {!isAdminPage && (
+              <div className="hidden lg:flex items-center gap-1 xl:gap-1 overflow-x-auto scrollbar-hide">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  const isItemActive = isActive(item.path);
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className={`relative group px-2 xl:px-3 py-2 rounded-xl transition-all duration-300 whitespace-nowrap ${
+                        isItemActive
+                          ? 'bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/30 dark:to-purple-900/30 text-indigo-600 dark:text-indigo-400 shadow-md'
                           : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800'
-                    }`}
-                    data-testid={`nav-${item.label.toLowerCase().replace(' ', '-')}`}
-                  >
-                    {/* Hover Glow Effect */}
-                    {isAdminPage && (
-                      <div className={`absolute inset-0 rounded-xl bg-gradient-to-r ${item.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
-                    )}
-                    
-                    <div className="relative flex items-center gap-1.5">
-                      <Icon className={`w-4 h-4 transition-all duration-300 ${
-                        isItemActive 
-                          ? 'scale-110' 
-                          : 'group-hover:scale-110 group-hover:rotate-12'
-                      }`} />
-                      <span className="font-bold text-xs xl:text-sm">{item.label}</span>
-                    </div>
-                    
-                    {/* Active Indicator */}
-                    {isItemActive && (
-                      <>
+                      }`}
+                      data-testid={`nav-${item.label.toLowerCase().replace(' ', '-')}`}
+                    >
+                      <div className="relative flex items-center gap-1.5">
+                        <Icon className={`w-4 h-4 transition-all duration-300 ${
+                          isItemActive 
+                            ? 'scale-110' 
+                            : 'group-hover:scale-110 group-hover:rotate-12'
+                        }`} />
+                        <span className="font-bold text-xs xl:text-sm">{item.label}</span>
+                      </div>
+                      
+                      {/* Active Indicator */}
+                      {isItemActive && (
                         <div className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r ${item.gradient} rounded-full`}></div>
-                        {isAdminPage && <Sparkles className="absolute -top-1 -right-1 w-3 h-3 text-cyan-400 animate-pulse" />}
-                      </>
+                      )}
+                    </Link>
+                  );
+                })}
+              
+                {/* Admin Button */}
+                {user?.role === 'admin' && (
+                  <Link
+                    to="/admin"
+                    className={`relative group px-3 py-2 rounded-xl transition-all duration-300 overflow-hidden ${
+                      isActive('/admin')
+                        ? 'bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 text-white shadow-neon-cyan'
+                        : 'glass-card-admin-hover text-slate-300'
+                    }`}
+                    data-testid="nav-admin"
+                  >
+                    {isActive('/admin') && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 blur-xl opacity-50"></div>
+                    )}
+                    <div className="relative flex items-center gap-2">
+                      <Shield className={`w-4 h-4 ${isActive('/admin') ? 'animate-pulse' : ''}`} />
+                      <span className="font-bold text-sm hidden xl:inline">Admin</span>
+                    </div>
+                    {isActive('/admin') && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-cyan-400 to-pink-400 rounded-full"></div>
                     )}
                   </Link>
-                );
-              })}
-              
-              {/* Admin Button */}
-              {user?.role === 'admin' && (
-                <Link
-                  to="/admin"
-                  className={`relative group px-3 py-2 rounded-xl transition-all duration-300 overflow-hidden ${
-                    isActive('/admin')
-                      ? 'bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 text-white shadow-neon-cyan'
-                      : 'glass-card-admin-hover text-slate-300'
-                  }`}
-                  data-testid="nav-admin"
-                >
-                  {isActive('/admin') && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 blur-xl opacity-50"></div>
-                  )}
-                  <div className="relative flex items-center gap-2">
-                    <Shield className={`w-4 h-4 ${isActive('/admin') ? 'animate-pulse' : ''}`} />
-                    <span className="font-bold text-sm hidden xl:inline">Admin</span>
-                  </div>
-                  {isActive('/admin') && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-cyan-400 to-pink-400 rounded-full"></div>
-                  )}
-                </Link>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Right Section - Premium Actions */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            
-            {/* Search Button (Desktop) */}
-            {/* <button className={`hidden md:flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 ${
-              isAdminPage
-                ? 'glass-card-admin-hover text-slate-300'
-                : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700'
-            }`}>
-              <Search className="w-4 h-4" />
-              <span className="text-sm font-semibold hidden lg:inline">Search</span>
-            </button> */}
-
-                    {/* Notifications with Glow */}
+            {/* Notifications with Glow */}
             <button 
               onClick={() => setShowNotifications(true)}
               className={`relative p-2.5 rounded-xl transition-all duration-300 group ${
@@ -267,7 +246,7 @@ const Navbar = () => {
                     isAdminPage 
                       ? 'from-cyan-500 to-purple-600' 
                       : 'from-indigo-600 to-purple-600'
-                   } rounded-xl flex items-center justify-center text-white font-black text-base shadow-lg group-hover:shadow-2xl transition-all duration-300 group-hover:scale-110 overflow-hidden`}>
+                  } rounded-xl flex items-center justify-center text-white font-black text-base shadow-lg group-hover:shadow-2xl transition-all duration-300 group-hover:scale-110 overflow-hidden`}>
                     {user?.profile_photo ? (
                       <img src={user.profile_photo} alt={user.username} className="w-full h-full object-cover" />
                     ) : (
@@ -302,7 +281,7 @@ const Navbar = () => {
                     <div className="flex items-center gap-3 mb-3">
                       <div className={`w-12 h-12 bg-gradient-to-br ${
                         isAdminPage ? 'from-cyan-500 to-purple-600' : 'from-indigo-600 to-purple-600'
-  } rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg overflow-hidden`}>
+                      } rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg overflow-hidden`}>
                         {user?.profile_photo ? (
                           <img src={user.profile_photo} alt={user.username} className="w-full h-full object-cover" />
                         ) : (
@@ -322,7 +301,8 @@ const Navbar = () => {
                         </p>
                       </div>
                     </div>
-                    {user?.role === 'admin' && (
+                    
+                    {user?.role === 'admin' && !isAdminPage && (
                       <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg ${
                         isAdminPage 
                           ? 'bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 text-cyan-300' 
@@ -349,21 +329,6 @@ const Navbar = () => {
                       <span className="font-semibold text-sm">Your Profile</span>
                     </Link>
                     
-                    {/* <button
-                      onClick={() => {
-                        setShowBrowseUsers(true);
-                        setShowProfileMenu(false);
-                      }}
-                      className={`w-full flex items-center gap-3 px-5 py-3 transition-all duration-200 ${
-                        isAdminPage
-                          ? 'text-slate-300 hover:text-purple-300 hover:bg-slate-800/50'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
-                      }`}
-                    >
-                      <Users className="w-4 h-4" />
-                      <span className="font-semibold text-sm">Browse Users</span>
-                    </button> */}
-
                     <Link
                       to="/settings"
                       className={`flex items-center gap-3 px-5 py-3 transition-all duration-200 ${
@@ -439,8 +404,8 @@ const Navbar = () => {
             : 'bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border-gray-200 dark:border-slate-800'
         } animate-slide-down`}>
           <div className="px-4 py-4 space-y-2">
-            {/* Mobile Navigation */}
-            {navItems.map((item) => {
+            {/* Mobile Navigation - Hidden on Admin Page */}
+            {!isAdminPage && navItems.map((item) => {
               const Icon = item.icon;
               const isItemActive = isActive(item.path);
               return (
@@ -469,8 +434,8 @@ const Navbar = () => {
               );
             })}
 
-            {/* Admin Link - Mobile */}
-            {user?.role === 'admin' && (
+            {/* Admin Link - Mobile - Hidden when already on admin page */}
+            {user?.role === 'admin' && !isAdminPage && (
               <Link
                 to="/admin"
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
@@ -561,7 +526,7 @@ const Navbar = () => {
         isOpen={showBrowseUsers} 
         onClose={() => setShowBrowseUsers(false)} 
       />
-            {/* Notifications Panel */}
+      {/* Notifications Panel */}
       <NotificationsPanel
         isOpen={showNotifications}
         onClose={() => {

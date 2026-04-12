@@ -97,7 +97,7 @@ async def book_free_session(data: FreeSessionCreate, current_user_id: str = Depe
         if chat_id:
             skill_info = ""
             if data.session_type == "exchange" and data.skill_teach and data.skill_learn:
-                skill_info = f"📚 Skill Exchange:• I'll teach: {data.skill_teach}• You teach me: {data.skill_learn}"
+                skill_info = f"📚 Skill Exchange:  • I'll teach: {data.skill_teach}  • You teach me: {data.skill_learn}"
             elif data.skill_learn:
                 skill_info = f"📚 Learning: {data.skill_learn}"
 
@@ -210,7 +210,8 @@ async def update_free_session(session_id: str, data: FreeSessionUpdate, current_
             
             if chat and chat.data:
                 chat_id = chat.data[0]['id']
-                status_message = f"✅ Session {data.status.upper()}![Session ID: {session_id}]"
+                status_emoji = "✅" if data.status == "accepted" else "❌"
+                status_message = f"{status_emoji} Session {data.status.upper()}![Session ID: {session_id}]"
                 db.table('realtime_messages').insert({
                     'chat_id': chat_id,
                     'sender_id': current_user_id,
@@ -252,7 +253,6 @@ async def update_free_session(session_id: str, data: FreeSessionUpdate, current_
         logger.error(f"Error updating session: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.patch("/{session_id}/meeting-link")
 async def add_meeting_link(session_id: str, data: MeetingLinkUpdate, current_user_id: str = Depends(get_current_user)):
     """Add Google Meet link to an accepted session"""
@@ -265,8 +265,8 @@ async def add_meeting_link(session_id: str, data: MeetingLinkUpdate, current_use
 
         s = session.data[0]
         
-        # Both sender and receiver can add meeting link
-        if s['sender_id'] != current_user_id and s['receiver_id'] != current_user_id:
+        # Both learner and mentor can add meeting link
+        if s['learner_id'] != current_user_id and s['mentor_id'] != current_user_id:
             raise HTTPException(status_code=403, detail="Not authorized")
 
         if s['status'] != 'accepted':
@@ -276,7 +276,7 @@ async def add_meeting_link(session_id: str, data: MeetingLinkUpdate, current_use
         db.table('learning_sessions').update({'meeting_link': data.meeting_link}).eq('id', session_id).execute()
 
         # Send message to chat with meeting link
-        sorted_ids = sorted([s['sender_id'], s['receiver_id']])
+        sorted_ids = sorted([s['learner_id'], s['mentor_id']])
         chat = db.table('chat_history').select('*').eq('user1_id', sorted_ids[0]).eq('user2_id', sorted_ids[1]).execute()
         
         if chat and chat.data:
@@ -291,7 +291,7 @@ async def add_meeting_link(session_id: str, data: MeetingLinkUpdate, current_use
             }).execute()
 
         # Notify the other user
-        other_user_id = s['receiver_id'] if s['sender_id'] == current_user_id else s['sender_id']
+        other_user_id = s['mentor_id'] if s['learner_id'] == current_user_id else s['learner_id']
         sender = db.table('users').select('username, full_name').eq('id', current_user_id).execute()
         sender_name = sender.data[0].get('full_name') or sender.data[0].get('username') if sender.data else 'Someone'
 
