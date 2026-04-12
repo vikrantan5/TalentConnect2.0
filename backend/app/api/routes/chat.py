@@ -73,9 +73,18 @@ async def create_or_get_chat(data: ChatCreateRequest, current_user_id: str = Dep
         # Check if chat already exists between the two users
         sorted_ids = sorted([current_user_id, receiver_id])
 
-        existing = db.table('chats').select('*').eq('user1_id', sorted_ids[0]).eq('user2_id', sorted_ids[1]).execute()
+        # Try to get existing chat (handle both 'chats' and 'chat_rooms' table names)
+        existing = None
+        try:
+            existing = db.table('chat_rooms').select('*').eq('user1_id', sorted_ids[0]).eq('user2_id', sorted_ids[1]).execute()
+        except Exception as e:
+            logger.warning(f"chat_rooms table query failed: {e}")
+            try:
+                existing = db.table('chats').select('*').eq('user1_id', sorted_ids[0]).eq('user2_id', sorted_ids[1]).execute()
+            except Exception as e2:
+                logger.warning(f"chats table query failed: {e2}")
 
-        if existing.data:
+        if existing and existing.data:
             return {"chat": existing.data[0], "created": False}
 
         # Create new chat
@@ -84,7 +93,13 @@ async def create_or_get_chat(data: ChatCreateRequest, current_user_id: str = Dep
             'user2_id': sorted_ids[1],
         }
 
-        result = db.table('chats').insert(new_chat).execute()
+        # Try to insert into chat_rooms first, fallback to chats
+        result = None
+        try:
+            result = db.table('chat_rooms').insert(new_chat).execute()
+        except Exception as e:
+            logger.warning(f"chat_rooms insert failed: {e}, trying chats table")
+            result = db.table('chats').insert(new_chat).execute()
         if not result.data:
             raise HTTPException(status_code=500, detail="Failed to create chat")
 
@@ -111,6 +126,15 @@ async def get_my_chats(current_user_id: str = Depends(get_current_user)):
     """Get all chats for the current user"""
     try:
         db = get_db()
+
+            # Try chat_rooms first, fallback to chats
+        all_chats = []
+        try:
+            chats1 = db.table('chat_rooms').select('*').eq('user1_id', current_user_id).execute()
+            chats2 = db.table('chat_rooms').select('*').eq('user2_id', current_user_id).execute()
+            all_chats = (chats1.data or []) + (chats2.data or [])
+        except Exception as e:
+            logger.warning(f"chat_rooms query failed: {e}, trying chats table")
 
         chats1 = db.table('chats').select('*').eq('user1_id', current_user_id).execute()
         chats2 = db.table('chats').select('*').eq('user2_id', current_user_id).execute()
@@ -149,8 +173,13 @@ async def get_chat_messages(chat_id: str, limit: int = 100, current_user_id: str
     try:
         db = get_db()
 
-        # Verify user is part of chat
-        chat = db.table('chats').select('*').eq('id', chat_id).execute()
+        # Try both table names
+        chat = None
+        try:
+            chat = db.table('chat_rooms').select('*').eq('id', chat_id).execute()
+        except Exception:
+            chat = db.table('chats').select('*').eq('id', chat_id).execute()
+            
         if not chat.data:
             raise HTTPException(status_code=404, detail="Chat not found")
 
@@ -193,8 +222,13 @@ async def send_message(chat_id: str, msg: ChatMessageRequest, current_user_id: s
 
         result = db.table('chat_messages').insert(message_data).execute()
 
-        # Update chat's updated_at
-        db.table('chats').update({'updated_at': datetime.now(timezone.utc).isoformat()}).eq('id', chat_id).execute()
+
+
+        # Update chat's updated_at (try both table names)
+        try:
+            db.table('chat_rooms').update({'updated_at': datetime.now(timezone.utc).isoformat()}).eq('id', chat_id).execute()
+        except Exception:
+            db.table('chats').update({'updated_at': datetime.now(timezone.utc).isoformat()}).eq('id', chat_id).execute()
 
         # Notify the other user
         other_id = c['user2_id'] if c['user1_id'] == current_user_id else c['user1_id']

@@ -77,9 +77,11 @@ const Matches = () => {
         { receiver_id: match.user_id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert('Chat created! Check your messages.');
+      // Navigate to messages page
+      navigate('/messages');
     } catch (error) {
       console.error('Error creating chat:', error);
+      alert('Error creating chat. Please try again.');
     }
   };
 
@@ -345,6 +347,7 @@ const Matches = () => {
 
       {showProfileModal && selectedUserId && (
         <UserProfileModal
+         isOpen={showProfileModal}
           userId={selectedUserId}
           onClose={() => {
             setShowProfileModal(false);

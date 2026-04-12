@@ -20,6 +20,7 @@ import RoadmapPlanner from './pages/RoadmapPlanner';
 import Teams from './pages/Teams';
 import WebSocketDebugger from './pages/WebSocketDebugger';
 import Matches from './pages/Matches';
+import Messages from './pages/Messages';
 // Auth context
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -123,6 +124,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Chatbot />
+              </ProtectedRoute>
+            }
+          />
+            <Route
+            path="/messages"
+            element={
+              <ProtectedRoute>
+                <Messages />
               </ProtectedRoute>
             }
           />

@@ -86,6 +86,7 @@ const Navbar = () => {
     { path: '/tasks', label: 'Tasks', icon: Briefcase, gradient: 'from-emerald-500 to-teal-600' },
     { path: '/exchange', label: 'Exchange', icon: ArrowLeftRight, gradient: 'from-teal-500 to-cyan-600' },
     { path: '/sessions', label: 'Sessions', icon: Calendar, gradient: 'from-purple-500 to-pink-600' },
+     { path: '/messages', label: 'Messages', icon: MessageSquare, gradient: 'from-indigo-500 to-purple-600' },
     { path: '/roadmap', label: 'Roadmap', icon: Map, gradient: 'from-orange-500 to-red-600' },
     { path: '/leaderboard', label: 'Leaderboard', icon: Award, gradient: 'from-amber-500 to-yellow-600' },
     { path: '/wallet', label: 'Wallet', icon: Wallet, gradient: 'from-green-500 to-emerald-600' },
