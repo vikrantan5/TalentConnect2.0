@@ -444,6 +444,41 @@ async def update_user_profile(update_data: UserUpdate, current_user_id: str = De
         )
     
 
+
+
+@router.patch("/me/availability")
+async def update_user_availability(availability: dict, current_user_id: str = Depends(get_current_user)):
+    """Update user's availability status for mentoring"""
+    try:
+        db = get_db()
+        
+        is_available = availability.get('is_available', True)
+        
+        # Update user's availability
+        result = db.table('users').update({'is_available': is_available}).eq('id', current_user_id).execute()
+        
+        if not result.data:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update availability"
+            )
+        
+        return {
+            "message": "Availability updated successfully",
+            "is_available": is_available
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating availability: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    
+    
+
 @router.post("/upload-profile-photo")
 async def upload_profile_photo(
     file: UploadFile = File(...),

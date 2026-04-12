@@ -54,7 +54,7 @@ const SkillMarketplace = () => {
   const [mySkills, setMySkills] = useState([]);
   const [mentors, setMentors] = useState([]);
     const [recommendations, setRecommendations] = useState([]);
-    const [skillSuggestions, setSkillSuggestions] = useState([]); // Suggestions for \"Want to Learn\"
+    const [skillSuggestions, setSkillSuggestions] = useState([]); // Suggestions for "Want to Learn"
   const [mentorLearnerMatches, setMentorLearnerMatches] = useState({ recommended_mentors: [], recommended_learners: [] }); // Mentor/Learner matches
   const [showAddSkill, setShowAddSkill] = useState(false);
   const [searchSkill, setSearchSkill] = useState('');
@@ -67,6 +67,8 @@ const SkillMarketplace = () => {
     hourly_rate: ''
   });
   const [loading, setLoading] = useState(false);
+    const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+
   const [viewMode, setViewMode] = useState('grid');
   const [filterLevel, setFilterLevel] = useState('all');
   const [filterType, setFilterType] = useState('all');
@@ -206,7 +208,7 @@ const SkillMarketplace = () => {
     setLoading(false);
   };
 
-  // Load skill suggestions for \"Want to Learn\"
+  // Load skill suggestions for "Want to Learn"
   const loadSkillSuggestions = async () => {
     setLoadingSuggestions(true);
     try {
@@ -232,7 +234,7 @@ const SkillMarketplace = () => {
     setLoading(false);
   };
 
-  // Handle clicking on a suggestion chip (auto-add to \"Want to Learn\")
+  // Handle clicking on a suggestion chip (auto-add to "Want to Learn")
   const handleAddSuggestionAsSkill = async (suggestion) => {
     setLoading(true);
     try {
@@ -242,7 +244,7 @@ const SkillMarketplace = () => {
         skill_level: suggestion.difficulty || 'beginner',
         description: suggestion.description || ''
       });
-      showNotification(`${suggestion.skill_name} added to \"Want to Learn\"!`, 'success');
+      showNotification(`${suggestion.skill_name} added to "Want to Learn"!`, 'success');
       // Remove from suggestions
       setSkillSuggestions(skillSuggestions.filter(s => s.skill_name !== suggestion.skill_name));
       await loadMySkills();
@@ -257,12 +259,13 @@ const SkillMarketplace = () => {
       loadMySkills();
     } else if (activeTab === 'recommendations') {
       loadRecommendations();
+         loadMentorLearnerMatches();
     } else if (activeTab === 'matches') {
       loadMentorLearnerMatches();
     }
   }, [activeTab]);
 
-  // Load suggestions when \"Add Skill\" modal opens and skill type is \"wanted\"
+  // Load suggestions when "Add Skill" modal opens and skill type is "wanted"
   useEffect(() => {
     if (showAddSkill && newSkill.skill_type === 'wanted') {
       loadSkillSuggestions();
@@ -396,7 +399,7 @@ const SkillMarketplace = () => {
 
         {/* My Skills Tab */}
         {activeTab === 'my-skills' && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Header with Stats */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -450,15 +453,44 @@ const SkillMarketplace = () => {
                 </button>
               </div>
             ) : (
-              <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'} gap-6`}>
-                {mySkills.map((skill) => {
-                  const LevelIcon = getLevelIcon(skill.skill_level);
-                  return (
-                   <div
-  key={skill.id}
-  className="group bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-  data-testid="skill-card"
->
+              <>
+                {/* 🟢 SKILLS I CAN TEACH SECTION */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 border-b-2 border-green-200 dark:border-green-800 pb-3">
+                    <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                      <GraduationCap className="w-6 h-6 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white">Skills I Can Teach</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {mySkills.filter(s => s.skill_type === 'offered').length} skill(s) you can mentor others in
+                      </p>
+                    </div>
+                  </div>
+
+                  {mySkills.filter(s => s.skill_type === 'offered').length === 0 ? (
+                    <div className="bg-green-50 dark:bg-green-900/10 border-2 border-dashed border-green-200 dark:border-green-800 rounded-xl p-8 text-center">
+                      <GraduationCap className="w-12 h-12 text-green-400 mx-auto mb-3" />
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">
+                        No teaching skills yet. Add skills you can mentor others in!
+                      </p>
+                      <button
+                        onClick={() => setShowAddSkill(true)}
+                        className="mt-3 text-green-600 dark:text-green-400 text-sm font-medium hover:underline"
+                      >
+                        + Add Teaching Skill
+                      </button>
+                    </div>
+                  ) : (
+                    <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'} gap-6`}>
+                      {mySkills.filter(s => s.skill_type === 'offered').map((skill) => {
+                        const LevelIcon = getLevelIcon(skill.skill_level);
+                        return (
+                          <div
+                            key={skill.id}
+                            className="group bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-2 border-green-200 dark:border-green-800 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                            data-testid="skill-card"
+                          >
   {/* Top Section */}
   <div className="p-5 border-b border-gray-100 dark:border-gray-800">
     <div className="flex items-start justify-between">
@@ -522,14 +554,8 @@ const SkillMarketplace = () => {
 
     {/* Badges */}
     <div className="flex flex-wrap gap-2 mt-3">
-      <span
-        className={`px-3 py-1 text-xs rounded-full font-medium ${
-          skill.skill_type === "offered"
-            ? "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
-            : "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
-        }`}
-      >
-        {skill.skill_type === "offered" ? "Can Teach" : "Want to Learn"}
+      <span className="px-3 py-1 text-xs rounded-full font-medium bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400">
+        Can Teach
       </span>
 
       <span
@@ -541,7 +567,8 @@ const SkillMarketplace = () => {
       </span>
 
       {skill.is_verified && (
-        <span className="px-3 py-1 text-xs rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+        <span className="px-3 py-1 text-xs rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center gap-1">
+          <Shield className="w-3 h-3" />
           Verified
         </span>
       )}
@@ -577,7 +604,7 @@ const SkillMarketplace = () => {
   </div>
 
   {/* Bottom Action */}
-  {!skill.is_verified && skill.skill_type === "offered" && (
+  {!skill.is_verified && (
     <div className="px-5 pb-5">
       <button
         onClick={(e) => {
@@ -596,9 +623,152 @@ const SkillMarketplace = () => {
     </div>
   )}
 </div>
-                  );
-                })}
-              </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* 🔵 SKILLS I WANT TO LEARN SECTION */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 border-b-2 border-blue-200 dark:border-blue-800 pb-3">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                      <BookOpen className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white">Skills I Want to Learn</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {mySkills.filter(s => s.skill_type === 'wanted').length} skill(s) you're learning
+                      </p>
+                    </div>
+                  </div>
+
+                  {mySkills.filter(s => s.skill_type === 'wanted').length === 0 ? (
+                    <div className="bg-blue-50 dark:bg-blue-900/10 border-2 border-dashed border-blue-200 dark:border-blue-800 rounded-xl p-8 text-center">
+                      <BookOpen className="w-12 h-12 text-blue-400 mx-auto mb-3" />
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">
+                        No learning goals yet. Add skills you want to master!
+                      </p>
+                      <button
+                        onClick={() => setShowAddSkill(true)}
+                        className="mt-3 text-blue-600 dark:text-blue-400 text-sm font-medium hover:underline"
+                      >
+                        + Add Learning Goal
+                      </button>
+                    </div>
+                  ) : (
+                    <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'} gap-6`}>
+                      {mySkills.filter(s => s.skill_type === 'wanted').map((skill) => {
+                        const LevelIcon = getLevelIcon(skill.skill_level);
+                        return (
+                          <div
+                            key={skill.id}
+                            className="group bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-2 border-blue-200 dark:border-blue-800 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                            data-testid="skill-card"
+                          >
+  {/* Top Section */}
+  <div className="p-5 border-b border-gray-100 dark:border-gray-800">
+    <div className="flex items-start justify-between">
+      
+      {/* Title + Description */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          {skill.skill_name}
+        </h3>
+
+        {skill.description && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+            {skill.description}
+          </p>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="flex gap-1">
+        <button
+          onClick={() => {
+            setEditSkill(skill);
+            setShowEditModal(true);
+          }}
+          className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+        >
+          <Edit2 className="w-4 h-4 text-gray-500" />
+        </button>
+
+        <button
+          onClick={() => setDeleteConfirm(skill.id)}
+          className="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition"
+        >
+          <X className="w-4 h-4 text-gray-500 hover:text-red-500" />
+        </button>
+      </div>
+    </div>
+
+    {/* Delete Confirmation */}
+    {deleteConfirm === skill.id && (
+      <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+        <p className="text-sm text-red-600 dark:text-red-400 mb-2">
+          Delete this skill?
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleDeleteSkill(skill.id)}
+            className="px-3 py-1 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700"
+          >
+            Yes
+          </button>
+          <button
+            onClick={() => setDeleteConfirm(null)}
+            className="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-xs rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
+          >
+            No
+          </button>
+        </div>
+      </div>
+    )}
+
+    {/* Badges */}
+    <div className="flex flex-wrap gap-2 mt-3">
+      <span className="px-3 py-1 text-xs rounded-full font-medium bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+        Want to Learn
+      </span>
+
+      <span
+        className={`px-3 py-1 text-xs rounded-full font-medium ${getLevelColor(
+          skill.skill_level
+        )}`}
+      >
+        {skill.skill_level || "Beginner"}
+      </span>
+    </div>
+  </div>
+
+  {/* Middle Info */}
+  <div className="p-5 space-y-3">
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-gray-600 dark:text-gray-400">
+        Target Level: <span className="font-semibold text-gray-900 dark:text-white capitalize">{skill.skill_level || 'Beginner'}</span>
+      </span>
+    </div>
+  </div>
+
+  {/* Bottom Action */}
+  <div className="px-5 pb-5">
+    <button
+      onClick={() => setFindMentorModal({ show: true, skill: skill.skill_name })}
+      className="w-full py-2.5 text-sm font-medium rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:opacity-90 transition flex items-center justify-center gap-2"
+    >
+      <Search className="w-4 h-4" />
+      Find Mentor
+    </button>
+  </div>
+</div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
         )}

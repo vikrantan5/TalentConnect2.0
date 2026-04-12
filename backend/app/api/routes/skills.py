@@ -381,3 +381,127 @@ async def get_skill_suggestions_for_want_to_learn(current_user_id: str = Depends
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
         )
+    
+@router.get("/mentor-learner-matches", response_model=dict)
+async def get_mentor_learner_matches(current_user_id: str = Depends(get_current_user)):
+    """
+    Smart recommendation system for mentor/learner matching.
+    
+    Returns:
+    - recommended_mentors: Users who can teach what current user wants to learn
+    - recommended_learners: Users who want to learn what current user can teach
+    
+    Each match includes full user profile with ratings, experience, bio, and availability.
+    """
+    try:
+        db = get_db()
+        
+        # Get current user's skills
+        user_skills_result = db.table('user_skills').select('*').eq('user_id', current_user_id).execute()
+        
+        if not user_skills_result.data:
+            return {
+                "recommended_mentors": [],
+                "recommended_learners": []
+            }
+        
+        # Separate user's skills by type
+        user_offered_skills = [s for s in user_skills_result.data if s['skill_type'] == 'offered']
+        user_wanted_skills = [s for s in user_skills_result.data if s['skill_type'] == 'wanted']
+        
+        recommended_mentors = []
+        recommended_learners = []
+        
+        # Find mentors (users who offer skills that current user wants to learn)
+        if user_wanted_skills:
+            wanted_skill_names = [s['skill_name'].lower() for s in user_wanted_skills]
+            
+            # Get all users who offer these skills (excluding current user)
+            for skill_name in wanted_skill_names:
+                mentors_result = db.table('user_skills').select('*, users:user_id(*)').eq('skill_type', 'offered').ilike('skill_name', skill_name).neq('user_id', current_user_id).execute()
+                
+                if mentors_result.data:
+                    for mentor_skill in mentors_result.data:
+                        user_data = mentor_skill.get('users')
+                        if user_data:
+                            # Get user's rating stats
+                            rating_result = db.table('reviews').select('rating').eq('reviewed_user_id', mentor_skill['user_id']).execute()
+                            
+                            ratings = [r['rating'] for r in rating_result.data] if rating_result.data else []
+                            avg_rating = sum(ratings) / len(ratings) if ratings else 0
+                            
+                            # Get session count
+                            session_result = db.table('sessions').select('id', count='exact').eq('mentor_id', mentor_skill['user_id']).eq('status', 'completed').execute()
+                            
+                            session_count = session_result.count if hasattr(session_result, 'count') and session_result.count else 0
+                            
+                            mentor_info = {
+                                "user_id": mentor_skill['user_id'],
+                                "username": user_data.get('username', ''),
+                                "full_name": user_data.get('full_name', ''),
+                                "email": user_data.get('email', ''),
+                                "bio": user_data.get('bio', ''),
+                                "avatar_url": user_data.get('avatar_url', ''),
+                                "is_available": user_data.get('is_available', True),
+                                "location": user_data.get('location', ''),
+                                "skill_name": mentor_skill['skill_name'],
+                                "skill_level": mentor_skill['skill_level'],
+                                "skill_id": mentor_skill['id'],
+                                "description": mentor_skill.get('description', ''),
+                                "years_experience": mentor_skill.get('years_experience', 0),
+                                "hourly_rate": mentor_skill.get('hourly_rate', 0),
+                                "is_verified": mentor_skill.get('is_verified', False),
+                                "average_rating": round(avg_rating, 2),
+                                "total_sessions": session_count,
+                                "total_reviews": len(ratings)
+                            }
+                            
+                            # Avoid duplicates
+                            if not any(m['user_id'] == mentor_info['user_id'] and m['skill_name'] == mentor_info['skill_name'] for m in recommended_mentors):
+                                recommended_mentors.append(mentor_info)
+        
+        # Find learners (users who want to learn skills that current user offers)
+        if user_offered_skills:
+            offered_skill_names = [s['skill_name'].lower() for s in user_offered_skills]
+            
+            # Get all users who want these skills (excluding current user)
+            for skill_name in offered_skill_names:
+                learners_result = db.table('user_skills').select('*, users:user_id(*)').eq('skill_type', 'wanted').ilike('skill_name', skill_name).neq('user_id', current_user_id).execute()
+                
+                if learners_result.data:
+                    for learner_skill in learners_result.data:
+                        user_data = learner_skill.get('users')
+                        if user_data:
+                            learner_info = {
+                                "user_id": learner_skill['user_id'],
+                                "username": user_data.get('username', ''),
+                                "full_name": user_data.get('full_name', ''),
+                                "email": user_data.get('email', ''),
+                                "bio": user_data.get('bio', ''),
+                                "avatar_url": user_data.get('avatar_url', ''),
+                                "is_available": user_data.get('is_available', True),
+                                "location": user_data.get('location', ''),
+                                "skill_name": learner_skill['skill_name'],
+                                "skill_level": learner_skill['skill_level'],
+                                "skill_id": learner_skill['id'],
+                                "description": learner_skill.get('description', ''),
+                            }
+                            
+                            # Avoid duplicates
+                            if not any(l['user_id'] == learner_info['user_id'] and l['skill_name'] == learner_info['skill_name'] for l in recommended_learners):
+                                recommended_learners.append(learner_info)
+        
+        # Sort mentors by rating and verification status
+        recommended_mentors.sort(key=lambda x: (x['is_verified'], x['average_rating'], x['total_sessions']), reverse=True)
+        
+        return {
+            "recommended_mentors": recommended_mentors[:20],  # Limit to top 20
+            "recommended_learners": recommended_learners[:20]
+        }
+    
+    except Exception as e:
+        logger.error(f"Error getting mentor/learner matches: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
