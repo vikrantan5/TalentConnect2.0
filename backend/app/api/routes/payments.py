@@ -109,6 +109,8 @@ async def create_payment_order(payment_data: PaymentCreate, current_user_id: str
             'razorpay_order_id': order['id'],
             'status': 'pending',
             'is_escrowed': True,
+             'payment_mode': 'TEST',  # Add payment_mode field
+            'escrow_status': None,  # NULL = not yet escrowed (will be set after payment verification)
             'payment_type': 'task_creation' if is_creation_payment else 'task_completion'
         }
         payment_result = db.table('payments').insert(new_payment).execute()
