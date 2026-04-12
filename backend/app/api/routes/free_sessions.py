@@ -24,7 +24,8 @@ class FreeSessionCreate(BaseModel):
 
 class FreeSessionUpdate(BaseModel):
     status: str  # "accepted" or "rejected"
-
+class MeetingLinkUpdate(BaseModel):
+    meeting_link: str
 
 @router.post("/book")
 async def book_free_session(data: FreeSessionCreate, current_user_id: str = Depends(get_current_user)):
