@@ -702,6 +702,7 @@ async def session_chat_websocket(websocket: WebSocket, session_id: str, token: s
             "id": str(uuid.uuid4()),
             "session_id": session_id,
             "sender_id": user_id,
+             "content": "joined the chat",
             "message": "joined the chat",
             "message_type": "system",
             "created_at": datetime.now(timezone.utc).isoformat()
@@ -727,16 +728,23 @@ async def session_chat_websocket(websocket: WebSocket, session_id: str, token: s
                 "id": str(uuid.uuid4()),
                 "session_id": session_id,
                 "sender_id": user_id,
-                "message": content,
+                "content": content,
                 "message_type": payload.get("message_type", "text"),
                 "created_at": datetime.now(timezone.utc).isoformat()
             }
             
-            # Store in database
+            # Store in exchange_chat_history table
             try:
-                db.table('session_messages').insert(message_data).execute()
+                receiver_id = session['participant2_id'] if user_id == session['participant1_id'] else session['participant1_id']
+                db.table('exchange_chat_history').insert({
+                    "sender_id": user_id,
+                    "receiver_id": receiver_id,
+                    "message": content,
+                    "chat_type": "session",
+                    "reference_id": session_id,
+                }).execute()
             except Exception as e:
-                logger.warning(f"Failed to persist message: {str(e)}")
+                logger.warning(f"Failed to persist message to exchange_chat_history: {str(e)}")
             
             # Broadcast to all participants
             await session_chat_manager.broadcast(session_id, message_data)
@@ -749,6 +757,7 @@ async def session_chat_websocket(websocket: WebSocket, session_id: str, token: s
             "id": str(uuid.uuid4()),
             "session_id": session_id,
             "sender_id": user_id,
+             "content": "left the chat",
             "message": "left the chat",
             "message_type": "system",
             "created_at": datetime.now(timezone.utc).isoformat()
@@ -779,12 +788,25 @@ async def get_session_chat_history(
         if session['participant1_id'] != current_user_id and session['participant2_id'] != current_user_id:
             raise HTTPException(status_code=403, detail="Not authorized")
         
-        # Get messages
-        messages_result = db.table('session_messages').select('*').eq('session_id', session_id).order('created_at', desc=False).limit(min(limit, 200)).execute()
+        # Get messages from exchange_chat_history table
+        messages_result = db.table('exchange_chat_history').select('*').eq('chat_type', 'session').eq('reference_id', session_id).order('created_at', desc=False).limit(min(limit, 200)).execute()
+        
+        # Normalize for frontend compatibility
+        messages = []
+        for msg in (messages_result.data or []):
+            messages.append({
+                "id": msg.get("id"),
+                "sender_id": msg.get("sender_id"),
+                "content": msg.get("message", ""),
+                "message": msg.get("message", ""),
+                "message_type": "text",
+                "created_at": msg.get("created_at"),
+                "session_id": session_id,
+            })
         
         return {
             "session_id": session_id,
-            "messages": messages_result.data or []
+            "messages": messages
         }
     
     except HTTPException:
@@ -797,7 +819,7 @@ async def get_session_chat_history(
             return {
                 "session_id": session_id,
                 "messages": [],
-                "note": "Run session_messages_migration.sql to enable chat persistence"
+                  "note": "Run exchange_chat_history migration SQL first"
             }
         
         raise HTTPException(status_code=500, detail=str(e))

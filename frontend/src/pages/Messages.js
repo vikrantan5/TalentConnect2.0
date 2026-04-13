@@ -69,7 +69,7 @@ const Messages = () => {
           return [...prev, {
             id: data.message.id,
             sender_id: data.message.sender_id,
-            text: data.message.text,
+              text: data.message.text || data.message.content || '',
             created_at: data.message.created_at,
             message_type: data.message.message_type
           }];
@@ -276,6 +276,9 @@ const Messages = () => {
 
   const extractSessionId = (text) => text.match(/\[Session ID: ([^\]]+)\]/)?.[1] || null;
 
+   const getMessageText = (msg) => msg.text || msg.content || '';
+
+
   const isSessionMessage = (msg) => 
     ['session_request', 'session_update', 'meeting_link'].includes(msg.message_type);
 
@@ -413,7 +416,9 @@ const Messages = () => {
                       {messages.map((msg, idx) => {
                         const isMe = msg.sender_id === user?.id;
                         const isSessionMsg = isSessionMessage(msg);
-                        const sessionId = extractSessionId(msg.text);
+                      
+                             const msgText = getMessageText(msg);
+                        const sessionId = extractSessionId(msgText);
 
                         return (
                           <div key={msg.id || idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
@@ -422,7 +427,7 @@ const Messages = () => {
                               : isMe 
                                 ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white' 
                                 : 'bg-white dark:bg-gray-800 shadow'}`}>
-                              <p className="text-sm whitespace-pre-line break-words">{msg.text}</p>
+                               <p className="text-sm whitespace-pre-line break-words">{msg.text || msg.content || ''}</p>
                               <p className="text-xs mt-1 opacity-70">{formatTime(msg.created_at)}</p>
 
                               {/* Accept/Reject Buttons */}
@@ -435,7 +440,7 @@ const Messages = () => {
 
                               {/* Join Meeting Button */}
                               {msg.message_type === 'meeting_link' && (
-                                <a href={msg.text.match(/https?:\/\/[^\s]+/)?.[0]} target="_blank" rel="noopener noreferrer" className="block mt-3">
+                                 <a href={msgText.match(/https?:\/\/[^\s]+/)?.[0]} target="_blank" rel="noopener noreferrer" className="block mt-3">
                                   <button className="w-full bg-green-600 text-white py-2.5 rounded-lg font-medium flex items-center justify-center gap-2">
                                     <Video className="w-4 h-4" /> Join Meeting
                                   </button>

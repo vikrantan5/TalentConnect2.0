@@ -189,7 +189,7 @@ const SessionChat = ({ sessionId, onClose }) => {
               return (
                 <div key={index} className="flex justify-center">
                   <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 px-3 py-1 rounded-full">
-                    {msg.message}
+                    {msg.content || msg.message || ''}
                   </span>
                 </div>
               );
@@ -208,7 +208,7 @@ const SessionChat = ({ sessionId, onClose }) => {
                         : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700'
                     }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap break-words">{msg.message || msg.content}</p>
+                                        <p className="text-sm whitespace-pre-wrap break-words">{msg.content || msg.message || ''}</p>
                   </div>
                   <div className={`flex items-center gap-2 mt-1 px-2 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
                     <span className="text-xs text-gray-400 dark:text-gray-500">
