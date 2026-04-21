@@ -187,7 +187,7 @@ class SkillExchangeTaskCreate(BaseModel):
     skill_requested: str
     difficulty_level: Optional[str] = None
     deadline: Optional[datetime] = None
-    estimated_hours: Optional[int] = None
+   
 
 
 class SkillExchangeTaskAccept(BaseModel):
@@ -204,7 +204,7 @@ class TaskCreate(BaseModel):
     attachment_urls: Optional[List[str]] = None
     attachments: Optional[List[str]] = None
     requirements: Optional[str] = None
-    estimated_hours: Optional[int] = None
+   
 
 class TaskResponse(BaseModel):
     id: UUID

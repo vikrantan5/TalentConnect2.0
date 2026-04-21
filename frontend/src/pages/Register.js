@@ -7,6 +7,7 @@ import {
   Users, BookOpen, Zap, Award, Check, ChevronRight, Info, Chrome, Github,
   TrendingUp, Target, Brain
 } from 'lucide-react';
+import GoogleAuthButton from '../components/GoogleAuthButton';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -23,7 +24,7 @@ const Register = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [focusedField, setFocusedField] = useState(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const { register, isAuthenticated } = useAuth();
+  const { register, loginWithGoogle, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   // Mouse tracking
@@ -724,21 +725,27 @@ const Register = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <button
-                        type="button"
-                        className="flex items-center justify-center gap-3 px-4 py-3 bg-white/5 border-2 border-white/20 rounded-2xl text-white hover:bg-white/10 hover:border-cyan-500/40 transition-all backdrop-blur-xl group"
-                      >
-                        <Chrome className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                        <span className="font-semibold">Google</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="flex items-center justify-center gap-3 px-4 py-3 bg-white/5 border-2 border-white/20 rounded-2xl text-white hover:bg-white/10 hover:border-purple-500/40 transition-all backdrop-blur-xl group"
-                      >
-                        <Github className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                        <span className="font-semibold">GitHub</span>
-                      </button>
+                    <div className="w-full" data-testid="register-google-container">
+                      <GoogleAuthButton
+                        testId="register-google-button"
+                        onCredential={async (credential) => {
+                          setLoading(true);
+                          setError('');
+                          const res = await loginWithGoogle(credential);
+                          if (res.success) {
+                            const ud = res.user || JSON.parse(localStorage.getItem('user') || '{}');
+                            setSuccess('Signed in with Google! Redirecting...');
+                            setTimeout(
+                              () => navigate(ud.role === 'admin' ? '/admin' : '/dashboard'),
+                              1200
+                            );
+                          } else {
+                            setError(res.error || 'Google sign-in failed');
+                          }
+                          setLoading(false);
+                        }}
+                        onError={(msg) => setError(msg)}
+                      />
                     </div>
                   </>
                 )}

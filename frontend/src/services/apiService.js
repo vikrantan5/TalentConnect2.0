@@ -18,6 +18,12 @@ export const authService = {
     const response = await api.get('/api/users/me');
     return response.data;
   },
+
+  
+  googleLogin: async (idToken) => {
+    const response = await api.post('/api/auth/google', { id_token: idToken });
+    return response.data;
+  },
 };
 
 // ============================================

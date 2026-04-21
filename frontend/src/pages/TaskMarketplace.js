@@ -86,7 +86,7 @@ const TaskMarketplace = () => {
     attachments: [],
      attachmentFiles: [], // Store actual File objects
     requirements: '',
-    estimated_hours: ''
+    // estimated_hours: ''
   });
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
@@ -259,7 +259,7 @@ const TaskMarketplace = () => {
         deadline: new Date(newTask.deadline).toISOString(),
 attachment_urls: uploadedFileUrls,
         requirements: newTask.requirements || null,
-        estimated_hours: newTask.estimated_hours ? parseInt(newTask.estimated_hours) : null
+        // estimated_hours: newTask.estimated_hours ? parseInt(newTask.estimated_hours) : null
       };
         console.log('Submitting task data:', taskDataToSubmit);
 
@@ -283,7 +283,7 @@ attachment_urls: uploadedFileUrls,
         attachments: [],
         attachmentFiles: [],
         requirements: '',
-        estimated_hours: ''
+        // estimated_hours: ''
       });
       loadTasks();
     } catch (error) {
@@ -864,12 +864,12 @@ attachment_urls: uploadedFileUrls,
 
             {/* Additional Info Badges */}
             <div className="flex flex-wrap gap-2 mb-4">
-              {task.estimated_hours && (
+              {/* {task.estimated_hours && (
                 <span className="px-2 py-1 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 rounded-lg text-xs font-medium flex items-center gap-1">
                   <Clock className="w-3 h-3" />
                   {task.estimated_hours} hrs
                 </span>
-              )}
+              )} */}
               {task.attachment_urls?.length > 0 && (
                 <span className="px-2 py-1 bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 rounded-lg text-xs font-medium flex items-center gap-1">
                   <Paperclip className="w-3 h-3" />

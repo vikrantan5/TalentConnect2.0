@@ -52,6 +52,34 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+
+  
+  const loginWithGoogle = async (idToken) => {
+    try {
+      const response = await authService.googleLogin(idToken);
+      const token = response.access_token;
+      localStorage.setItem('token', token);
+      let userData = response.user;
+      try {
+        userData = await authService.getCurrentUser();
+      } catch (_e) {
+        // fallback to payload user if /me fails
+      }
+      if (userData) {
+        localStorage.setItem('user', JSON.stringify(userData));
+        setUser(userData);
+      }
+      setIsAuthenticated(true);
+      return { success: true, user: userData };
+    } catch (error) {
+      console.error('Google login error:', error);
+      return {
+        success: false,
+        error: error.response?.data?.detail || 'Google sign-in failed',
+      };
+    }
+  };
+
   // UPDATED register function with password truncation
   const register = async (userData) => {
     try {
@@ -109,6 +137,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     loading,
     login,
+    loginWithGoogle,
     register,
     logout,
     darkMode,
