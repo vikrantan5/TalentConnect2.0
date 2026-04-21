@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { X, Search, Loader2, Star, Trophy, Shield, MessageSquare, Calendar } from 'lucide-react';
+import { toast } from 'sonner';
+import { X, Search, Loader2, Star, Trophy, Shield, MessageSquare, Calendar, Gift } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -8,21 +9,41 @@ const FindMentorModal = ({ isOpen, onClose, skillName }) => {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [rewardInfo, setRewardInfo] = useState(null);
 
   const searchMentors = async () => {
     setLoading(true);
     setSearched(true);
+    setRewardInfo(null);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `${BACKEND_URL}/api/ai/match-mentors`,
-        { skill_name: skillName, limit: 5 },
+
+      // Step 1: call reward-aware skill exchange endpoint
+      const exchRes = await axios.post(
+        `${BACKEND_URL}/api/match/skill-exchange`,
+        { skill_requested: skillName },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setMatches(response.data.matches || []);
+      const exch = exchRes.data || {};
+      if (exch.rewardPoints) {
+        toast.success(`+${exch.rewardPoints} points awarded 🎉`);
+      }
+      setRewardInfo(exch);
+
+      // Step 2: if mentors exist, fetch AI-ranked list
+      if (exch.mentorFound) {
+        const response = await axios.post(
+          `${BACKEND_URL}/api/ai/match-mentors`,
+          { skill_name: skillName, limit: 5 },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setMatches(response.data.matches || []);
+      } else {
+        setMatches([]);
+      }
     } catch (error) {
       console.error('Error finding mentors:', error);
-      alert('Failed to find mentors');
+      toast.error(error?.response?.data?.detail || 'Failed to find mentors');
     }
     setLoading(false);
   };
@@ -71,10 +92,24 @@ const FindMentorModal = ({ isOpen, onClose, skillName }) => {
             </div>
           ) : matches.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-600 dark:text-gray-400">No mentors found for this skill</p>
+              {rewardInfo?.rewardPoints > 0 && (
+                <div className="mb-4 mx-auto max-w-md p-4 rounded-xl bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 flex items-center gap-3">
+                  <Gift className="w-6 h-6 text-orange-500" />
+                  <p className="text-sm font-semibold text-orange-700">{rewardInfo.message}</p>
+                </div>
+              )}
+              <p className="text-gray-600 dark:text-gray-400">
+                {rewardInfo?.message || 'No mentors found for this skill'}
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
+              {rewardInfo?.rewardPoints > 0 && (
+                <div className="p-4 rounded-xl bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 flex items-center gap-3">
+                  <Gift className="w-6 h-6 text-orange-500" />
+                  <p className="text-sm font-semibold text-orange-700">{rewardInfo.message}</p>
+                </div>
+              )}
               {matches.map((match, index) => {
                 const mentor = match.mentor || match;
                 const trustBadge = getTrustBadge(mentor.trust_score);

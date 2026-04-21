@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
 from app.utils.auth import get_current_user
 from app.database import get_db
 from app.ai.groq_service import groq_service
@@ -8,6 +9,126 @@ from typing import List, Dict
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/match", tags=["Matching"])
+
+
+class SkillExchangeRequest(BaseModel):
+    skill_requested: str
+
+
+REWARD_POINTS = 500
+
+
+def _award_reward(db, user_id: str, reason: str, reference_key: str) -> int:
+    """Award points once per (user, reference_key). Returns points awarded (0 if duplicate)."""
+    try:
+        existing = db.table('reward_points_log').select('id').eq(
+            'user_id', user_id
+        ).eq('reference_key', reference_key).limit(1).execute()
+        if existing.data:
+            return 0
+
+        db.table('reward_points_log').insert({
+            'user_id': user_id,
+            'points': REWARD_POINTS,
+            'reason': reason,
+            'reference_key': reference_key,
+        }).execute()
+
+        # Increment user's points
+        user_row = db.table('users').select('points').eq('id', user_id).single().execute()
+        current = (user_row.data or {}).get('points') or 0
+        db.table('users').update({'points': current + REWARD_POINTS}).eq('id', user_id).execute()
+        return REWARD_POINTS
+    except Exception as e:
+        logger.error(f"Reward award failed for user={user_id} ref={reference_key}: {e}")
+        return 0
+
+
+@router.post("/skill-exchange")
+async def request_skill_exchange(
+    payload: SkillExchangeRequest,
+    current_user_id: str = Depends(get_current_user),
+):
+    """Request a skill exchange. Awards +500 points on edge cases:
+    - No mentor found for skill
+    - Mentor found but user has no skill to offer in exchange
+    Duplicate requests for the same skill do NOT award again.
+    """
+    try:
+        skill = (payload.skill_requested or "").strip()
+        if not skill:
+            raise HTTPException(status_code=400, detail="skill_requested is required")
+
+        db = get_db()
+
+        # Find mentors offering this skill
+        mentors = db.table('user_skills').select(
+            'user_id, skill_level, is_verified'
+        ).eq('skill_type', 'offered').ilike('skill_name', skill).neq('user_id', current_user_id).execute()
+
+        if not mentors.data:
+            awarded = _award_reward(
+                db, current_user_id,
+                reason=f"No mentor found for '{skill}'",
+                reference_key=f"no_mentor:{skill.lower()}",
+            )
+            return {
+                "success": False,
+                "mentorFound": False,
+                "rewardPoints": awarded,
+                "message": (
+                    f"No mentor found for this skill. You've been rewarded with {awarded} points."
+                    if awarded else
+                    "No mentor found for this skill. (Already rewarded earlier for this request.)"
+                ),
+            }
+
+        # Mentor(s) found - check if requester has any skill to offer in exchange
+        my_offered = db.table('user_skills').select('skill_name').eq(
+            'user_id', current_user_id
+        ).eq('skill_type', 'offered').execute()
+        my_offered_names = {s['skill_name'].lower() for s in (my_offered.data or [])}
+
+        # Collect mentors' wanted skills
+        mentor_ids = [m['user_id'] for m in mentors.data]
+        mentor_wanted = db.table('user_skills').select('skill_name, user_id').in_(
+            'user_id', mentor_ids
+        ).eq('skill_type', 'wanted').execute()
+        wanted_pool = {s['skill_name'].lower() for s in (mentor_wanted.data or [])}
+
+        can_exchange = bool(my_offered_names & wanted_pool)
+
+        if not can_exchange:
+            awarded = _award_reward(
+                db, current_user_id,
+                reason=f"No skill to exchange for '{skill}'",
+                reference_key=f"no_exchange:{skill.lower()}",
+            )
+            return {
+                "success": True,
+                "mentorFound": True,
+                "mentorCount": len(mentors.data),
+                "rewardPoints": awarded,
+                "message": (
+                    f"You don't have a matching skill to exchange. You've been rewarded with {awarded} points."
+                    if awarded else
+                    "You don't have a matching skill to exchange. (Already rewarded earlier for this request.)"
+                ),
+            }
+
+        return {
+            "success": True,
+            "mentorFound": True,
+            "mentorCount": len(mentors.data),
+            "rewardPoints": 0,
+            "message": "Mentor found successfully!",
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"skill-exchange error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 def get_match_type(user_a_teach, user_a_learn, user_b_teach, user_b_learn):

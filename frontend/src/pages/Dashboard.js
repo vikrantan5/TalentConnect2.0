@@ -111,7 +111,6 @@ const Dashboard = () => {
       setLoading(false);
     }
   };
-
   const loadRecommendedSkills = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -119,20 +118,19 @@ const Dashboard = () => {
         const response = await axios.get(`${BACKEND_URL}/api/users/recommended-skills`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setRecommendedSkills(response.data || []);
+        const skills = (response.data || []).map((s) => ({
+          name: s.name || s.skill_name,
+          icon: s.icon || Code,
+          color: s.color || 'from-indigo-500 to-purple-400',
+          students: s.students || 0,
+        }));
+        setRecommendedSkills(skills);
       }
     } catch (error) {
       console.error('Error loading recommended skills:', error);
-      // Fallback to default skills
-      setRecommendedSkills([
-        { name: 'React Development', icon: Code, color: 'from-blue-500 to-cyan-400', students: 0 },
-        { name: 'UI/UX Design', icon: Palette, color: 'from-purple-500 to-pink-400', students: 0 },
-        { name: 'Digital Marketing', icon: Globe, color: 'from-green-500 to-emerald-400', students: 0 },
-        { name: 'Photography', icon: Camera, color: 'from-orange-500 to-red-400', students: 0 },
-      ]);
+      setRecommendedSkills([]);
     }
   };
-
   const loadRecentActivities = async () => {
     try {
       // Use the correct activities endpoint
@@ -281,10 +279,7 @@ const Dashboard = () => {
                         <Calendar className="w-5 h-5" />
                         Member since {new Date(user?.created_at || Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                       </div>
-                      <div className="px-5 py-2.5 bg-yellow-400/30 backdrop-blur-md rounded-full text-yellow-600 text-sm font-semibold flex items-center gap-2 shadow-lg hover:scale-105 transition-transform duration-300">
-                        <Flame className="w-5 h-5" />
-                        {stats.totalSessions} day streak
-                      </div>
+                 
                       <div className="px-5 py-2.5 bg-purple-400/30 backdrop-blur-md rounded-full text-purple-600 text-sm font-semibold flex items-center gap-2 shadow-lg hover:scale-105 transition-transform duration-300">
                         <Trophy className="w-5 h-5" />
                         {stats.averageRating > 0 ? `${stats.averageRating} ⭐ Rating` : 'New Member'}
@@ -321,16 +316,16 @@ const Dashboard = () => {
           {/* Enhanced Stats Grid with Premium Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
             {[
-              { icon: BookOpen, label: 'Total Sessions', value: stats.totalSessions, color: 'blue', trend: '+12%', iconBg: 'from-blue-500 to-cyan-400', borderColor: 'border-blue-200/50 dark:border-blue-800/50' },
-              { icon: CheckCircle, label: 'Tasks Completed', value: stats.totalTasks, color: 'green', trend: '+5%', iconBg: 'from-green-500 to-emerald-400', borderColor: 'border-green-200/50 dark:border-green-800/50' },
-              { icon: Star, label: 'Average Rating', value: stats.averageRating.toFixed(1), suffix: ' ⭐', color: 'yellow', trend: '+0.2', iconBg: 'from-yellow-500 to-orange-400', borderColor: 'border-yellow-200/50 dark:border-yellow-800/50' },
-              { icon: Target, label: 'Skills Listed', value: stats.totalSkills, color: 'purple', trend: '+3', iconBg: 'from-purple-500 to-pink-400', borderColor: 'border-purple-200/50 dark:border-purple-800/50' },
+                 { icon: BookOpen, label: 'Total Sessions', value: stats.totalSessions, color: 'blue', iconBg: 'from-blue-500 to-cyan-400', borderColor: 'border-blue-200/50 dark:border-blue-800/50' },
+              { icon: CheckCircle, label: 'Tasks Completed', value: stats.totalTasks, color: 'green', iconBg: 'from-green-500 to-emerald-400', borderColor: 'border-green-200/50 dark:border-green-800/50' },
+              { icon: Star, label: 'Average Rating', value: stats.averageRating.toFixed(1), suffix: ' ⭐', color: 'yellow', iconBg: 'from-yellow-500 to-orange-400', borderColor: 'border-yellow-200/50 dark:border-yellow-800/50' },
+              { icon: Target, label: 'Skills Listed', value: stats.totalSkills, color: 'purple', iconBg: 'from-purple-500 to-pink-400', borderColor: 'border-purple-200/50 dark:border-purple-800/50' },
               { 
                 icon: Coins, 
                 label: 'Skill Tokens', 
                 value: loadingTokens ? '...' : (tokenBalance?.balance || 0), 
                 color: 'indigo', 
-                trend: '+' + (tokenBalance?.total_earned || 0), 
+                // trend: '+' + (tokenBalance?.total_earned || 0), 
                 iconBg: 'from-indigo-500 to-purple-400',
                 borderColor: 'border-indigo-200/50 dark:border-indigo-800/50'
               },
@@ -355,9 +350,7 @@ const Dashboard = () => {
                         >
                           <Icon className="w-7 h-7" />
                         </div>
-                        <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">
-                          {stat.trend}
-                        </span>
+
                       </div>
                       
                       <p className="text-gray-600 dark:text-gray-400 text-sm font-semibold mb-2 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
@@ -442,7 +435,7 @@ const Dashboard = () => {
           {/* Enhanced Activity and Recommendations Grid */}
           <div className="grid lg:grid-cols-3 gap-8 mb-10">
             {/* Recent Activity with Modern Cards */}
-            <div className="lg:col-span-2 glass-card rounded-3xl p-8 bg-gradient-to-br from-pink-200 via-rose-200 to-purple-200 border border-white/20 dark:border-gray-700/30">
+            {/* <div className="lg:col-span-2 glass-card rounded-3xl p-8 bg-gradient-to-br from-pink-200 via-rose-200 to-purple-200 border border-white/20 dark:border-gray-700/30">
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <h2 className="text-3xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
@@ -484,16 +477,16 @@ const Dashboard = () => {
                     </div>
                   );
                 })}
-              </div>
+              </div> */}
 
               {/* Activity Chart Placeholder */}
-              <div className="mt-8 p-6 glass-card rounded-2xl border border-gray-100 dark:border-gray-700/50">
+              {/* <div className="mt-8 p-6 glass-card rounded-2xl border border-gray-100 dark:border-gray-700/50">
               </div>
-            </div>
+            </div> */}
             
             {/* Enhanced Right Sidebar */}
             <div className="space-y-8">
-              {/* Premium Achievement Card */}
+              {/* Premium Achievement Card
               <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 p-1 shadow-premium-lg group">
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 translate-y-full group-hover:translate-y-0 transition-transform duration-700"></div>
                 
@@ -521,10 +514,10 @@ const Dashboard = () => {
                     <span className="text-sm font-semibold">3 achievements this month</span>
                   </div>
                 </div>
-              </div>
+              </div> */}
 
               {/* Enhanced Recommended Skills */}
-              <div className="glass-card rounded-3xl p-8 bg-gradient-to-br from-amber-200 via-pink-200 to-purple-200 border border-white/20 dark:border-gray-700/30">
+              {/* <div className="glass-card rounded-3xl p-8 bg-gradient-to-br from-amber-200 via-pink-200 to-purple-200 border border-white/20 dark:border-gray-700/30">
                 <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2 flex items-center gap-3">
                   <Sparkles className="w-7 h-7 text-yellow-500" />
                   Recommended Skills
@@ -560,15 +553,15 @@ const Dashboard = () => {
                   View all recommendations
                   <ArrowRight className="w-5 h-5" />
                 </button>
-              </div>
+              </div> */}
 
               {/* Calendar Widget */}
               {/* <CalendarWidget userId={user?.id} /> */}
             </div>
-          </div>
+          {/* </div>
 
           {/* Premium Bottom Banner */}
-          <div className="relative overflow-hidden rounded-3xl p-1 bg-gradient-to-br from-yellow-200 via-orange-200 to-teal-200 group">
+          {/* <div className="relative overflow-hidden rounded-3xl p-1 bg-gradient-to-br from-yellow-200 via-orange-200 to-teal-200 group">
             <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 blur-2xl opacity-60 group-hover:opacity-80 transition-opacity duration-500 animate-gradient"></div>
             <div className="relative bg-gradient-to-r from-yellow-500 via-orange-600 to-red-600 rounded-[22px] p-8 text-white">
               <div className="flex items-center justify-between flex-wrap gap-6">
@@ -585,7 +578,7 @@ const Dashboard = () => {
                   Claim Offer
                 </button>
               </div>
-            </div>
+            </div>  */}
           </div>
         </div>
 

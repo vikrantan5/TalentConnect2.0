@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Navbar from '../components/Navbar';
 import { roadmapService, skillService } from '../services/apiService';
-import { Brain, Loader2, Map, CheckCircle2, Rocket, Target } from 'lucide-react';
+import { Brain, Loader2, Map, CheckCircle2, Rocket, Download } from 'lucide-react';
+import jsPDF from 'jspdf';
 
 const RoadmapPlanner = () => {
   const [careerGoal, setCareerGoal] = useState('');
@@ -69,18 +70,6 @@ const RoadmapPlanner = () => {
     setLoading(false);
   };
 
-  const updateProgress = async (currentStep, completionPercentage) => {
-    if (!selectedRoadmap?.id) return;
-    setUpdatingProgress(true);
-    try {
-      await roadmapService.updateProgress(selectedRoadmap.id, currentStep, completionPercentage);
-      await loadMyRoadmaps();
-      setMessage('Progress updated.');
-    } catch (error) {
-      setMessage(error?.response?.data?.detail || 'Failed to update progress');
-    }
-    setUpdatingProgress(false);
-  };
 
   const markCompleted = async () => {
     if (!selectedRoadmap?.id) return;
@@ -93,6 +82,64 @@ const RoadmapPlanner = () => {
       setMessage(error?.response?.data?.detail || 'Failed to complete roadmap');
     }
     setUpdatingProgress(false);
+  };
+
+
+   const downloadPDF = () => {
+    if (!selectedRoadmap) return;
+    const goal = selectedRoadmap.career_goal || selectedRoadmap?.roadmap_data?.career_goal || 'Roadmap';
+    const estTime = selectedRoadmap?.roadmap_data?.estimated_total_time || selectedRoadmap?.estimated_total_time || 'N/A';
+
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 40;
+    let y = margin;
+
+    const addText = (text, options = {}) => {
+      const { size = 11, bold = false, color = [30, 30, 30], lineGap = 4 } = options;
+      doc.setFont('helvetica', bold ? 'bold' : 'normal');
+      doc.setFontSize(size);
+      doc.setTextColor(...color);
+      const lines = doc.splitTextToSize(text, pageWidth - margin * 2);
+      lines.forEach((ln) => {
+        if (y > pageHeight - margin) { doc.addPage(); y = margin; }
+        doc.text(ln, margin, y);
+        y += size + lineGap;
+      });
+    };
+
+    // Header
+    doc.setFillColor(79, 70, 229);
+    doc.rect(0, 0, pageWidth, 70, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(22);
+    doc.text('Learning Roadmap', margin, 44);
+    y = 100;
+
+    addText(`Career Goal: ${goal}`, { size: 16, bold: true, color: [67, 56, 202] });
+    addText(`Estimated Total Time: ${estTime}`, { size: 11, color: [80, 80, 80] });
+    y += 8;
+
+    steps.forEach((step, index) => {
+      if (y > pageHeight - 120) { doc.addPage(); y = margin; }
+      addText(`Step ${step.step_number || index + 1}: ${step.title || 'Untitled'}`, { size: 13, bold: true, color: [17, 24, 39] });
+      if (step.description) addText(step.description, { size: 10, color: [55, 65, 81] });
+      if (step.estimated_time) addText(`Estimated: ${step.estimated_time}`, { size: 10, color: [107, 114, 128] });
+      if (Array.isArray(step.skills_to_learn) && step.skills_to_learn.length) {
+        addText(`Skills: ${step.skills_to_learn.join(', ')}`, { size: 10, color: [55, 65, 81] });
+      }
+      if (Array.isArray(step.resources) && step.resources.length) {
+        addText(`Resources: ${step.resources.join(', ')}`, { size: 10, color: [55, 65, 81] });
+      }
+      if (Array.isArray(step.projects) && step.projects.length) {
+        addText(`Projects: ${step.projects.join(', ')}`, { size: 10, color: [55, 65, 81] });
+      }
+      y += 6;
+    });
+
+    doc.save(`${goal.replace(/\s+/g, '_')}_roadmap.pdf`);
   };
 
   return (
@@ -206,27 +253,28 @@ const RoadmapPlanner = () => {
                   ))}
                 </div>
 
-                {selectedRoadmap?.id && (
+                {selectedRoadmap && (
                   <div className="flex flex-wrap gap-3 pt-2" data-testid="roadmap-actions-row">
                     <button
-                      onClick={() => updateProgress((selectedRoadmap.current_step || 1) + 1, Math.min(100, Number(selectedRoadmap.completion_percentage || 0) + 10))}
-                      disabled={updatingProgress}
-                      className="px-4 py-2 rounded-xl bg-indigo-600 text-white disabled:opacity-50 inline-flex items-center gap-2"
-                      data-testid="roadmap-update-progress-button"
+                      onClick={downloadPDF}
+                      className="px-4 py-2 rounded-xl bg-indigo-600 text-white inline-flex items-center gap-2 hover:bg-indigo-700"
+                      data-testid="roadmap-download-pdf-button"
                     >
-                      <Target className="w-4 h-4" />
-                      Mark Next Step
+                      <Download className="w-4 h-4" />
+                      Download as PDF
                     </button>
 
-                    <button
-                      onClick={markCompleted}
-                      disabled={updatingProgress}
-                      className="px-4 py-2 rounded-xl bg-green-600 text-white disabled:opacity-50 inline-flex items-center gap-2"
-                      data-testid="roadmap-complete-button"
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      Complete Roadmap
-                    </button>
+                    {selectedRoadmap?.id && (
+                      <button
+                        onClick={markCompleted}
+                        disabled={updatingProgress}
+                        className="px-4 py-2 rounded-xl bg-green-600 text-white disabled:opacity-50 inline-flex items-center gap-2"
+                        data-testid="roadmap-complete-button"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        Complete Roadmap
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
