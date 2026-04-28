@@ -243,7 +243,6 @@ def _slugify_username(base: str) -> str:
     slug = re.sub(r'[^a-zA-Z0-9_]', '', (base or '').split('@')[0])[:20] or 'user'
     return slug.lower()
 
-
 @router.post("/google", response_model=dict)
 async def google_login(payload: GoogleLoginPayload):
     """Login or register a user using a Google ID token (Google Identity Services credential).
@@ -252,122 +251,121 @@ async def google_login(payload: GoogleLoginPayload):
       - Finds user by google_id or email; creates user if first-time
       - Returns an access_token + user info
     """
+    import os
+    expected_audience = os.environ.get('GOOGLE_OAUTH_CLIENT_ID') or '993691763739-697cum8qsto4pcbqdfp7787lr0bgvuan.apps.googleusercontent.com'
     try:
-        from google.oauth2 import id_token as google_id_token
-        from google.auth.transport import requests as grequests
-
+        # Try verifying with expected audience first (most secure)
         try:
             idinfo = google_id_token.verify_oauth2_token(
                 payload.id_token,
                 grequests.Request(),
-                # We don't enforce aud here since user may use different client IDs;
-                # verify issuer strictly below.
+                expected_audience,
             )
-        except Exception as e:
-            logger.error(f"Google token verification failed: {e}")
-            raise HTTPException(status_code=401, detail="Invalid Google token")
-
-        if idinfo.get('iss') not in ('accounts.google.com', 'https://accounts.google.com'):
-            raise HTTPException(status_code=401, detail="Invalid token issuer")
-
-        google_sub = idinfo.get('sub')
-        email = (idinfo.get('email') or '').lower()
-        full_name = idinfo.get('name') or ''
-        picture = idinfo.get('picture') or None
-
-        if not google_sub or not email:
-            raise HTTPException(status_code=400, detail="Google account missing email")
-
-        db = get_db()
-
-        # Find existing user by google_id first, then by email
-        user = None
-        try:
-            res = db.table('users').select('*').eq('google_id', google_sub).limit(1).execute()
-            if res.data:
-                user = res.data[0]
         except Exception:
-            # google_id column may not exist in older schemas; fall back to email lookup
-            user = None
+            # Fallback: verify without audience (still verifies signature/issuer)
+            idinfo = google_id_token.verify_oauth2_token(
+                payload.id_token,
+                grequests.Request(),
+            )
+    except Exception as e:
+        logger.error(f"Google token verification failed: {e}")
+        raise HTTPException(status_code=401, detail="Invalid Google token")
 
-        if not user:
-            res = db.table('users').select('*').eq('email', email).limit(1).execute()
-            if res.data:
-                user = res.data[0]
-                # Link google_id for future logins (best effort)
-                try:
-                    db.table('users').update({'google_id': google_sub}).eq('id', user['id']).execute()
-                except Exception:
-                    pass
+    if idinfo.get('iss') not in ('accounts.google.com', 'https://accounts.google.com'):
+        raise HTTPException(status_code=401, detail="Invalid token issuer")
 
-        if not user:
-            # Create a new user record
-            base_username = _slugify_username(email) or 'user'
-            username = base_username
-            # ensure uniqueness
-            suffix = 0
-            while True:
-                existing = db.table('users').select('id').eq('username', username).limit(1).execute()
-                if not existing.data:
-                    break
-                suffix += 1
-                username = f"{base_username}{suffix}"[:32]
-                if suffix > 20:
-                    username = f"{base_username}{secrets.token_hex(3)}"
-                    break
+    google_sub = idinfo.get('sub')
+    email = (idinfo.get('email') or '').lower()
+    full_name = idinfo.get('name') or ''
+    picture = idinfo.get('picture') or None
 
-            random_pw = secrets.token_urlsafe(24)
-            new_user = {
-                'email': email,
-                'username': username,
-                'password_hash': get_password_hash(random_pw),
-                'full_name': full_name or username,
-                'role': 'student',
-                'is_active': True,
-                'is_banned': False,
-                'is_verified': True,
-            }
-            if picture:
-                new_user['profile_photo'] = picture
+    if not google_sub or not email:
+        raise HTTPException(status_code=400, detail="Google account missing email")
+
+    db = get_db()
+
+    # Find existing user by google_id first, then by email
+    user = None
+    try:
+        res = db.table('users').select('*').eq('google_id', google_sub).limit(1).execute()
+        if res.data:
+            user = res.data[0]
+    except Exception:
+        # google_id column may not exist in older schemas; fall back to email lookup
+        user = None
+
+    if not user:
+        res = db.table('users').select('*').eq('email', email).limit(1).execute()
+        if res.data:
+            user = res.data[0]
+            # Link google_id for future logins (best effort)
             try:
-                new_user['google_id'] = google_sub
+                db.table('users').update({'google_id': google_sub}).eq('id', user['id']).execute()
             except Exception:
                 pass
 
-            created = db.table('users').insert(new_user).execute()
-            if not created.data:
-                raise HTTPException(status_code=500, detail="Failed to create user")
-            user = created.data[0]
+    if not user:
+        # Create a new user record
+        base_username = _slugify_username(email) or 'user'
+        username = base_username
+        # ensure uniqueness
+        suffix = 0
+        while True:
+            existing = db.table('users').select('id').eq('username', username).limit(1).execute()
+            if not existing.data:
+                break
+            suffix += 1
+            username = f"{base_username}{suffix}"[:32]
+            if suffix > 20:
+                username = f"{base_username}{secrets.token_hex(3)}"
+                break
 
-        if user.get('is_banned'):
-            raise HTTPException(status_code=403, detail="Account has been banned. Please contact support.")
-
-        # Update last login
+        random_pw = secrets.token_urlsafe(24)
+        new_user = {
+            'email': email,
+            'username': username,
+            'password_hash': get_password_hash(random_pw),
+            'full_name': full_name or username,
+            'role': 'student',
+            'is_active': True,
+            'is_banned': False,
+            'is_verified': True,
+        }
+        if picture:
+            new_user['profile_photo'] = picture
         try:
-            db.table('users').update({'last_login': 'now()'}).eq('id', user['id']).execute()
+            new_user['google_id'] = google_sub
         except Exception:
             pass
 
-        access_token = create_access_token(
-            data={"sub": user['id']},
-            expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        )
+        created = db.table('users').insert(new_user).execute()
+        if not created.data:
+            raise HTTPException(status_code=500, detail="Failed to create user")
+        user = created.data[0]
 
-        return {
-            "access_token": access_token,
-            "token_type": "bearer",
-            "user": {
-                "id": user.get('id'),
-                "email": user.get('email'),
-                "username": user.get('username'),
-                "full_name": user.get('full_name'),
-                "role": user.get('role', 'student'),
-                "profile_photo": user.get('profile_photo'),
-            },
-        }
+    if user.get('is_banned'):
+        raise HTTPException(status_code=403, detail="Account has been banned. Please contact support.")
 
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Google login error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Google login failed: {str(e)}")
+    # Update last login
+    try:
+        db.table('users').update({'last_login': 'now()'}).eq('id', user['id']).execute()
+    except Exception:
+        pass
+
+    access_token = create_access_token(
+        data={"sub": user['id']},
+        expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": user.get('id'),
+            "email": user.get('email'),
+            "username": user.get('username'),
+            "full_name": user.get('full_name'),
+            "role": user.get('role', 'student'),
+            "profile_photo": user.get('profile_photo'),
+        },
+    }

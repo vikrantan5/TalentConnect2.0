@@ -20,50 +20,47 @@ class QuizSubmissionPayload(BaseModel):
 
 @router.post("/chatbot", response_model=ChatResponse)
 async def chat_with_bot(chat_data: ChatMessage, current_user_id: str = Depends(get_current_user)):
-    """Chat with AI learning assistant"""
+    """Chat with AI learning assistant (history stored in-memory per session)."""
     try:
         db = get_db()
-        
+
         # Generate or use existing session ID
         session_id = chat_data.session_id or str(uuid.uuid4())
-        
-        # Get chat history for context
-        history_result = db.table('chat_history').select('role, message').eq('user_id', current_user_id).eq('session_id', session_id).order('created_at', desc=False).limit(10).execute()
-        
-        chat_history = history_result.data if history_result.data else []
-        
+
+        # Get chat history from in-memory store
+        if not hasattr(chat_with_bot, "_sessions"):
+            chat_with_bot._sessions = {}
+        history_store = chat_with_bot._sessions
+        chat_history = history_store.get(session_id, [])[-10:]
+
         # Get user's skills for context
-        skills_result = db.table('user_skills').select('skill_name, skill_type').eq('user_id', current_user_id).execute()
-        user_skills = skills_result.data if skills_result.data else []
-        
+        try:
+            skills_result = db.table('user_skills').select('skill_name, skill_type').eq('user_id', current_user_id).execute()
+            user_skills = skills_result.data if skills_result.data else []
+        except Exception:
+            user_skills = []
+
         # Generate AI response
         ai_response = await groq_service.generate_learning_response(
             message=chat_data.message,
             chat_history=chat_history,
             user_skills=user_skills
         )
-        
-        # Save user message
-        db.table('chat_history').insert({
-            'user_id': current_user_id,
-            'session_id': session_id,
-            'role': 'user',
-            'message': chat_data.message
-        }).execute()
-        
-        # Save AI response
-        db.table('chat_history').insert({
-            'user_id': current_user_id,
-            'session_id': session_id,
-            'role': 'assistant',
-            'message': ai_response
-        }).execute()
-        
+
+        # Append to in-memory history
+        history_store.setdefault(session_id, []).extend([
+            {"role": "user", "message": chat_data.message},
+            {"role": "assistant", "message": ai_response},
+        ])
+        # cap history size
+        if len(history_store[session_id]) > 40:
+            history_store[session_id] = history_store[session_id][-40:]
+
         return {
             "response": ai_response,
             "session_id": session_id
         }
-    
+
     except Exception as e:
         logger.error(f"Error in chatbot: {str(e)}")
         raise HTTPException(
@@ -278,20 +275,9 @@ async def submit_skill_quiz(
 
 @router.get("/chat-history/{session_id}")
 async def get_chat_history(session_id: str, current_user_id: str = Depends(get_current_user)):
-    """Get chat history for a session"""
-    try:
-        db = get_db()
-        
-        history_result = db.table('chat_history').select('*').eq('user_id', current_user_id).eq('session_id', session_id).order('created_at', desc=False).execute()
-        
-        return history_result.data if history_result.data else []
-    
-    except Exception as e:
-        logger.error(f"Error fetching chat history: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
+    """Get chat history for a session (in-memory)."""
+    store = getattr(chat_with_bot, "_sessions", {})
+    return store.get(session_id, [])
     
 
 
