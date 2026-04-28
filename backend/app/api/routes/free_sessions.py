@@ -36,6 +36,57 @@ class FreeSessionUpdate(BaseModel):
 class MeetingLinkUpdate(BaseModel):
     meeting_link: str
 
+
+
+BONUS_POINTS = 500
+
+
+def _has_skill_to_exchange(db, learner_id: str, mentor_id: str) -> bool:
+    """Check if learner has any skill that mentor wants to learn."""
+    try:
+        learner_offered = db.table('user_skills').select('skill_name').eq(
+            'user_id', learner_id
+        ).eq('skill_type', 'offered').execute()
+        offered_names = {s['skill_name'].lower() for s in (learner_offered.data or [])}
+        if not offered_names:
+            return False
+
+        mentor_wanted = db.table('user_skills').select('skill_name').eq(
+            'user_id', mentor_id
+        ).eq('skill_type', 'wanted').execute()
+        wanted_names = {s['skill_name'].lower() for s in (mentor_wanted.data or [])}
+
+        return bool(offered_names & wanted_names)
+    except Exception as e:
+        logger.warning(f"Skill exchange check failed: {e}")
+        return False
+
+
+def _adjust_user_points(db, user_id: str, delta: int, reason: str, reference_key: str) -> int:
+    """Apply delta to user.points and log. Idempotent via reference_key. Returns applied delta (0 if duplicate)."""
+    try:
+        existing = db.table('reward_points_log').select('id').eq(
+            'user_id', user_id
+        ).eq('reference_key', reference_key).limit(1).execute()
+        if existing.data:
+            return 0
+
+        db.table('reward_points_log').insert({
+            'user_id': user_id,
+            'points': delta,
+            'reason': reason,
+            'reference_key': reference_key,
+        }).execute()
+
+        user_row = db.table('users').select('points').eq('id', user_id).single().execute()
+        current = (user_row.data or {}).get('points') or 0
+        new_points = max(0, current + delta)  # prevent negative balance
+        db.table('users').update({'points': new_points}).eq('id', user_id).execute()
+        return delta
+    except Exception as e:
+        logger.error(f"Point adjust failed user={user_id} delta={delta} ref={reference_key}: {e}")
+        return 0
+
 @router.post("/book")
 async def book_free_session(data: FreeSessionCreate, current_user_id: str = Depends(get_current_user)):
     """Book a free session (mentor or exchange) and create chat message"""
@@ -201,6 +252,30 @@ async def update_free_session(session_id: str, data: FreeSessionUpdate, current_
 
         db.table('learning_sessions').update({'status': data.status}).eq('id', session_id).execute()
 
+        
+        # Points transfer: If mentor ACCEPTS and learner has NO skill to exchange,
+        # mentor earns +500 bonus, learner is charged -500 points.
+        points_transferred = 0
+        learner_id_pt = s.get('learner_id')
+        mentor_id_pt = s.get('mentor_id')
+        if data.status == 'accepted' and learner_id_pt and mentor_id_pt:
+            can_exchange = _has_skill_to_exchange(db, learner_id_pt, mentor_id_pt)
+            if not can_exchange:
+                ref = f"session_accept:{session_id}"
+                # Award mentor +500
+                _adjust_user_points(
+                    db, mentor_id_pt, BONUS_POINTS,
+                    f"Mentor bonus for accepting one-way session {session_id}",
+                    f"{ref}:mentor_bonus"
+                )
+                # Deduct learner -500
+                _adjust_user_points(
+                    db, learner_id_pt, -BONUS_POINTS,
+                    f"Learner charge for one-way session {session_id}",
+                    f"{ref}:learner_charge"
+                )
+                points_transferred = BONUS_POINTS
+
         # Send message to chat about status update
         learner_id = s.get('learner_id')
         mentor_id = s.get('mentor_id')
@@ -245,7 +320,7 @@ async def update_free_session(session_id: str, data: FreeSessionUpdate, current_
                     'sender_id': current_user_id
                 }, f'session_{data.status}'))
 
-        return {"message": f"Session {data.status}", "session_id": session_id}
+            return {"message": f"Session {data.status}", "session_id": session_id, "points_transferred": points_transferred}
 
     except HTTPException:
         raise

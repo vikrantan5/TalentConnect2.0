@@ -33,37 +33,19 @@ class LeaderboardService:
             # Delete existing entries for this week and category
             db.table('leaderboard_entries').delete().eq('category', category).eq('week_start_date', str(week_start)).execute()
             
-            # Get all users with their stats
-            users_result = db.table('users').select('id, username, total_sessions, average_rating, total_tasks_completed, total_ratings, total_skill_exchanges_completed').order('total_sessions', desc=True).limit(limit).execute()
+                # Get all users with their stats
+            users_result = db.table('users').select('id, username, total_sessions, average_rating, total_tasks_completed, total_ratings, total_skill_exchanges_completed').order('average_rating', desc=True).limit(limit).execute()
             
-            # Calculate scores based on category
+            # Calculate scores based on category - ONLY RATING MATTERS
             entries = []
             for rank, user in enumerate(users_result.data if users_result.data else [], 1):
-                if category == 'top_mentor':
-                    # Mentors scored on sessions + rating + skill exchanges
-                    score = (
-                        user.get('total_sessions', 0) * 3 + 
-                        user.get('average_rating', 0) * 10 +
-                        user.get('total_skill_exchanges_completed', 0) * 2
-                    )
-                elif category == 'top_learner':
-                    # Learners scored on tasks completed + sessions + skill exchanges
-                    score = (
-                        user.get('total_tasks_completed', 0) * 5 + 
-                        user.get('total_sessions', 0) * 2 +
-                        user.get('total_skill_exchanges_completed', 0) * 3
-                    )
-                elif category == 'top_contributor':
-                    # Overall contribution score
-                    score = (
-                        user.get('total_sessions', 0) * 2 + 
-                        user.get('total_tasks_completed', 0) * 3 + 
-                        user.get('total_ratings', 0) +
-                        user.get('total_skill_exchanges_completed', 0) * 2 +
-                        user.get('average_rating', 0) * 5
-                    )
-                else:
+                rating = user.get('average_rating', 0) or 0
+                total_ratings = user.get('total_ratings', 0) or 0
+                # Skip users with no ratings so leaderboard shows only rated users
+                if total_ratings <= 0 and rating <= 0:
                     continue
+                # Score = rating * 100 to preserve precision (tiebreaker: total_ratings)
+                score = rating * 100 + min(total_ratings, 99) * 0.01
                 
                 entries.append({
                     'user_id': user['id'],
@@ -89,18 +71,14 @@ class LeaderboardService:
     
     @staticmethod
     def get_leaderboard(category: str, limit: int = 10) -> List[Dict]:
-        """Get current week's leaderboard"""
+        """Get current week's leaderboard - always refresh to reflect latest ratings"""
         try:
             db = get_db()
             week_start, week_end = LeaderboardService.get_current_week_dates()
             
-            # Get leaderboard entries
+            # Always regenerate to reflect current rating data
+            LeaderboardService.update_leaderboard(category, max(limit, 100))
             result = db.table('leaderboard_entries').select('*').eq('category', category).eq('week_start_date', str(week_start)).order('rank', desc=False).limit(limit).execute()
-            
-            if not result.data:
-                # If no data, update leaderboard first
-                LeaderboardService.update_leaderboard(category, limit)
-                result = db.table('leaderboard_entries').select('*').eq('category', category).eq('week_start_date', str(week_start)).order('rank', desc=False).limit(limit).execute()
             
             leaderboard = []
             if result.data:

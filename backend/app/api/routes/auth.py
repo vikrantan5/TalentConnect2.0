@@ -254,7 +254,11 @@ async def google_login(payload: GoogleLoginPayload):
       - Returns an access_token + user info
     """
     import os
-    expected_audience = os.environ.get('GOOGLE_OAUTH_CLIENT_ID') or '993691763739-697cum8qsto4pcbqdfp7787lr0bgvuan.apps.googleusercontent.com'
+    expected_audience = (
+        os.environ.get('GOOGLE_OAUTH_CLIENT_ID')
+        or getattr(settings, 'GOOGLE_OAUTH_CLIENT_ID', None)
+        or getattr(settings, 'GOOGLE_CLIENT_ID', None)
+    )
     try:
         # Try verifying with expected audience first (most secure)
         try:

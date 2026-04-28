@@ -98,12 +98,15 @@ const Messages = () => {
   }, [activeChat, user]);
 
   useEffect(() => {
-    if (activeChat && isConnected) {
-      joinChat(activeChat.chat.id);
+    if (activeChat) {
+      // Load messages immediately regardless of socket connection state
       loadMessages(activeChat.chat.id, 1, true);
+      if (isConnected) {
+        joinChat(activeChat.chat.id);
+      }
     }
     return () => {
-      if (activeChat) leaveChat(activeChat.chat.id);
+      if (activeChat && isConnected) leaveChat(activeChat.chat.id);
     };
   }, [activeChat, isConnected]);
 
