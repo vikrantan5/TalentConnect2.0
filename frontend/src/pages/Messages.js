@@ -248,16 +248,35 @@ const Messages = () => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  const handleSessionAction = async (sessionId, action) => {
+   const handleSessionAction = async (sessionId, action) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`${BACKEND_URL}/api/free-sessions/${sessionId}`, 
-        { status: action }, 
+      const payload = { status: action };
+
+      if (action === 'accepted') {
+        // Mentor must paste a Google Meet (or Zoom/Jitsi) link before accepting
+        const link = window.prompt(
+          'Paste the Google Meet link for this session(e.g. https://meet.google.com/xxx-yyyy-zzz):',
+          'https://meet.google.com/'
+        );
+        if (link === null) return; // user cancelled
+        const trimmed = (link || '').trim();
+        if (!trimmed || !/^https?:\/\//i.test(trimmed)) {
+          alert('A valid meeting link is required to accept this session.');
+          return;
+        }
+        payload.meeting_link = trimmed;
+      }
+
+      await axios.patch(
+        `${BACKEND_URL}/api/free-sessions/${sessionId}`,
+        payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (activeChat) loadMessages(activeChat.chat.id, 1, true);
     } catch (error) {
-      alert('Failed to update session');
+      const detail = error?.response?.data?.detail || 'Failed to update session';
+      alert(detail);
     }
   };
 

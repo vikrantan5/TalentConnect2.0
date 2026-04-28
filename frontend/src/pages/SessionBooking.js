@@ -572,7 +572,8 @@ const SessionBooking = () => {
                         <User className="w-4 h-4" />
                         View Profile
                       </button> */}
-                      {session.meeting_link && session.status === 'scheduled' && (
+                      {session.meeting_link && (session.status === 'scheduled' || session.status === 'accepted') && (
+                        
                         <a
                           href={session.meeting_link}
                           target="_blank"
@@ -763,7 +764,7 @@ const SessionBooking = () => {
 
                 {/* Action Buttons */}
                 <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                  {selectedSession.meeting_link && selectedSession.status === 'scheduled' && (
+                  {selectedSession.meeting_link && (selectedSession.status === 'scheduled' || selectedSession.status === 'accepted') && (
                     <a
                       href={selectedSession.meeting_link}
                       target="_blank"

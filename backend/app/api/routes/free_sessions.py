@@ -32,9 +32,36 @@ class FreeSessionCreate(BaseModel):
 
 
 class FreeSessionUpdate(BaseModel):
-    status: str  # "accepted" or "rejected"
+    status: str  # \"accepted\" or \"rejected\"
+    meeting_link: Optional[str] = None  # Required when status == \"accepted\"
+
 class MeetingLinkUpdate(BaseModel):
     meeting_link: str
+
+
+import re
+
+GOOGLE_MEET_PATTERN = re.compile(
+    r'^https?://(?:[a-z0-9-]+\.)*(?:meet\.google\.com|meet\.jit\.si|zoom\.us|teams\.microsoft\.com|whereby\.com|daily\.co)/[^\s]+',
+    re.IGNORECASE,
+)
+
+
+def _validate_meeting_link(link: str) -> str:
+    """Validate and normalize a meeting link. Raises HTTPException on invalid input."""
+    if not link or not isinstance(link, str):
+        raise HTTPException(status_code=400, detail="Meeting link is required to accept the session")
+    cleaned = link.strip()
+    if not cleaned:
+        raise HTTPException(status_code=400, detail="Meeting link cannot be empty")
+    if not GOOGLE_MEET_PATTERN.match(cleaned):
+        # Also allow generic https URLs as a soft fallback
+        if not re.match(r'^https?://[^\s]+$', cleaned):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid meeting link. Please provide a valid Google Meet / Zoom / Jitsi URL"
+            )
+    return cleaned
 
 
 
@@ -250,7 +277,21 @@ async def update_free_session(session_id: str, data: FreeSessionUpdate, current_
         if s['status'] != 'pending':
             raise HTTPException(status_code=400, detail="Session already processed")
 
-        db.table('learning_sessions').update({'status': data.status}).eq('id', session_id).execute()
+         # If accepting, mentor MUST provide a valid meeting link.
+        # This prevents accepted sessions from existing without a join URL.
+        meeting_link_value = None
+        if data.status == 'accepted':
+            meeting_link_value = _validate_meeting_link(data.meeting_link or '')
+
+        update_payload = {'status': data.status}
+        if meeting_link_value:
+            update_payload['meeting_link'] = meeting_link_value
+
+        try:
+            db.table('learning_sessions').update(update_payload).eq('id', session_id).execute()
+        except Exception as e:
+            logger.error(f"Failed to update session {session_id}: {e}")
+            raise HTTPException(status_code=500, detail="Failed to update session. Please try again.")
 
         
         # Points transfer: If mentor ACCEPTS and learner has NO skill to exchange,
@@ -286,12 +327,19 @@ async def update_free_session(session_id: str, data: FreeSessionUpdate, current_
             if chat and chat.data:
                 chat_id = chat.data[0]['id']
                 status_emoji = "✅" if data.status == "accepted" else "❌"
-                status_message = f"{status_emoji} Session {data.status.upper()}![Session ID: {session_id}]"
+                if data.status == 'accepted' and meeting_link_value:
+                    status_message = (
+                        f"{status_emoji} Session ACCEPTED! Meeting link attached."
+                        f"🔗 {meeting_link_value}"
+                        f"[Session ID: {session_id}]"
+                    )
+                else:
+                    status_message = f"{status_emoji} Session {data.status.upper()}![Session ID: {session_id}]"
                 db.table('realtime_messages').insert({
                     'chat_id': chat_id,
                     'sender_id': current_user_id,
                     'text': status_message,
-                    'message_type': 'session_update',
+                    'message_type': 'session_update' if data.status != 'accepted' else 'meeting_link',
                     'reference_id': session_id
                 }).execute()
 
@@ -320,7 +368,7 @@ async def update_free_session(session_id: str, data: FreeSessionUpdate, current_
                     'sender_id': current_user_id
                 }, f'session_{data.status}'))
 
-            return {"message": f"Session {data.status}", "session_id": session_id, "points_transferred": points_transferred}
+                return {"message": f"Session {data.status}", "session_id": session_id, "points_transferred": points_transferred, "meeting_link": meeting_link_value}
 
     except HTTPException:
         raise
@@ -347,8 +395,11 @@ async def add_meeting_link(session_id: str, data: MeetingLinkUpdate, current_use
         if s['status'] != 'accepted':
             raise HTTPException(status_code=400, detail="Can only add meeting link to accepted sessions")
 
+        # Validate the link
+        validated_link = _validate_meeting_link(data.meeting_link)
+
         # Update session with meeting link
-        db.table('learning_sessions').update({'meeting_link': data.meeting_link}).eq('id', session_id).execute()
+        db.table('learning_sessions').update({'meeting_link': validated_link}).eq('id', session_id).execute()
 
         # Send message to chat with meeting link
         sorted_ids = sorted([s['learner_id'], s['mentor_id']])
@@ -356,7 +407,7 @@ async def add_meeting_link(session_id: str, data: MeetingLinkUpdate, current_use
         
         if chat and chat.data:
             chat_id = chat.data[0]['id']
-            link_message = f"🔗 Google Meet Link Added!{data.meeting_link}[Session ID: {session_id}]"
+            link_message = f"🔗 Google Meet Link Added!{validated_link}[Session ID: {session_id}]"
             db.table('realtime_messages').insert({
                 'chat_id': chat_id,
                 'sender_id': current_user_id,
@@ -379,7 +430,7 @@ async def add_meeting_link(session_id: str, data: MeetingLinkUpdate, current_use
             'reference_type': 'learning_session'
         }).execute()
 
-        return {"message": "Meeting link added successfully", "meeting_link": data.meeting_link}
+        return {"message": "Meeting link added successfully", "meeting_link": validated_link}
 
     except HTTPException:
         raise
