@@ -424,7 +424,7 @@ years_experience: ''
         <div className="flex space-x-4 mb-8 border-b border-gray-200 dark:border-gray-700" data-testid="skill-tabs">
           {[
             { id: 'my-skills', label: 'My Skills', icon: BookOpen },
-            { id: 'recommendations', label: 'Recommended', icon: Sparkles },
+            // { id: 'recommendations', label: 'Recommended', icon: Sparkles },
             // { id: 'find-mentors', label: 'Find Mentors', icon: Compass },
           ].map((tab) => {
             const Icon = tab.icon;
