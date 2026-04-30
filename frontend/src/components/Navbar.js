@@ -1,540 +1,257 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import React, { useEffect, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LayoutDashboard,
-  Code2,
-  Briefcase,
-  Calendar,
-  Bot,
-  Shield,
-  User,
-  LogOut,
-  Menu,
-  X,
-  ChevronDown,
-  Bell,
-  Settings,
-  Moon,
-  Sun,
-  Search,
-  Home,
-  GraduationCap,
-  Sparkles,
-  Zap,
-  MessageSquare,
-  Award,
-  TrendingUp,
-  ArrowLeftRight,
-  Users,
-  Map,
-  Wallet
+  LayoutDashboard, Sparkles, Code2, Briefcase, ArrowLeftRight, Calendar,
+  MessageSquare, Map, Award, Wallet, Bot, Bell, Sun, Moon, Menu, X,
+  ChevronDown, User, Settings, LogOut, GraduationCap, Shield, Search,
 } from 'lucide-react';
-import BrowseUsersModal from './BrowseUsersModal';
-import NotificationsPanel from './NotificationsPanel';
-import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+
+const NAV = [
+  { path: '/dashboard',    label: 'Dashboard',   icon: LayoutDashboard },
+  { path: '/matches',      label: 'Match',       icon: Sparkles },
+  { path: '/skills',       label: 'Skills',      icon: Code2 },
+  { path: '/tasks',        label: 'Tasks',       icon: Briefcase },
+  { path: '/exchange',     label: 'Exchange',    icon: ArrowLeftRight },
+  { path: '/sessions',     label: 'Sessions',    icon: Calendar },
+  { path: '/messages',     label: 'Messages',    icon: MessageSquare },
+  { path: '/roadmap',      label: 'Roadmap',     icon: Map },
+  { path: '/leaderboard',  label: 'Leaderboard', icon: Award },
+  { path: '/wallet',       label: 'Wallet',      icon: Wallet },
+  { path: '/chatbot',      label: 'AI',          icon: Bot },
+];
 
 const Navbar = () => {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { theme, toggle } = useTheme();
   const location = useLocation();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
-  const [notificationCount, setNotificationCount] = useState(0);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showBrowseUsers, setShowBrowseUsers] = useState(false);
+  const navigate = useNavigate();
+  const [scrolled, setScrolled] = useState(false);
+  const [openMobile, setOpenMobile] = useState(false);
+  const [openProfile, setOpenProfile] = useState(false);
+  const [query, setQuery] = useState('');
+  const notifCount = 3;
+  const profileRef = useRef(null);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    const onClick = (e) => {
+      if (profileRef.current && !profileRef.current.contains(e.target)) setOpenProfile(false);
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
   }, []);
 
-  // Load notification count
-  useEffect(() => {
-    loadNotificationCount();
-    // Poll every 30 seconds
-    const interval = setInterval(loadNotificationCount, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  const active = (p) => location.pathname === p;
 
-  const loadNotificationCount = async () => {
-    try {
-      const response = await api.get('/api/notifications/count');
-      setNotificationCount(response.data.unread_count || 0);
-    } catch (error) {
-      console.error('Error loading notification count:', error);
-    }
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  const isActive = (path) => location.pathname === path;
-  const isAdminPage = location.pathname.startsWith('/admin');
-
-  const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, gradient: 'from-cyan-500 to-blue-600' },
-    { path: '/matches', label: 'Match', icon: Sparkles, gradient: 'from-orange-500 to-red-600' },
-    { path: '/skills', label: 'Skills', icon: Code2, gradient: 'from-blue-500 to-indigo-600' },
-    { path: '/tasks', label: 'Tasks', icon: Briefcase, gradient: 'from-emerald-500 to-teal-600' },
-    { path: '/exchange', label: 'Exchange', icon: ArrowLeftRight, gradient: 'from-teal-500 to-cyan-600' },
-    { path: '/sessions', label: 'Sessions', icon: Calendar, gradient: 'from-purple-500 to-pink-600' },
-    { path: '/messages', label: 'Messages', icon: MessageSquare, gradient: 'from-indigo-500 to-purple-600' },
-    { path: '/roadmap', label: 'Roadmap', icon: Map, gradient: 'from-orange-500 to-red-600' },
-    { path: '/leaderboard', label: 'Leaderboard', icon: Award, gradient: 'from-amber-500 to-yellow-600' },
-    { path: '/wallet', label: 'Wallet', icon: Wallet, gradient: 'from-green-500 to-emerald-600' },
-    { path: '/chatbot', label: 'AI', icon: Bot, gradient: 'from-pink-500 to-purple-600' },
-  ];
+  const onLogout = () => { logout(); navigate('/login'); };
 
   return (
-    <nav 
-      className={`sticky top-0 z-50 transition-all duration-500 w-full ${
-        isScrolled 
-          ? isAdminPage
-            ? 'glass-card-admin shadow-neon-cyan'
-            : 'bg-white/70 dark:bg-slate-900/80 backdrop-blur-2xl shadow-premium' 
-          : isAdminPage
-            ? 'glass-card-admin border-b border-cyan-500/20'
-            : 'bg-white dark:bg-slate-900 shadow-md'
-      }`} 
+    <motion.nav
+      initial={{ y: -24, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
       data-testid="navbar"
+      className={`sticky top-0 z-50 w-full transition-all duration-500 ${
+        scrolled ? 'glass-strong shadow-soft' : 'bg-transparent'
+      }`}
     >
-      {/* Premium Gradient Border */}
-      <div className={`absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-${isScrolled ? '100' : '0'} transition-opacity duration-500`}></div>
-      
-      <div className="w-full mx-auto px-3 sm:px-4 lg:px-6">
-        <div className="flex justify-between h-16 items-center gap-2">
-          {/* Logo Section with Premium Effects */}
-          <div className="flex items-center space-x-2 lg:space-x-4 flex-shrink-0">
-            <Link 
-              to="/dashboard" 
-              className="flex items-center gap-2 group relative" 
-              data-testid="nav-logo"
-            >
-              {/* Animated Glow Effect */}
-              <div className="absolute -inset-2 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-2xl blur-xl opacity-0 group-hover:opacity-30 transition-opacity duration-500"></div>
-              
-              <div className="relative">
-                <div className={`w-5 h-5 lg:w-9 lg:h-9 bg-gradient-to-br ${
-                  isAdminPage 
-                    ? 'from-cyan-500 via-purple-600 to-pink-600' 
-                    : 'from-indigo-600 to-purple-600'
-                } rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-2xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-6`}>
-                  <GraduationCap className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
-                </div>
-                {/* Online Status Badge */}
-                <div className="absolute -top-1 -right-1 w-3 h-3 lg:w-3.5 lg:h-3.5 bg-emerald-400 rounded-full border-2 border-white dark:border-slate-900 animate-pulse shadow-lg"></div>
-              </div>
-              
-              <span className={`hidden sm:block text-lg lg:text-xl xl:text-1.5xl font-black bg-gradient-to-r ${
-                isAdminPage 
-                  ? 'from-cyan-400 via-purple-400 to-pink-400' 
-                  : 'from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400'
-              } bg-clip-text text-transparent whitespace-nowrap tracking-tight`}>
-                TalentConnect
-              </span>
-            </Link>
+      {/* thin gradient hairline */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
 
-            {/* Desktop Navigation - Premium Style - Hidden on Admin Page */}
-            {!isAdminPage && (
-              <div className="hidden lg:flex items-center gap-1 xl:gap-1 overflow-x-auto scrollbar-hide">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  const isItemActive = isActive(item.path);
-                  return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      className={`relative group px-2 xl:px-3 py-2 rounded-xl transition-all duration-300 whitespace-nowrap ${
-                        isItemActive
-                          ? 'bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/30 dark:to-purple-900/30 text-indigo-600 dark:text-indigo-400 shadow-md'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800'
-                      }`}
-                      data-testid={`nav-${item.label.toLowerCase().replace(' ', '-')}`}
-                    >
-                      <div className="relative flex items-center gap-1.5">
-                        <Icon className={`w-4 h-4 transition-all duration-300 ${
-                          isItemActive 
-                            ? 'scale-110' 
-                            : 'group-hover:scale-110 group-hover:rotate-12'
-                        }`} />
-                        <span className="font-bold text-xs xl:text-sm">{item.label}</span>
-                      </div>
-                      
-                      {/* Active Indicator */}
-                      {isItemActive && (
-                        <div className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r ${item.gradient} rounded-full`}></div>
-                      )}
-                    </Link>
-                  );
-                })}
-              
-                {/* Admin Button */}
-                {user?.role === 'admin' && (
+      <div className="mx-auto max-w-[1480px] px-4 lg:px-8">
+        <div className="flex h-16 items-center justify-between gap-4">
+          {/* Logo */}
+          <Link to="/dashboard" className="flex items-center gap-2.5 group" data-testid="nav-logo">
+            <span className="relative inline-flex">
+              <span className="absolute inset-0 rounded-2xl blur-lg bg-cyan-400/40 opacity-0 group-hover:opacity-100 transition" />
+              <span className="relative w-9 h-9 rounded-2xl bg-ink-950 text-cyan-300 grid place-items-center ring-1 ring-white/10">
+                <GraduationCap className="w-5 h-5" />
+              </span>
+            </span>
+            <span className="hidden sm:flex flex-col leading-none">
+              <span className="font-display text-[22px] text-ink-950 dark:text-white">Talent<span className="italic text-gradient-cyan">Connect</span></span>
+              <span className="text-[10px] uppercase tracking-[.22em] text-ink-500 dark:text-ink-300">skill · mentor · grow</span>
+            </span>
+          </Link>
+
+          {/* Desktop nav */}
+          <div className="hidden lg:flex items-center gap-1 flex-1 justify-center max-w-3xl">
+            <div className="flex items-center gap-1 glass rounded-full px-1.5 py-1.5">
+              {NAV.map((it) => {
+                const Icon = it.icon;
+                const a = active(it.path);
+                return (
                   <Link
-                    to="/admin"
-                    className={`relative group px-3 py-2 rounded-xl transition-all duration-300 overflow-hidden ${
-                      isActive('/admin')
-                        ? 'bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 text-white shadow-neon-cyan'
-                        : 'glass-card-admin-hover text-slate-300'
+                    key={it.path}
+                    to={it.path}
+                    data-testid={`nav-${it.label.toLowerCase()}`}
+                    className={`relative px-3 py-1.5 rounded-full text-[13px] font-medium flex items-center gap-1.5 transition-colors ${
+                      a ? 'text-white' : 'text-ink-700 dark:text-ink-200 hover:text-ink-950 dark:hover:text-white'
                     }`}
-                    data-testid="nav-admin"
                   >
-                    {isActive('/admin') && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 blur-xl opacity-50"></div>
+                    {a && (
+                      <motion.span
+                        layoutId="nav-pill"
+                        transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                        className="absolute inset-0 rounded-full bg-ink-950 dark:bg-cyan-500/90 shadow-glow"
+                      />
                     )}
-                    <div className="relative flex items-center gap-2">
-                      <Shield className={`w-4 h-4 ${isActive('/admin') ? 'animate-pulse' : ''}`} />
-                      <span className="font-bold text-sm hidden xl:inline">Admin</span>
-                    </div>
-                    {isActive('/admin') && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-cyan-400 to-pink-400 rounded-full"></div>
-                    )}
+                    <Icon className="relative w-3.5 h-3.5" />
+                    <span className="relative">{it.label}</span>
                   </Link>
-                )}
-              </div>
-            )}
+                );
+              })}
+            </div>
           </div>
 
-          {/* Right Section - Premium Actions */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {/* Notifications with Glow */}
-            <button 
-              onClick={() => setShowNotifications(true)}
-              className={`relative p-2.5 rounded-xl transition-all duration-300 group ${
-                isAdminPage
-                  ? 'glass-card-admin-hover text-slate-300'
-                  : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700'
-              }`}
+          {/* Right */}
+          <div className="flex items-center gap-2">
+            {/* Search */}
+            <div className="hidden md:flex items-center gap-2 glass rounded-full pl-3 pr-1 py-1">
+              <Search className="w-4 h-4 text-ink-500" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search skills, people…"
+                className="bg-transparent outline-none text-sm w-40 placeholder:text-ink-400"
+                data-testid="nav-search"
+              />
+              <kbd className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-ink-100 dark:bg-white/10 text-ink-600 dark:text-ink-200">⌘K</kbd>
+            </div>
+
+            {/* Theme toggle */}
+            <button
+              onClick={toggle}
+              data-testid="theme-toggle"
+              className="relative w-9 h-9 rounded-full glass grid place-items-center hover:shadow-glow transition"
+              aria-label="Toggle theme"
             >
-              <Bell className="w-5 h-5 group-hover:animate-bounce-subtle" />
-              {notificationCount > 0 && (
+              <AnimatePresence mode="wait" initial={false}>
+                {theme === 'dark' ? (
+                  <motion.span key="sun" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.25 }}>
+                    <Sun className="w-4 h-4 text-amber-300" />
+                  </motion.span>
+                ) : (
+                  <motion.span key="moon" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.25 }}>
+                    <Moon className="w-4 h-4 text-ink-800" />
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </button>
+
+            {/* AI quick */}
+            <Link to="/chatbot" className="hidden sm:inline-flex btn btn-cyan px-4 py-2 text-xs" data-testid="nav-ai-btn">
+              <Bot className="w-4 h-4" /> Ask AI
+            </Link>
+
+            {/* Notifications */}
+            <button className="relative w-9 h-9 rounded-full glass grid place-items-center" data-testid="nav-bell">
+              <Bell className="w-4 h-4" />
+              {notifCount > 0 && (
                 <>
-                  <span className={`absolute -top-1 -right-1 w-5 h-5 ${
-                    isAdminPage ? 'bg-cyan-500' : 'bg-red-500'
-                  } text-white text-xs rounded-full flex items-center justify-center font-bold animate-pulse shadow-lg`}>
-                    {notificationCount}
-                  </span>
-                  {isAdminPage && (
-                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-cyan-500 rounded-full animate-ping opacity-75"></div>
-                  )}
+                  <span className="absolute -top-0.5 -right-0.5 grid place-items-center min-w-[18px] h-[18px] px-1 rounded-full bg-coral-500 text-white text-[10px] font-bold">{notifCount}</span>
+                  <span className="absolute -top-0.5 -right-0.5 w-[18px] h-[18px] rounded-full bg-coral-500/60 animate-ping" />
                 </>
               )}
             </button>
 
-            {/* Profile Dropdown - Premium Style */}
-            <div className="relative">
+            {/* Profile */}
+            <div ref={profileRef} className="relative">
               <button
-                onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className={`flex items-center gap-3 p-2 rounded-xl transition-all duration-300 group ${
-                  isAdminPage
-                    ? 'glass-card-admin-hover'
-                    : 'hover:bg-gray-100 dark:hover:bg-slate-800'
-                }`}
+                onClick={() => setOpenProfile((v) => !v)}
                 data-testid="nav-profile"
+                className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full glass hover:shadow-glow transition"
               >
-                <div className="relative">
-                  {/* Profile Avatar with Premium Effects */}
-                  <div className={`w-9 h-9 bg-gradient-to-br ${
-                    isAdminPage 
-                      ? 'from-cyan-500 to-purple-600' 
-                      : 'from-indigo-600 to-purple-600'
-                  } rounded-xl flex items-center justify-center text-white font-black text-base shadow-lg group-hover:shadow-2xl transition-all duration-300 group-hover:scale-110 overflow-hidden`}>
-                    {user?.profile_photo ? (
-                      <img src={user.profile_photo} alt={user.username} className="w-full h-full object-cover" />
-                    ) : (
-                      user?.username?.charAt(0).toUpperCase()
-                    )}
-                  </div>
-                  {/* Online Indicator */}
-                  <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 ${
-                    isAdminPage ? 'bg-cyan-400' : 'bg-emerald-500'
-                  } rounded-full border-2 border-white dark:border-slate-900 shadow-lg`}></div>
-                  {isAdminPage && (
-                    <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-cyan-400 rounded-full animate-ping opacity-75"></div>
-                  )}
-                </div>
-                <ChevronDown className={`w-4 h-4 ${
-                  isAdminPage ? 'text-slate-300' : 'text-gray-500'
-                } transition-transform duration-300 hidden sm:block ${showProfileMenu ? 'rotate-180' : ''}`} />
+                <span className="w-7 h-7 rounded-full bg-gradient-to-br from-cyan-400 to-indigo-500 grid place-items-center text-ink-950 font-bold text-xs overflow-hidden">
+                  {user?.profile_photo ? <img src={user.profile_photo} alt="" className="w-full h-full object-cover"/> : (user?.username?.[0] || 'U').toUpperCase()}
+                </span>
+                <ChevronDown className={`w-3.5 h-3.5 text-ink-500 transition ${openProfile ? 'rotate-180' : ''}`} />
               </button>
-
-              {/* Enhanced Profile Dropdown Menu */}
-              {showProfileMenu && (
-                <div className={`absolute top-full right-0 mt-3 w-72 ${
-                  isAdminPage 
-                    ? 'glass-card-admin border border-cyan-500/20' 
-                    : 'bg-white/90 dark:bg-slate-800/90 backdrop-blur-2xl border border-gray-200 dark:border-slate-700'
-                } rounded-2xl shadow-2xl py-3 z-[100] animate-fade-in-scale`}>
-                  
-                  {/* User Info Header */}
-                  <div className={`px-5 py-4 border-b ${
-                    isAdminPage ? 'border-slate-700/50' : 'border-gray-200 dark:border-slate-700'
-                  }`}>
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className={`w-12 h-12 bg-gradient-to-br ${
-                        isAdminPage ? 'from-cyan-500 to-purple-600' : 'from-indigo-600 to-purple-600'
-                      } rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg overflow-hidden`}>
-                        {user?.profile_photo ? (
-                          <img src={user.profile_photo} alt={user.username} className="w-full h-full object-cover" />
-                        ) : (
-                          user?.username?.charAt(0).toUpperCase()
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <p className={`text-sm font-bold ${
-                          isAdminPage ? 'text-white' : 'text-gray-900 dark:text-white'
-                        }`}>
-                          {user?.full_name || user?.username}
-                        </p>
-                        <p className={`text-xs ${
-                          isAdminPage ? 'text-slate-400' : 'text-gray-500 dark:text-gray-400'
-                        }`}>
-                          {user?.email}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    {user?.role === 'admin' && !isAdminPage && (
-                      <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg ${
-                        isAdminPage 
-                          ? 'bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 text-cyan-300' 
-                          : 'bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800'
-                      }`}>
-                        <Shield className="w-3.5 h-3.5" />
-                        <span className="text-xs font-bold">Admin Access</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Menu Items */}
-                  <div className="py-2">
-                    <Link
-                      to="/profile"
-                      className={`flex items-center gap-3 px-5 py-3 transition-all duration-200 ${
-                        isAdminPage
-                          ? 'text-slate-300 hover:text-cyan-300 hover:bg-slate-800/50'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
-                      }`}
-                      onClick={() => setShowProfileMenu(false)}
-                    >
-                      <User className="w-4 h-4" />
-                      <span className="font-semibold text-sm">Your Profile</span>
-                    </Link>
-                    
-                    <Link
-                      to="/settings"
-                      className={`flex items-center gap-3 px-5 py-3 transition-all duration-200 ${
-                        isAdminPage
-                          ? 'text-slate-300 hover:text-cyan-300 hover:bg-slate-800/50'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
-                      }`}
-                      onClick={() => setShowProfileMenu(false)}
-                    >
-                      <Settings className="w-4 h-4" />
-                      <span className="font-semibold text-sm">Settings</span>
-                    </Link>
-                    
-                    <Link
-                      to="/teams"
-                      className={`flex items-center gap-3 px-5 py-3 transition-all duration-200 ${
-                        isAdminPage
-                          ? 'text-slate-300 hover:text-purple-300 hover:bg-slate-800/50'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
-                      }`}
-                      onClick={() => setShowProfileMenu(false)}
-                      data-testid="nav-teams"
-                    >
-                      <Users className="w-4 h-4" />
-                      <span className="font-semibold text-sm">Teams</span>
-                    </Link>
-                  </div>
-                  
-                  <div className={`border-t ${
-                    isAdminPage ? 'border-slate-700/50' : 'border-gray-200 dark:border-slate-700'
-                  } my-2`}></div>
-                  
-                  {/* Logout Button */}
-                  <button
-                    onClick={() => {
-                      handleLogout();
-                      setShowProfileMenu(false);
-                    }}
-                    className={`w-full flex items-center gap-3 px-5 py-3 transition-all duration-200 ${
-                      isAdminPage
-                        ? 'text-red-400 hover:bg-red-500/20'
-                        : 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
-                    }`}
-                    data-testid="logout-button"
+              <AnimatePresence>
+                {openProfile && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: .96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: .96 }}
+                    transition={{ duration: .18 }}
+                    className="absolute right-0 mt-2 w-64 glass-strong rounded-2xl p-2 shadow-soft-lg"
                   >
-                    <LogOut className="w-4 h-4" />
-                    <span className="font-bold text-sm">Logout</span>
-                  </button>
-                </div>
-              )}
+                    <div className="p-3 border-b border-black/5 dark:border-white/10">
+                      <p className="font-semibold text-sm">{user?.full_name || user?.username || 'Guest'}</p>
+                      <p className="text-xs text-ink-500 dark:text-ink-300 truncate">{user?.email || 'not signed in'}</p>
+                    </div>
+                    <div className="py-1">
+                      <Link to="/profile" onClick={() => setOpenProfile(false)} className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-ink-100 dark:hover:bg-white/5">
+                        <User className="w-4 h-4"/> Profile
+                      </Link>
+                      <Link to="/teams" onClick={() => setOpenProfile(false)} className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-ink-100 dark:hover:bg-white/5">
+                        <Settings className="w-4 h-4"/> Teams & Settings
+                      </Link>
+                      {user?.role === 'admin' && (
+                        <Link to="/admin" onClick={() => setOpenProfile(false)} className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-ink-100 dark:hover:bg-white/5">
+                          <Shield className="w-4 h-4"/> Admin
+                        </Link>
+                      )}
+                    </div>
+                    <div className="border-t border-black/5 dark:border-white/10 pt-1">
+                      <button
+                        onClick={onLogout}
+                        data-testid="logout-button"
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-coral-500 hover:bg-coral-500/10"
+                      >
+                        <LogOut className="w-4 h-4"/> Sign out
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className={`lg:hidden p-2.5 rounded-xl transition-all duration-300 ${
-                isAdminPage
-                  ? 'glass-card-admin-hover text-slate-300'
-                  : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700'
-              }`}
-            >
-              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {/* Mobile */}
+            <button onClick={() => setOpenMobile((v) => !v)} className="lg:hidden w-9 h-9 rounded-full glass grid place-items-center" data-testid="nav-mobile-toggle">
+              {openMobile ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
           </div>
         </div>
+
+        {/* Mobile panel */}
+        <AnimatePresence>
+          {openMobile && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="lg:hidden overflow-hidden"
+            >
+              <div className="py-3 grid grid-cols-2 gap-2">
+                {NAV.map((it) => {
+                  const Icon = it.icon;
+                  const a = active(it.path);
+                  return (
+                    <Link
+                      key={it.path}
+                      to={it.path}
+                      onClick={() => setOpenMobile(false)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-2xl text-sm font-medium ${a ? 'bg-ink-950 text-white dark:bg-cyan-500 dark:text-ink-950' : 'glass'}`}
+                    >
+                      <Icon className="w-4 h-4"/> {it.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-
-      {/* Mobile Menu - Premium Style */}
-      {isMenuOpen && (
-        <div className={`lg:hidden border-t ${
-          isAdminPage
-            ? 'glass-card-admin border-slate-700/50'
-            : 'bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border-gray-200 dark:border-slate-800'
-        } animate-slide-down`}>
-          <div className="px-4 py-4 space-y-2">
-            {/* Mobile Navigation - Hidden on Admin Page */}
-            {!isAdminPage && navItems.map((item) => {
-              const Icon = item.icon;
-              const isItemActive = isActive(item.path);
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                    isItemActive
-                      ? isAdminPage
-                        ? 'bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 text-cyan-300 shadow-neon-cyan'
-                        : 'bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/30 dark:to-purple-900/30 text-indigo-600 dark:text-indigo-400'
-                      : isAdminPage
-                        ? 'text-slate-300 hover:bg-slate-800/50'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800'
-                  }`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <div className={`p-2 rounded-lg bg-gradient-to-br ${item.gradient} ${
-                    isItemActive ? 'shadow-lg' : 'opacity-70'
-                  }`}>
-                    <Icon className="w-4 h-4 text-white" />
-                  </div>
-                  <span className="font-bold flex-1">{item.label}</span>
-                  {isItemActive && <Sparkles className="w-4 h-4 animate-pulse" />}
-                </Link>
-              );
-            })}
-
-            {/* Admin Link - Mobile - Hidden when already on admin page */}
-            {user?.role === 'admin' && !isAdminPage && (
-              <Link
-                to="/admin"
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                  isActive('/admin')
-                    ? 'bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 text-white shadow-neon-cyan'
-                    : isAdminPage
-                      ? 'text-slate-300 hover:bg-slate-800/50'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800'
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Shield className="w-5 h-5" />
-                <span className="font-bold">Admin Dashboard</span>
-              </Link>
-            )}
-
-            <div className={`border-t ${
-              isAdminPage ? 'border-slate-700/50' : 'border-gray-200 dark:border-slate-700'
-            } my-3`}></div>
-
-            {/* Browse Users - Mobile */}
-            <button
-              onClick={() => {
-                setShowBrowseUsers(true);
-                setIsMenuOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                isAdminPage
-                  ? 'bg-gradient-to-r from-cyan-500 to-purple-600 text-white shadow-neon-cyan'
-                  : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700'
-              }`}
-            >
-              <Users className="w-5 h-5" />
-              <span className="font-bold">Browse Users</span>
-            </button>
-
-            {/* Settings - Mobile */}
-            <Link
-              to="/settings"
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                isAdminPage
-                  ? 'text-slate-300 hover:bg-slate-800/50'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800'
-              }`}
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <Settings className="w-5 h-5" />
-              <span className="font-bold">Settings</span>
-            </Link>
-
-            {/* Logout - Mobile */}
-            <button
-              onClick={() => {
-                handleLogout();
-                setIsMenuOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                isAdminPage
-                  ? 'text-red-400 hover:bg-red-500/20 border border-red-500/30'
-                  : 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
-              }`}
-            >
-              <LogOut className="w-5 h-5" />
-              <span className="font-bold">Logout</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      <style jsx>{`
-        @keyframes slide-down {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-slide-down {
-          animation: slide-down 0.3s ease-out forwards;
-        }
-      `}</style>
-
-      {/* Browse Users Modal */}
-      <BrowseUsersModal 
-        isOpen={showBrowseUsers} 
-        onClose={() => setShowBrowseUsers(false)} 
-      />
-      {/* Notifications Panel */}
-      <NotificationsPanel
-        isOpen={showNotifications}
-        onClose={() => {
-          setShowNotifications(false);
-          loadNotificationCount(); // Refresh count when closing
-        }}
-      />
-    </nav>
+    </motion.nav>
   );
 };
 
