@@ -52,7 +52,9 @@ const Teams = () => {
   ];
 console.log(teamMembers[0].image);
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
+        <div className="min-h-screen relative aurora-bg grid-bg overflow-hidden text-ink-950 dark:text-white">
+      <div className="blob w-[520px] h-[520px] -left-40 -top-32 bg-cyan-400/30 pointer-events-none" />
+      <div className="blob w-[440px] h-[440px] -right-32 top-40 bg-coral-400/25 pointer-events-none" style={{ animationDelay: '-6s' }} />
       <Navbar />
       
       {/* Hero Section */}

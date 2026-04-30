@@ -257,7 +257,9 @@ const Profile = () => {
   const TrustIcon = trustBadge.icon;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]" data-testid="profile-page">
+        <div className="min-h-screen relative aurora-bg grid-bg overflow-hidden text-ink-950 dark:text-white" data-testid="profile-page">
+      <div className="blob w-[520px] h-[520px] -left-40 -top-32 bg-cyan-400/30 pointer-events-none" />
+      <div className="blob w-[440px] h-[440px] -right-32 top-40 bg-coral-400/25 pointer-events-none" style={{ animationDelay: '-6s' }} />
       {/* Google Font */}
       <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Satoshi:wght@400;500;600;700&display=swap" rel="stylesheet" />
       <style>{`

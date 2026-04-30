@@ -113,12 +113,14 @@ const Matches = () => {
   if (loading) {
     return (
       <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        <div className="min-h-screen relative aurora-bg grid-bg overflow-hidden text-ink-950 dark:text-white">
+          <div className="blob w-[520px] h-[520px] -left-40 -top-32 bg-cyan-400/30 pointer-events-none" />
+          <div className="blob w-[440px] h-[440px] -right-32 top-40 bg-coral-400/25 pointer-events-none" style={{ animationDelay: '-6s' }} />
           <Navbar />
           <div className="flex items-center justify-center h-[80vh]">
             <div className="text-center">
-              <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-              <p className="mt-4 text-gray-600 dark:text-gray-400">Finding your perfect matches...</p>
+              <div className="tc-spinner mx-auto" />
+              <p className="mt-4 font-display text-xl text-ink-700 dark:text-ink-200">Finding your perfect matches...</p>
             </div>
           </div>
         </div>
@@ -128,15 +130,17 @@ const Matches = () => {
 
   return (
     <div className={`${darkMode ? 'dark' : ''}`}>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="min-h-screen relative aurora-bg grid-bg overflow-hidden text-ink-950 dark:text-white">
+        <div className="blob w-[520px] h-[520px] -left-40 -top-32 bg-cyan-400/30 pointer-events-none" />
+        <div className="blob w-[440px] h-[440px] -right-32 top-40 bg-coral-400/25 pointer-events-none" style={{ animationDelay: '-6s' }} />
         <Navbar />
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h1 className="text-4xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
-                  Your Matches
+                   <h1 className="font-display text-5xl md:text-6xl leading-[.95] tracking-tight text-ink-950 dark:text-white mb-2">
+                  Your <span className="italic text-gradient">Matches</span>
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400">
                   AI-powered skill matching to help you grow

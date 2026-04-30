@@ -150,7 +150,9 @@ const Wallet = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-100 via-pink-100 to-purple-100" data-testid="wallet-page">
+     <div className="min-h-screen relative aurora-bg grid-bg overflow-hidden text-ink-950 dark:text-white" data-testid="wallet-page">
+      <div className="blob w-[520px] h-[520px] -left-40 -top-32 bg-cyan-400/30 pointer-events-none" />
+      <div className="blob w-[440px] h-[440px] -right-32 top-40 bg-coral-400/25 pointer-events-none" style={{ animationDelay: '-6s' }} />
       <Navbar />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
