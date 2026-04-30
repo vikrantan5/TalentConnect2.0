@@ -115,7 +115,7 @@ const Navbar = () => {
           {/* Right */}
           <div className="flex items-center gap-2">
             {/* Search */}
-            <div className="hidden md:flex items-center gap-2 glass rounded-full pl-3 pr-1 py-1">
+            {/* <div className="hidden md:flex items-center gap-2 glass rounded-full pl-3 pr-1 py-1">
               <Search className="w-4 h-4 text-ink-500" />
               <input
                 value={query}
@@ -125,7 +125,7 @@ const Navbar = () => {
                 data-testid="nav-search"
               />
               <kbd className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-ink-100 dark:bg-white/10 text-ink-600 dark:text-ink-200">⌘K</kbd>
-            </div>
+            </div> */}
 
             {/* Theme toggle */}
             <button
@@ -148,9 +148,9 @@ const Navbar = () => {
             </button>
 
             {/* AI quick */}
-            <Link to="/chatbot" className="hidden sm:inline-flex btn btn-cyan px-4 py-2 text-xs" data-testid="nav-ai-btn">
+            {/* <Link to="/chatbot" className="hidden sm:inline-flex btn btn-cyan px-4 py-2 text-xs" data-testid="nav-ai-btn">
               <Bot className="w-4 h-4" /> Ask AI
-            </Link>
+            </Link> */}
 
             {/* Notifications */}
             <button className="relative w-9 h-9 rounded-full glass grid place-items-center" data-testid="nav-bell">

@@ -6,50 +6,12 @@ import { Link } from 'react-router-dom';
 import { skillService, taskService, sessionService, dashboardService, activitiesService } from '../services/apiService';
 import axios from 'axios';
 import CalendarWidget from '../components/CalendarWidget';
-import { 
-  BookOpen, 
-  CheckCircle, 
-  Star, 
-  Target, 
-  PlusCircle, 
-  Briefcase, 
-  Bot, 
-  TrendingUp,
-  Users,
-  Award,
-  Clock,
-  Sparkles,
-  ArrowRight,
-  Calendar,
-  Zap,
-  Shield,
-  Code,
-  Palette,
-  Globe,
-  Camera,
-  Music,
-  PenTool,
-  Moon,
-  Sun,
-  Bell,
-  Settings,
-  Activity,
-  BarChart3,
-  PieChart,
-  Gift,
-  Rocket,
-  Crown,
-  Medal,
-  Trophy,
-  Flame,
-  Coffee,
-  Compass,
-  Heart,
-  Share2,
-  MoreHorizontal,
-  Coins,
-  Loader2,
-  User
+import {
+  BookOpen, CheckCircle, Star, Target, PlusCircle, Briefcase, Bot, TrendingUp,
+  Users, Award, Clock, Sparkles, ArrowRight, Calendar, Zap, Shield, Code,
+  Palette, Globe, Camera, Music, PenTool, Moon, Sun, Bell, Settings, Activity,
+  BarChart3, PieChart, Gift, Rocket, Crown, Medal, Trophy, Flame, Coffee,
+  Compass, Heart, Share2, MoreHorizontal, Coins, Loader2, User
 } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -72,9 +34,8 @@ const Dashboard = () => {
   const [loadingTokens, setLoadingTokens] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
-  
+
   useEffect(() => {
-    // Set greeting based on time of day
     const hour = new Date().getHours();
     if (hour < 12) setGreeting('Good morning');
     else if (hour < 18) setGreeting('Good afternoon');
@@ -84,14 +45,12 @@ const Dashboard = () => {
     loadRecommendedSkills();
     loadRecentActivities();
     loadTokenBalance();
-    // Hide welcome message after 5 seconds
     const timer = setTimeout(() => setShowWelcome(false), 5000);
     return () => clearTimeout(timer);
   }, []);
 
   const loadDashboardData = async () => {
-    try{
-      // Load user stats from NEW dashboard API
+    try {
       const dashboardStats = await dashboardService.getStats();
       setStats({
         totalSessions: dashboardStats.total_sessions || 0,
@@ -99,18 +58,16 @@ const Dashboard = () => {
         totalSkills: dashboardStats.skills_listed || 0,
         averageRating: dashboardStats.average_rating || 0,
       });
-      
-      // Set token balance if available
       if (dashboardStats.tokens !== undefined) {
         setTokenBalance(dashboardStats.tokens);
       }
-      
       setLoading(false);
     } catch (error) {
       console.error('Error loading dashboard:', error);
       setLoading(false);
     }
   };
+
   const loadRecommendedSkills = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -131,17 +88,14 @@ const Dashboard = () => {
       setRecommendedSkills([]);
     }
   };
+
   const loadRecentActivities = async () => {
     try {
-      // Use the correct activities endpoint
       const activities = await activitiesService.getRecent(20);
-      
-      // Format activities with time ago
       const formattedActivities = (activities || []).map(activity => ({
         ...activity,
         timeAgo: getTimeAgo(activity.time)
       }));
-      
       setRecentActivities(formattedActivities);
     } catch (error) {
       console.error('Error loading recent activities:', error);
@@ -151,11 +105,9 @@ const Dashboard = () => {
 
   const getTimeAgo = (dateString) => {
     if (!dateString) return 'Recently';
-    
     const date = new Date(dateString);
     const now = new Date();
     const seconds = Math.floor((now - date) / 1000);
-    
     if (seconds < 60) return 'Just now';
     if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
     if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
@@ -188,38 +140,27 @@ const Dashboard = () => {
 
   const getMotivationalQuote = () => {
     const quotes = [
-      { text: "The expert in anything was once a beginner.", author: "Helen Hayes" },
-      { text: "Learning is a treasure that will follow its owner everywhere.", author: "Chinese Proverb" },
-      { text: "The capacity to learn is a gift; the ability to learn is a skill; the willingness to learn is a choice.", author: "Brian Herbert" },
-      { text: "Education is the passport to the future, for tomorrow belongs to those who prepare for it today.", author: "Malcolm X" },
+      { text: 'The expert in anything was once a beginner.', author: 'Helen Hayes' },
+      { text: 'Learning is a treasure that will follow its owner everywhere.', author: 'Chinese Proverb' },
+      { text: 'The capacity to learn is a gift; the ability to learn is a skill; the willingness to learn is a choice.', author: 'Brian Herbert' },
+      { text: 'Education is the passport to the future, for tomorrow belongs to those who prepare for it today.', author: 'Malcolm X' },
     ];
     return quotes[Math.floor(Math.random() * quotes.length)];
   };
 
-  // Get quote once - this is the ONLY declaration
   const motivationalQuote = getMotivationalQuote();
 
   if (loading) {
     return (
-      <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className={`${darkMode ? 'dark' : ''}`}>
+        <div className="min-h-screen aurora-bg grid-bg relative overflow-hidden text-ink-950 dark:text-white">
+          <div className="blob w-[480px] h-[480px] -left-40 top-10 bg-cyan-400/30" />
+          <div className="blob w-[360px] h-[360px] right-[-6rem] top-[30%] bg-coral-400/30" style={{ animationDelay: '-4s' }} />
           <Navbar />
-          <div className="flex items-center justify-center h-[80vh]">
-            <div className="relative">  
-              {/* Animated Loading Spinner */}
-              <div className="w-24 h-24 relative">
-                <div className="absolute inset-0 rounded-full border-4 border-indigo-200 dark:border-indigo-900/30"></div>
-                <div className="absolute inset-0 rounded-full border-4 border-t-indigo-600 dark:border-t-indigo-400 animate-spin"></div>
-                <div className="absolute inset-2 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-gray-800 dark:to-gray-700 animate-pulse"></div>
-              </div>
-              
-              {/* Floating Particles */}
-              <div className="absolute -top-10 -left-10 w-20 h-20 bg-indigo-200/30 dark:bg-indigo-500/10 rounded-full blur-xl animate-pulse"></div>
-              <div className="absolute -bottom-10 -right-10 w-20 h-20 bg-purple-200/30 dark:bg-purple-500/10 rounded-full blur-xl animate-pulse animation-delay-1000"></div>
-              
-              <div className="mt-8 text-center">
-                <p className="text-gray-600 dark:text-gray-400 animate-pulse">Loading your dashboard...</p>
-              </div>
+          <div className="flex items-center justify-center h-[70vh]">
+            <div className="flex flex-col items-center gap-5">
+              <div className="tc-spinner" />
+              <p className="font-display text-xl text-ink-600 dark:text-ink-200">Loading your dashboard…</p>
             </div>
           </div>
         </div>
@@ -229,202 +170,145 @@ const Dashboard = () => {
 
   return (
     <div className={`${darkMode ? 'dark' : ''}`}>
-      <div className="min-h-screen relative bg-user-gradient " data-testid="dashboard-page">
-        {/* Overlay for better content visibility */}
-        <div className="absolute inset-0 bg-white/40 dark:bg-gray-900/60 backdrop-blur-sm"></div>
-        
+      <div className="min-h-screen aurora-bg grid-bg relative overflow-hidden text-ink-950 dark:text-white" data-testid="dashboard-page">
+        {/* Floating blobs — matches LandingPage */}
+        <div className="blob w-[520px] h-[520px] -left-40 top-10 bg-cyan-400/30" />
+        <div className="blob w-[380px] h-[380px] right-[-6rem] top-[30%] bg-coral-400/30" style={{ animationDelay: '-4s' }} />
+        <div className="blob w-[420px] h-[420px] left-[40%] bottom-[-10rem] bg-indigo-500/20" style={{ animationDelay: '-8s' }} />
+
         <div className="relative z-10">
           <Navbar />
         </div>
-        
-        {/* Subtle Animated Accents */}
-        <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 bg-gradient-to-br from-amber-100 via-pink-100 to-purple-100">
-          <div className="absolute top-20 right-20 w-72 h-72 bg-indigo-400/10 dark:bg-indigo-400/5 rounded-full mix-blend-multiply filter blur-3xl animate-float-smooth"></div>
-          <div className="absolute bottom-20 left-20 w-96 h-96 bg-purple-400/10 dark:bg-purple-400/5 rounded-full mix-blend-multiply filter blur-3xl animate-float-smooth" style={{animationDelay: '2s'}}></div>
-        </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 ">
-          {/* Welcome Section with Enhanced Glass Effect */}
-          <div className="relative mb-10 group animate-scale-in" data-testid="welcome-section">
-            <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-3xl blur-2xl opacity-60 group-hover:opacity-80 transition-opacity duration-500"></div>
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-1 shadow-premium-lg">
-              <div className="relative glass-card rounded-[22px] p-8 md:p-10">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-700/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
-                
-                <div className="relative flex items-center justify-between flex-wrap gap-8">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-6 mb-6">
-                      <div className="relative group">
-                        <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-3xl flex items-center justify-center text-5xl shadow-premium transform transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6">
-                          {getGreetingEmoji()}
-                        </div>
-                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full border-4 border-white dark:border-gray-800 animate-pulse shadow-lg"></div>
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-4 mb-2">
-                          <Sparkles className="w-8 h-8 text-yellow-300 animate-pulse" />
-                          <h1 className="text-5xl font-black text-white tracking-tight">
-                            {greeting}, {user?.full_name || user?.username}!
-                          </h1>
-                        </div>
-                        <p className="text-xl text-[#333333] font-medium">
-                          Ready to level up your skills today? ✨
-                        </p>
-                      </div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Welcome banner — ink-navy card with aurora lighting */}
+          <div className="relative mb-10 animate-scale-in" data-testid="welcome-section">
+            <div className="relative overflow-hidden rounded-[28px] bg-ink-950 text-white p-8 md:p-10 shadow-soft-lg">
+              <div
+                className="absolute inset-0 opacity-60"
+                style={{
+                  background:
+                    'radial-gradient(600px 400px at 10% -10%, rgba(34,211,238,.28), transparent 60%), radial-gradient(600px 500px at 95% 110%, rgba(255,106,91,.22), transparent 60%)',
+                }}
+              />
+              <div className="relative flex items-center justify-between flex-wrap gap-8">
+                <div className="flex-1 min-w-[260px]">
+                  <div className="flex items-center gap-5 mb-5">
+                    <div className="w-16 h-16 rounded-3xl bg-white/10 ring-1 ring-white/15 grid place-items-center text-3xl backdrop-blur-md">
+                      {getGreetingEmoji()}
                     </div>
-                    
-                    <div className="flex flex-wrap items-center gap-4 mt-6">
-                      <div className="px-5 py-2.5 bg-white/10 backdrop-blur-md rounded-full text-black text-sm font-semibold flex items-center gap-2 shadow-lg hover:scale-105 transition-transform duration-300">
-                        <Calendar className="w-5 h-5" />
-                        Member since {new Date(user?.created_at || Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                      </div>
-                 
-                      <div className="px-5 py-2.5 bg-purple-400/30 backdrop-blur-md rounded-full text-purple-600 text-sm font-semibold flex items-center gap-2 shadow-lg hover:scale-105 transition-transform duration-300">
-                        <Trophy className="w-5 h-5" />
-                        {stats.averageRating > 0 ? `${stats.averageRating} ⭐ Rating` : 'New Member'}
-                      </div>
-                      <div className="px-5 py-2.5 bg-green-400/30 backdrop-blur-md rounded-full text-green-600 text-sm font-semibold flex items-center gap-2 shadow-lg hover:scale-105 transition-transform duration-300" data-testid="token-balance-badge">
-                        <Coins className="w-5 h-5" />
-                        {loadingTokens ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <>Tokens: {tokenBalance?.balance || 0}</>
-                        )}
-                      </div>
+                    <div>
+                      <span className="chip chip-cyan mb-3">
+                        <Sparkles className="w-3 h-3" /> {greeting.toLowerCase()}
+                      </span>
+                      <h1 className="font-display text-4xl md:text-5xl leading-[1] tracking-tight">
+                        Hey <span className="italic text-gradient-cyan">{user?.full_name || user?.username}</span>,
+                        <br /> ready to <span className="italic text-gradient">grow</span>?
+                      </h1>
                     </div>
-                  </div>  
-                  
-                  {/* Motivational Quote Card with Enhanced Design */}
-                  <div className="hidden lg:block relative group max-w-xs">
-                    <div className="absolute inset-0 bg-gradient-to-r from-yellow-600 to-orange-700 rounded-3xl blur-xl opacity-40 group-hover:opacity-60 transition-opacity duration-500"></div>
-                    <div className="relative glass-card rounded-3xl p-8 border-2 border-white/30 shadow-premium transform transition-all duration-500 hover:scale-105">
-                      <Coffee className="w-10 h-10 text-yellow-400 mb-4 animate-float-smooth" />
-                      <p className="text-black text-base italic font-medium leading-relaxed mb-4">
-                        "{motivationalQuote.text}"
-                      </p>
-                      <p className="text-black text-sm font-semibold">
-                        — {motivationalQuote.author}
-                      </p>
-                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2.5 mt-6">
+                    <span className="chip chip-ink ring-1 ring-white/10 bg-white/5 text-white">
+                      <Calendar className="w-3.5 h-3.5" />
+                      Member since {new Date(user?.created_at || Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                    </span>
+                    <span className="chip chip-coral">
+                      <Trophy className="w-3.5 h-3.5" />
+                      {stats.averageRating > 0 ? `${stats.averageRating} ★ rating` : 'New member'}
+                    </span>
+                    <span className="chip chip-cyan" data-testid="token-balance-badge">
+                      <Coins className="w-3.5 h-3.5" />
+                      {loadingTokens ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>Tokens · {tokenBalance?.balance || 0}</>}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Motivational quote card */}
+                <div className="hidden lg:block max-w-xs">
+                  <div className="relative glass rounded-[24px] p-6 bg-white/5 border-white/10">
+                    <Coffee className="w-7 h-7 text-cyan-300 mb-3" />
+                    <p className="font-display text-xl leading-snug text-white/95 italic">“{motivationalQuote.text}”</p>
+                    <p className="mt-3 text-xs uppercase tracking-widest text-ink-300">— {motivationalQuote.author}</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Enhanced Stats Grid with Premium Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
+          {/* Stats grid — bento cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-5 mb-10">
             {[
-                 { icon: BookOpen, label: 'Total Sessions', value: stats.totalSessions, color: 'blue', iconBg: 'from-blue-500 to-cyan-400', borderColor: 'border-blue-200/50 dark:border-blue-800/50' },
-              { icon: CheckCircle, label: 'Tasks Completed', value: stats.totalTasks, color: 'green', iconBg: 'from-green-500 to-emerald-400', borderColor: 'border-green-200/50 dark:border-green-800/50' },
-              { icon: Star, label: 'Average Rating', value: stats.averageRating.toFixed(1), suffix: ' ⭐', color: 'yellow', iconBg: 'from-yellow-500 to-orange-400', borderColor: 'border-yellow-200/50 dark:border-yellow-800/50' },
-              { icon: Target, label: 'Skills Listed', value: stats.totalSkills, color: 'purple', iconBg: 'from-purple-500 to-pink-400', borderColor: 'border-purple-200/50 dark:border-purple-800/50' },
-              { 
-                icon: Coins, 
-                label: 'Skill Tokens', 
-                value: loadingTokens ? '...' : (tokenBalance?.balance || 0), 
-                color: 'indigo', 
-                // trend: '+' + (tokenBalance?.total_earned || 0), 
-                iconBg: 'from-indigo-500 to-purple-400',
-                borderColor: 'border-indigo-200/50 dark:border-indigo-800/50'
+              { icon: BookOpen, label: 'Total Sessions', value: stats.totalSessions, iconBg: 'from-cyan-400 to-cyan-600' },
+              { icon: CheckCircle, label: 'Tasks Completed', value: stats.totalTasks, iconBg: 'from-emerald-400 to-emerald-600' },
+              { icon: Star, label: 'Average Rating', value: stats.averageRating.toFixed(1), suffix: ' ★', iconBg: 'from-amber-400 to-coral-400' },
+              { icon: Target, label: 'Skills Listed', value: stats.totalSkills, iconBg: 'from-indigo-400 to-indigo-600' },
+              {
+                icon: Coins,
+                label: 'Skill Tokens',
+                value: loadingTokens ? '...' : (tokenBalance?.balance || 0),
+                iconBg: 'from-coral-400 to-coral-600',
               },
             ].map((stat, index) => {
               const Icon = stat.icon;
               return (
                 <div
                   key={index}
-                  className="group relative animate-scale-in"
-                  style={{ animationDelay: `${index * 0.1}s` }}
+                  className="bento bento-glow p-6 animate-scale-in"
+                  style={{ animationDelay: `${index * 0.08}s` }}
+                  data-testid={`stat-${stat.label.toLowerCase().replace(/s+/g, '-')}`}
                 >
-                  {/* Premium Card with Modern Design */}
-                  <div className={`relative glass-card  rounded-3xl p-7 bg-gradient-to-br from-red-200 via-pink-200 to-blue-200 hover:shadow-premium-lg transition-all duration-500 transform hover:-translate-y-3 hover:scale-105 border-2 ${stat.borderColor} overflow-hidden`}>
-                    {/* Gradient Overlay on Hover */}
-                    <div className={`absolute inset-0 bg-gradient-to-br ${stat.iconBg} opacity-0 group-hover:opacity-5 transition-opacity duration-500`}></div>
-                    
-                    <div className="relative z-10">
-                      <div className="flex items-start justify-between mb-5">
-                        <div
-                          className={`p-4 bg-gradient-to-br ${stat.iconBg} rounded-2xl text-white shadow-lg 
-                          transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500`}
-                        >
-                          <Icon className="w-7 h-7" />
-                        </div>
-
-                      </div>
-                      
-                      <p className="text-gray-600 dark:text-gray-400 text-sm font-semibold mb-2 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
-                        {stat.label}
-                      </p>
-                      <p className="text-4xl font-black text-gray-900 dark:text-white mb-4 group-hover:scale-110 transform transition-transform origin-left">
-                        {stat.value}{stat.suffix || ''}
-                      </p>
-                      
-                      {/* Animated Progress Bar */}
-                      <div className="h-2 bg-gray-100 dark:bg-gray-700/50 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full bg-gradient-to-r ${stat.iconBg} rounded-full transition-all duration-1000 ease-out`}
-                          style={{ width: `${Math.min(100, (stat.value / 100) * 100)}%` }}
-                        ></div>
-                      </div>
-                    </div>
+                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${stat.iconBg} text-white grid place-items-center shadow-soft`}>
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <p className="mt-5 text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300">{stat.label}</p>
+                  <p className="font-display text-5xl mt-1 leading-none">
+                    {stat.value}{stat.suffix || ''}
+                  </p>
+                  <div className="mt-4 h-1.5 rounded-full bg-black/5 dark:bg-white/10 overflow-hidden">
+                    <div
+                      className={`h-full bg-gradient-to-r ${stat.iconBg} rounded-full animate-progress`}
+                      style={{ width: `${Math.min(100, (Number(stat.value) / 100) * 100)}%` }}
+                    />
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Enhanced Quick Actions with Modern Design */}
-          <div className="glass-card  rounded-3xl p-8 bg-gradient-to-br from-blue-200 via-emerald-200 to-lime-200 mb-10 border border-white/20 dark:border-gray-700/30" data-testid="quick-actions">
-            <div className="flex items-center justify-between mb-8">
+          {/* Quick Actions */}
+          <div className="bento p-8 mb-10" data-testid="quick-actions">
+            <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
               <div>
-                <h2 className="text-3xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
-                  Quick Actions
+                <span className="chip chip-coral mb-3"><Zap className="w-3 h-3" /> hot today</span>
+                <h2 className="font-display text-4xl md:text-5xl leading-tight">
+                  Quick <span className="italic text-gradient">actions</span>
                 </h2>
-                <p className="text-gray-600 dark:text-gray-400">Recommended for you today</p>
-              </div>
-              <div className="flex items-center gap-3 px-5 py-2.5 bg-yellow-50 dark:bg-yellow-900/20 rounded-full border border-yellow-200 dark:border-yellow-800">
-                <Zap className="w-5 h-5 text-yellow-600 dark:text-yellow-400 animate-pulse" />
-                <span className="text-sm font-semibold text-yellow-700 dark:text-yellow-300">Hot Today</span>
+                <p className="mt-2 text-ink-500 dark:text-ink-300">Recommended for you today</p>
               </div>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {[
-                { to: '/skills', icon: PlusCircle, title: 'Add Skills', desc: 'List your expertise', color: 'indigo', gradient: 'from-indigo-500 via-indigo-600 to-purple-600' },
-                { to: '/tasks', icon: Briefcase, title: 'Browse Tasks', desc: 'Find earning opportunities', color: 'green', gradient: 'from-green-500 via-green-600 to-emerald-600' },
-                { to: '/chatbot', icon: Bot, title: 'AI Assistant', desc: 'Get learning guidance', color: 'purple', gradient: 'from-purple-500 via-purple-600 to-pink-600' },
+                { to: '/skills', icon: PlusCircle, title: 'Add Skills', desc: 'List your expertise', gradient: 'from-cyan-400 to-indigo-500' },
+                { to: '/tasks', icon: Briefcase, title: 'Browse Tasks', desc: 'Find earning opportunities', gradient: 'from-emerald-400 to-cyan-500' },
+                { to: '/chatbot', icon: Bot, title: 'AI Assistant', desc: 'Get learning guidance', gradient: 'from-coral-400 to-pink-500' },
               ].map((action, index) => {
                 const Icon = action.icon;
                 return (
                   <Link
                     key={index}
                     to={action.to}
-                    className="group relative overflow-hidden rounded-2xl p-8 glass-card hover:shadow-premium-lg transition-all duration-500 transform hover:-translate-y-2 hover:scale-105 border-2 border-transparent hover:border-white/30"
-                    data-testid={`action-${action.title.toLowerCase().replace(' ', '-')}`}
+                    className="group bento bento-glow p-7 block"
+                    data-testid={`action-${action.title.toLowerCase().replace(/s+/g, '-')}`}
                   >
-                    {/* Animated Gradient Background */}
-                    <div className={`absolute inset-0 bg-gradient-to-br ${action.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-700`}></div>
-                    
-                    <div className="relative z-10">
-                      <div className="relative mb-6">
-                        <div className={`w-16 h-16 bg-gradient-to-br ${action.gradient} rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500 shadow-lg`}>
-                          <Icon className={`w-8 h-8 text-white`} />
-                        </div>
-                        <div className="absolute -top-2 -right-2 w-5 h-5 bg-green-500 rounded-full border-3 border-white dark:border-gray-800 animate-pulse opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      </div>
-                      
-                      <h3 className={`font-black text-gray-900 dark:text-white mb-2 text-2xl group-hover:text-white transition-colors`}>
-                        {action.title}
-                      </h3>
-                      <p className={`text-base text-gray-600 dark:text-gray-400 group-hover:text-white/90 transition-colors font-medium`}>
-                        {action.desc}
-                      </p>
-                      
-                      {/* Animated Arrow */}
-                      <div className="absolute bottom-8 right-8 transform translate-x-0 group-hover:translate-x-2 transition-transform duration-500">
-                        <ArrowRight className="w-6 h-6 text-gray-400 group-hover:text-white" />
-                      </div>
+                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${action.gradient} grid place-items-center shadow-soft transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`}>
+                      <Icon className="w-7 h-7 text-white" />
+                    </div>
+                    <h3 className="font-display text-3xl mt-5 leading-tight">{action.title}</h3>
+                    <p className="mt-1 text-sm text-ink-500 dark:text-ink-300">{action.desc}</p>
+                    <div className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-ink-950 dark:text-white">
+                      Explore <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                     </div>
                   </Link>
                 );
@@ -432,310 +316,171 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Enhanced Activity and Recommendations Grid */}
-          <div className="grid lg:grid-cols-3 gap-8 mb-10">
-            {/* Recent Activity with Modern Cards */}
-            {/* <div className="lg:col-span-2 glass-card rounded-3xl p-8 bg-gradient-to-br from-pink-200 via-rose-200 to-purple-200 border border-white/20 dark:border-gray-700/30">
-              <div className="flex items-center justify-between mb-8">
+          {/* Activity + Sidebar */}
+          <div className="grid lg:grid-cols-3 gap-5 mb-10">
+            {/* Recent Activity — left 2/3 */}
+            <div className="lg:col-span-2 bento p-8" data-testid="recent-activity">
+              <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
                 <div>
-                  <h2 className="text-3xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
-                    Recent Activity
+                  <span className="chip chip-cyan mb-3"><Activity className="w-3 h-3" /> live feed</span>
+                  <h2 className="font-display text-3xl md:text-4xl leading-tight">
+                    Recent <span className="italic text-gradient-cyan">activity</span>
                   </h2>
-                  <p className="text-gray-600 dark:text-gray-400">Your latest interactions</p>
+                  <p className="mt-1 text-sm text-ink-500 dark:text-ink-300">Your latest interactions</p>
                 </div>
-                <button className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all">
-                  View all
-                  <ArrowRight className="w-4 h-4" />
+                <button className="btn btn-ghost text-xs">
+                  View all <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
-              
-              <div className="space-y-4">
-                {recentActivities.map((activity, index) => {
-                  const Icon = activity.icon || Activity;
-                  return (
-                    <div
-                      key={index}
-                      className="group relative overflow-hidden p-6 glass-card rounded-2xl hover:shadow-lg transition-all duration-500 animate-scale-in border border-gray-100 dark:border-gray-700/50 hover:-translate-y-1"
-                      style={{ animationDelay: `${index * 0.1}s` }}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                      
-                      <div className="relative flex items-center gap-5">
-                        <div className={`p-4 bg-gradient-to-br ${activity.color === 'blue' ? 'from-blue-500 to-cyan-400' : activity.color === 'green' ? 'from-green-500 to-emerald-400' : activity.color === 'purple' ? 'from-purple-500 to-pink-400' : 'from-yellow-500 to-orange-400'} rounded-2xl group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500 shadow-lg`}>
-                          <Icon className="w-6 h-6 text-white" />
-                        </div>
-                        
-                        <div className="flex-1">
-                          <p className="font-bold text-gray-900 dark:text-white text-lg mb-1">{activity.title}</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{activity.timeAgo || activity.time}</p>
-                        </div>
-                        
-                        <button className="p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-all opacity-0 group-hover:opacity-100">
-                          <MoreHorizontal className="w-5 h-5 text-gray-500" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div> */}
 
-              {/* Activity Chart Placeholder */}
-              {/* <div className="mt-8 p-6 glass-card rounded-2xl border border-gray-100 dark:border-gray-700/50">
-              </div>
-            </div> */}
-            
-            {/* Enhanced Right Sidebar */}
-            <div className="space-y-8">
-              {/* Premium Achievement Card
-              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 p-1 shadow-premium-lg group">
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 translate-y-full group-hover:translate-y-0 transition-transform duration-700"></div>
-                
-                <div className="relative glass-card rounded-[22px] p-8 text-white">
-                  <div className="flex items-center justify-between mb-6">
-                    <Crown className="w-10 h-10 text-yellow-300 animate-float-smooth" />
-                    <span className="px-4 py-2 bg-white/25 backdrop-blur-md rounded-full text-sm font-bold">Level 5</span>
-                  </div>
-                  
-                  <h3 className="text-2xl font-black mb-3">Skill Seeker</h3>
-                  <p className="text-white/90 text-sm mb-6 font-medium">Complete 10 more sessions to reach next level</p>
-                  
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm font-semibold">
-                      <span>Progress to Level 6</span>
-                      <span>65%</span>
-                    </div>
-                    <div className="h-3 bg-white/20 rounded-full overflow-hidden backdrop-blur-sm">
-                      <div className="h-full bg-gradient-to-r from-white to-yellow-300 rounded-full animate-progress shadow-lg" style={{ width: '65%' }}></div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-6 flex items-center gap-3 p-4 bg-white/15 backdrop-blur-md rounded-2xl">
-                    <Medal className="w-6 h-6 text-yellow-300" />
-                    <span className="text-sm font-semibold">3 achievements this month</span>
-                  </div>
+              {recentActivities.length === 0 ? (
+                <div className="empty-state">
+                  <Activity className="w-8 h-8 text-ink-400" />
+                  <p className="font-display text-2xl">No activity yet</p>
+                  <p className="text-sm text-ink-500 max-w-sm">
+                    Start a session, post a skill, or browse tasks — your journey will show up here.
+                  </p>
+                  <Link to="/skills" className="btn btn-cyan mt-2">
+                    Get started <ArrowRight className="w-4 h-4" />
+                  </Link>
                 </div>
-              </div> */}
-
-              {/* Enhanced Recommended Skills */}
-              {/* <div className="glass-card rounded-3xl p-8 bg-gradient-to-br from-amber-200 via-pink-200 to-purple-200 border border-white/20 dark:border-gray-700/30">
-                <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2 flex items-center gap-3">
-                  <Sparkles className="w-7 h-7 text-yellow-500" />
-                  Recommended Skills
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">Curated for you</p>
-                
-                <div className="space-y-4">
-                  {recommendedSkills.slice(0, 4).map((skill, index) => {
-                    const Icon = skill.icon;
+              ) : (
+                <div className="space-y-3">
+                  {recentActivities.slice(0, 6).map((activity, index) => {
+                    const Icon = activity.icon || Activity;
+                    const palette = activity.color === 'blue' ? 'from-cyan-400 to-cyan-600'
+                      : activity.color === 'green' ? 'from-emerald-400 to-cyan-500'
+                      : activity.color === 'purple' ? 'from-indigo-400 to-indigo-600'
+                      : 'from-coral-400 to-coral-600';
                     return (
                       <div
                         key={index}
-                        className="group flex items-center justify-between p-5 glass-card rounded-2xl hover:shadow-lg transition-all cursor-pointer border border-gray-100 dark:border-gray-700/50 hover:-translate-y-1 duration-300"
+                        className="group flex items-center gap-4 p-4 rounded-2xl glass hover:shadow-soft transition-all animate-scale-in border border-transparent hover:border-black/5 dark:hover:border-white/10"
+                        style={{ animationDelay: `${index * 0.06}s` }}
                       >
-                        <div className="flex items-center gap-4 flex-1">
-                          <div className={`p-3 bg-gradient-to-br ${skill.color} rounded-xl text-white transform group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500 shadow-lg`}>
-                            <Icon className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <p className="font-bold text-gray-900 dark:text-white text-base">{skill.name}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{skill.students} students</p>
-                          </div>
+                        <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${palette} grid place-items-center text-white shadow-soft transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 shrink-0`}>
+                          <Icon className="w-5 h-5" />
                         </div>
-                        <button className="p-3 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all transform hover:scale-110">
-                          <PlusCircle className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-ink-950 dark:text-white truncate">{activity.title}</p>
+                          <p className="text-xs text-ink-500 dark:text-ink-300 mt-0.5">{activity.timeAgo || activity.time}</p>
+                        </div>
+                        <button className="opacity-0 group-hover:opacity-100 transition-opacity w-9 h-9 rounded-full grid place-items-center hover:bg-black/5 dark:hover:bg-white/10">
+                          <MoreHorizontal className="w-4 h-4 text-ink-500" />
                         </button>
                       </div>
                     );
                   })}
                 </div>
-                
-                <button className="w-full mt-6 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-bold rounded-2xl hover:shadow-premium-lg transition-all transform hover:scale-105 flex items-center justify-center gap-2">
-                  View all recommendations
-                  <ArrowRight className="w-5 h-5" />
-                </button>
-              </div> */}
-
-              {/* Calendar Widget */}
-              {/* <CalendarWidget userId={user?.id} /> */}
+              )}
             </div>
-          {/* </div>
 
-          {/* Premium Bottom Banner */}
-          {/* <div className="relative overflow-hidden rounded-3xl p-1 bg-gradient-to-br from-yellow-200 via-orange-200 to-teal-200 group">
-            <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 blur-2xl opacity-60 group-hover:opacity-80 transition-opacity duration-500 animate-gradient"></div>
-            <div className="relative bg-gradient-to-r from-yellow-500 via-orange-600 to-red-600 rounded-[22px] p-8 text-white">
-              <div className="flex items-center justify-between flex-wrap gap-6">
-                <div className="flex items-center gap-6">
-                  <div className="w-16 h-16 bg-white/25 backdrop-blur-md rounded-2xl flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500">
-                    <Gift className="w-8 h-8 text-white" />
+            {/* Right sidebar */}
+            <div className="space-y-5">
+              {/* Achievement card */}
+              <div className="bento bento-glow p-7 bg-ink-950 text-white relative overflow-hidden" data-testid="achievement-card">
+                <div className="absolute inset-0 opacity-60" style={{ background: 'radial-gradient(500px 300px at 100% -10%, rgba(34,211,238,.3), transparent 60%), radial-gradient(400px 300px at -10% 110%, rgba(255,106,91,.22), transparent 60%)' }} />
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-5">
+                    <Crown className="w-8 h-8 text-amber-300" />
+                    <span className="chip chip-cyan">Level 5</span>
                   </div>
-                  <div>
-                    <h3 className="text-3xl font-black mb-2">🎉 Special Offer!</h3>
-                    <p className="text-white/95 text-lg font-medium">Get 20% off on premium mentorship sessions this week</p>
+                  <h3 className="font-display text-3xl">Skill Seeker</h3>
+                  <p className="text-sm text-ink-300 mt-1">Complete 10 more sessions to reach the next level.</p>
+
+                  <div className="mt-6">
+                    <div className="flex justify-between text-xs font-semibold mb-2 text-ink-300">
+                      <span>Progress to Level 6</span>
+                      <span>65%</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                      <div className="h-full rounded-full animate-progress" style={{ width: '65%', background: 'linear-gradient(90deg,#22d3ee,#ff6a5b)' }} />
+                    </div>
+                  </div>
+
+                  <div className="mt-5 flex items-center gap-2.5 p-3 rounded-2xl bg-white/5 ring-1 ring-white/10">
+                    <Medal className="w-5 h-5 text-amber-300" />
+                    <span className="text-xs text-ink-200">3 achievements this month</span>
                   </div>
                 </div>
-                <button className="px-8 py-4 bg-white text-orange-600 rounded-2xl font-black text-lg hover:shadow-2xl transform hover:scale-110 transition-all duration-300">
-                  Claim Offer
-                </button>
               </div>
-            </div>  */}
+
+              {/* Recommended Skills */}
+              {recommendedSkills.length > 0 && (
+                <div className="bento p-7" data-testid="recommended-skills">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Sparkles className="w-4 h-4 text-cyan-500" />
+                    <span className="chip chip-cyan">curated</span>
+                  </div>
+                  <h3 className="font-display text-2xl mt-3">Recommended skills</h3>
+                  <p className="text-xs text-ink-500 dark:text-ink-300">Handpicked for your goals</p>
+
+                  <div className="mt-5 space-y-2.5">
+                    {recommendedSkills.slice(0, 4).map((skill, i) => {
+                      const Icon = skill.icon;
+                      return (
+                        <div
+                          key={i}
+                          className="group flex items-center gap-3 p-3 rounded-2xl glass hover:shadow-soft transition-all cursor-pointer"
+                        >
+                          <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${skill.color} grid place-items-center text-white shadow-soft transition-transform duration-500 group-hover:scale-110`}>
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm truncate">{skill.name}</p>
+                            <p className="text-[11px] text-ink-500 dark:text-ink-300">{skill.students} students</p>
+                          </div>
+                          <button className="w-8 h-8 rounded-full grid place-items-center hover:bg-cyan-500/10 transition">
+                            <PlusCircle className="w-4 h-4 text-cyan-500" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <Link to="/skills" className="btn btn-ghost w-full mt-5">
+                    View all <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              )}
+
+              {/* Calendar Widget */}
+              {user?.id && (
+                <div className="bento p-0 overflow-hidden">
+                  <CalendarWidget userId={user.id} />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Bottom Promo Banner */}
+          <div className="relative overflow-hidden rounded-[28px] bg-ink-950 text-white p-8 md:p-10 shadow-soft-lg" data-testid="promo-banner">
+            <div
+              className="absolute inset-0 opacity-70"
+              style={{
+                background:
+                  'radial-gradient(500px 300px at 10% -10%, rgba(255,106,91,.35), transparent 60%), radial-gradient(500px 400px at 95% 110%, rgba(34,211,238,.25), transparent 60%)',
+              }}
+            />
+            <div className="relative flex items-center justify-between gap-6 flex-wrap">
+              <div className="flex items-center gap-5">
+                <div className="w-14 h-14 rounded-2xl bg-white/10 ring-1 ring-white/15 grid place-items-center backdrop-blur-md">
+                  <Gift className="w-7 h-7 text-coral-300" />
+                </div>
+                <div>
+                  <span className="chip chip-coral mb-2">limited</span>
+                  <h3 className="font-display text-3xl md:text-4xl leading-tight">
+                    Special <span className="italic text-gradient">offer</span>
+                  </h3>
+                  <p className="text-sm text-ink-300 mt-1">Get 20% off on premium mentorship sessions this week.</p>
+                </div>
+              </div>
+              <Link to="/sessions" className="btn btn-coral px-6 py-3">
+                Claim offer <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
           </div>
         </div>
-
-        <style jsx>{`
-          @keyframes blob {
-            0%, 100% { transform: translate(0px, 0px) scale(1); }
-            33% { transform: translate(30px, -50px) scale(1.1); }
-            66% { transform: translate(-20px, 20px) scale(0.9); }
-          }
-          
-          @keyframes float-slow {
-            0%, 100% { transform: translate(0px, 0px) scale(1); }
-            50% { transform: translate(20px, -20px) scale(1.05); }
-          }
-          
-          @keyframes float-particle {
-            0%, 100% { transform: translate(0, 0); }
-            50% { transform: translate(20px, -20px); }
-          }
-          
-          @keyframes slide-in-right {
-            from {
-              transform: translateX(100%);
-              opacity: 0;
-            }
-            to {
-              transform: translateX(0);
-              opacity: 1;
-            }
-          }
-          
-          @keyframes slide-in-up {
-            from {
-              transform: translateY(20px);
-              opacity: 0;
-            }
-            to {
-              transform: translateY(0);
-              opacity: 1;
-            }
-          }
-          
-          .animate-blob {
-            animation: blob 7s infinite;
-          }
-          
-          .animate-float-slow {
-            animation: float-slow 8s ease-in-out infinite;
-          }
-          
-          .animate-float-particle {
-            animation: float-particle 8s ease-in-out infinite;
-          }
-          
-          .animate-slide-in-right {
-            animation: slide-in-right 0.5s ease-out forwards;
-          }
-          
-          .animate-slide-in-up {
-            animation: slide-in-up 0.5s ease-out forwards;
-            opacity: 0;
-          }
-          
-          .animation-delay-2000 {
-            animation-delay: 2s;
-          }
-          
-          .animation-delay-4000 {
-            animation-delay: 4s;
-          }
-          
-          .animation-delay-1000 {
-            animation-delay: 1s;
-          }
-          
-          @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-          }
-          
-          .animate-float {
-            animation: float 3s ease-in-out infinite;
-          }
-          
-          @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-          }
-          
-          .animate-gradient {
-            background-size: 200% 200%;
-            animation: gradient 3s ease infinite;
-          }
-          
-          @keyframes progress {
-            0% { width: 0%; }
-          }
-          
-          .animate-progress {
-            animation: progress 1s ease-out forwards;
-          }
-          
-          @keyframes pulse-slow {
-            0%, 100% { opacity: 0.75; }
-            50% { opacity: 1; }
-          }
-          
-          .animate-pulse-slow {
-            animation: pulse-slow 3s ease-in-out infinite;
-          }
-          
-          /* 3D Effects */
-          .perspective-1000 {
-            perspective: 1000px;
-          }
-          
-          .preserve-3d {
-            transform-style: preserve-3d;
-          }
-          
-          .rotate-y-6 {
-            transform: rotateY(6deg);
-          }
-          
-          .transform-gpu {
-            transform: translateZ(0);
-          }
-          
-          .transform-z-[-10px] {
-            transform: translateZ(-10px);
-          }
-          
-          /* Dark mode transitions */
-          .dark {
-            color-scheme: dark;
-          }
-          
-          /* Custom scrollbar */
-          ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-          }
-          
-          ::-webkit-scrollbar-track {
-            background: transparent;
-          }
-          
-          ::-webkit-scrollbar-thumb {
-            background: rgba(99, 102, 241, 0.3);
-            border-radius: 4px;
-          }
-          
-          ::-webkit-scrollbar-thumb:hover {
-            background: rgba(99, 102, 241, 0.5);
-          }
-        `}</style>
 
         {/* User Profile Modal */}
         {showProfileModal && selectedUserId && (
