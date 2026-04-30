@@ -371,14 +371,12 @@ years_experience: ''
   const displayedMentors = filterMentorsByType(filterMentorsByLevel(sortMentors(mentors)));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-100 via-pink-100 to-purple-100 dark:from-gray-900 dark:via-indigo-950 dark:to-purple-950" data-testid="skill-marketplace-page">
+    <div className="min-h-screen relative aurora-bg grid-bg overflow-hidden text-ink-950 dark:text-white" data-testid="skill-marketplace-page">
       <Navbar />
-      
-      {/* Animated Background */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden bg-gradient-to-br from-amber-100 via-pink-100 to-purple-100">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-indigo-200 dark:bg-indigo-500/20 rounded-full blur-3xl opacity-20 animate-blob"></div>
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-200 dark:bg-purple-500/20 rounded-full blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-      </div>
+
+      {/* Decorative blobs matching Landing/Login aesthetic */}
+      <div className="blob w-[520px] h-[520px] -left-40 -top-32 bg-cyan-400/30 pointer-events-none" />
+      <div className="blob w-[440px] h-[440px] -right-32 top-40 bg-coral-400/25 pointer-events-none" style={{ animationDelay: '-6s' }} />
 
       {/* Notification Toast */}
       {notification.show && (
