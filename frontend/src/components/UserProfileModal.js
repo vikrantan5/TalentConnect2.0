@@ -35,7 +35,7 @@ const UserProfileModal = ({ userId, isOpen, onClose }) => {
       data-testid="user-profile-modal"
     >
       <div 
-        className="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+        className="bento bg-white dark:bg-ink-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}

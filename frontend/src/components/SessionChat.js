@@ -128,7 +128,7 @@ const SessionChat = ({ sessionId, onClose }) => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
+    <div className="flex flex-col h-full bento bg-white dark:bg-ink-900 rounded-lg overflow-hidden">
       {/* Header */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -205,7 +205,7 @@ const SessionChat = ({ sessionId, onClose }) => {
                     className={`rounded-2xl p-3 ${
                       isCurrentUser
                         ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
-                        : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700'
+                        : 'bento bg-white dark:bg-ink-900 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700'
                     }`}
                   >
                                         <p className="text-sm whitespace-pre-wrap break-words">{msg.content || msg.message || ''}</p>
@@ -224,7 +224,7 @@ const SessionChat = ({ sessionId, onClose }) => {
       </div>
 
       {/* Input */}
-      <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800">
+      <div className="border-t border-gray-200 dark:border-gray-700 p-4 bento bg-white dark:bg-ink-900">
         <div className="flex gap-2">
           <input
             type="text"

@@ -77,7 +77,7 @@ const MentorDetailModal = ({ isOpen, onClose, mentor, onBookSession, onSendMessa
       data-testid="mentor-detail-modal"
     >
       <div
-        className="bg-white dark:bg-gray-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+        className="bento bg-white dark:bg-ink-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
         {/* Header with Banner */}
@@ -96,7 +96,7 @@ const MentorDetailModal = ({ isOpen, onClose, mentor, onBookSession, onSendMessa
           {/* Avatar */}
           <div className="absolute -bottom-16 left-8">
             <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 p-1 shadow-2xl">
-              <div className="w-full h-full rounded-xl bg-white dark:bg-gray-800 flex items-center justify-center">
+              <div className="w-full h-full rounded-xl bento bg-white dark:bg-ink-900 flex items-center justify-center">
                 <span className="text-5xl font-bold text-indigo-600">
                   {(mentor.full_name || mentor.username)?.charAt(0).toUpperCase()}
                 </span>
@@ -258,7 +258,7 @@ const MentorDetailModal = ({ isOpen, onClose, mentor, onBookSession, onSendMessa
                   <input
                     type="date"
                     min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bento bg-white dark:bg-ink-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     value={bookingData.date}
                     onChange={(e) => setBookingData({ ...bookingData, date: e.target.value })}
                     data-testid="booking-date-input"
@@ -270,7 +270,7 @@ const MentorDetailModal = ({ isOpen, onClose, mentor, onBookSession, onSendMessa
                   </label>
                   <input
                     type="time"
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bento bg-white dark:bg-ink-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     value={bookingData.time}
                     onChange={(e) => setBookingData({ ...bookingData, time: e.target.value })}
                     data-testid="booking-time-input"
@@ -283,7 +283,7 @@ const MentorDetailModal = ({ isOpen, onClose, mentor, onBookSession, onSendMessa
                   Duration
                 </label>
                 <select
-                  className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bento bg-white dark:bg-ink-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   value={bookingData.duration}
                   onChange={(e) => setBookingData({ ...bookingData, duration: parseInt(e.target.value) })}
                   data-testid="booking-duration-select"
@@ -300,7 +300,7 @@ const MentorDetailModal = ({ isOpen, onClose, mentor, onBookSession, onSendMessa
                   Message (Optional)
                 </label>
                 <textarea
-                  className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bento bg-white dark:bg-ink-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   rows="3"
                   placeholder="What would you like to learn?"
                   value={bookingData.message}

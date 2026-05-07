@@ -96,7 +96,7 @@ const SessionRequestsPanel = () => {
       {requests.map((item) => (
         <div
           key={item.request.id}
-          className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700"
+          className="bento bg-white dark:bg-ink-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700"
         >
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3 flex-1">
@@ -157,7 +157,7 @@ const SessionRequestsPanel = () => {
                   value={meetingLink}
                   onChange={(e) => setMeetingLink(e.target.value)}
                   placeholder="https://meet.google.com/..."
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bento bg-white dark:bg-ink-900 text-gray-900 dark:text-white"
                 />
               </div>
 
@@ -170,7 +170,7 @@ const SessionRequestsPanel = () => {
                     type="date"
                     value={scheduledDate}
                     onChange={(e) => setScheduledDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bento bg-white dark:bg-ink-900 text-gray-900 dark:text-white"
                   />
                 </div>
                 <div>
@@ -181,7 +181,7 @@ const SessionRequestsPanel = () => {
                     type="time"
                     value={scheduledTime}
                     onChange={(e) => setScheduledTime(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bento bg-white dark:bg-ink-900 text-gray-900 dark:text-white"
                   />
                 </div>
               </div>

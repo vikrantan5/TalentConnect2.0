@@ -58,14 +58,15 @@ import {
   Grid,
   List,
   Wallet,
-    Paperclip,
+  Paperclip,
   XCircle,
-  Flag
+  Flag,
+  ArrowRight,
 } from 'lucide-react';
 
 const TaskMarketplace = () => {
-   const { user } = useAuth();
-  
+  const { user } = useAuth();
+
   const [tasks, setTasks] = useState([]);
   const [activeTab, setActiveTab] = useState('all');
   const [showCreateTask, setShowCreateTask] = useState(false);
@@ -84,9 +85,8 @@ const TaskMarketplace = () => {
     price: '',
     deadline: '',
     attachments: [],
-     attachmentFiles: [], // Store actual File objects
+    attachmentFiles: [],
     requirements: '',
-    // estimated_hours: ''
   });
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
@@ -94,17 +94,17 @@ const TaskMarketplace = () => {
   const [submissionData, setSubmissionData] = useState({
     message: '',
     attachments: [],
-    attachmentFiles: [] // Store actual File objects
+    attachmentFiles: [],
   });
 
-   const [viewSubmissionsModal, setViewSubmissionsModal] = useState(false);
+  const [viewSubmissionsModal, setViewSubmissionsModal] = useState(false);
   const [taskSubmissions, setTaskSubmissions] = useState([]);
 
-    const [showChat, setShowChat] = useState(false);
+  const [showChat, setShowChat] = useState(false);
   const [chatTask, setChatTask] = useState(null);
   const [showPayment, setShowPayment] = useState(false);
   const [paymentTask, setPaymentTask] = useState(null);
-    const [showApplicants, setShowApplicants] = useState(false);
+  const [showApplicants, setShowApplicants] = useState(false);
   const [applicantsTask, setApplicantsTask] = useState(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelTask, setCancelTask] = useState(null);
@@ -131,37 +131,32 @@ const TaskMarketplace = () => {
       } else {
         data = await taskService.getAllTasks(activeTab);
       }
-      // Extract tasks from response - handle both flat and nested structures
       let processedTasks = [];
       if (Array.isArray(data)) {
-        processedTasks = data.map(item => {
-          // If item has 'task' property, extract and merge with user info
+        processedTasks = data.map((item) => {
           if (item.task) {
-            // For my-tasks, the acceptor is the one working on the task
-            const userName = activeTab === 'my-tasks' 
-              ? (item.acceptor?.full_name || item.acceptor?.username)
-              : (item.creator?.full_name || item.creator?.username);
-            
-            const userPhoto = activeTab === 'my-tasks'
-              ? item.acceptor?.profile_photo
-              : item.creator?.profile_photo;
-            
-            const userRating = activeTab === 'my-tasks'
-              ? item.acceptor?.average_rating
-              : item.creator?.average_rating;
-            
+            const userName =
+              activeTab === 'my-tasks'
+                ? item.acceptor?.full_name || item.acceptor?.username
+                : item.creator?.full_name || item.creator?.username;
+
+            const userPhoto =
+              activeTab === 'my-tasks' ? item.acceptor?.profile_photo : item.creator?.profile_photo;
+
+            const userRating =
+              activeTab === 'my-tasks' ? item.acceptor?.average_rating : item.creator?.average_rating;
+
             return {
               ...item.task,
               creator_name: userName,
               creator_photo: userPhoto,
-              creator_rating: userRating
+              creator_rating: userRating,
             };
           }
-          // Otherwise it's already a flat task object
           return item;
         });
       }
-      
+
       setTasks(processedTasks);
     } catch (error) {
       console.error('Error loading tasks:', error);
@@ -198,81 +193,76 @@ const TaskMarketplace = () => {
   };
 
   const handlePaymentSuccess = () => {
- showNotification('Payment successful! Your task is now published.', 'success');
+    showNotification('Payment successful! Your task is now published.', 'success');
     setPaymentModal(false);
     setPaymentTask(null);
     loadTasks();
   };
 
-    const handleCreateTask = async (e) => {
+  const handleCreateTask = async (e) => {
     e.preventDefault();
 
-     // Client-side validation
     if (newTask.title.length < 10) {
       showNotification('Task title must be at least 10 characters long', 'error');
       return;
     }
-    
+
     if (newTask.title.length > 500) {
       showNotification('Task title cannot exceed 500 characters', 'error');
       return;
     }
-    
+
     if (!newTask.description || newTask.description.trim().length === 0) {
       showNotification('Task description is required', 'error');
       return;
     }
-    
+
     if (!newTask.price || parseFloat(newTask.price) <= 0) {
       showNotification('Task price must be greater than 0', 'error');
       return;
     }
-    
+
     if (!newTask.deadline) {
       showNotification('Task deadline is required', 'error');
       return;
     }
-    
+
     setLoading(true);
     try {
-        // Upload files first if any
-        let uploadedFileUrls = [];
-        if (newTask.attachmentFiles && newTask.attachmentFiles.length > 0) {
-          try {
-            const uploadResults = await uploadMultipleFiles(newTask.attachmentFiles, 'task-attachments', 'task-files');
-            uploadedFileUrls = uploadResults.map(result => result.url);
-            showNotification('Files uploaded successfully!', 'success');
-          } catch (uploadError) {
-            console.error('File upload error:', uploadError);
-            showNotification('Failed to upload files: ' + uploadError.message, 'error');
-            setLoading(false);
-            return; // Don't proceed if file upload fails
-          }
+      let uploadedFileUrls = [];
+      if (newTask.attachmentFiles && newTask.attachmentFiles.length > 0) {
+        try {
+          const uploadResults = await uploadMultipleFiles(newTask.attachmentFiles, 'task-attachments', 'task-files');
+          uploadedFileUrls = uploadResults.map((result) => result.url);
+          showNotification('Files uploaded successfully!', 'success');
+        } catch (uploadError) {
+          console.error('File upload error:', uploadError);
+          showNotification('Failed to upload files: ' + uploadError.message, 'error');
+          setLoading(false);
+          return;
         }
-        // Prepare task data with proper formatting
+      }
       const taskDataToSubmit = {
-          title: newTask.title.trim(),
+        title: newTask.title.trim(),
         description: newTask.description.trim(),
         subject: newTask.subject || null,
         difficulty_level: newTask.difficulty_level || null,
         price: parseFloat(newTask.price),
         deadline: new Date(newTask.deadline).toISOString(),
-attachment_urls: uploadedFileUrls,
+        attachment_urls: uploadedFileUrls,
         requirements: newTask.requirements || null,
-        // estimated_hours: newTask.estimated_hours ? parseInt(newTask.estimated_hours) : null
       };
-        console.log('Submitting task data:', taskDataToSubmit);
+      console.log('Submitting task data:', taskDataToSubmit);
 
       const result = await taskService.createTask(taskDataToSubmit);
       showNotification('Task created successfully! Please make payment to publish.', 'success');
       setShowCreateTask(false);
-      
-      // Open payment modal for the newly created task
+
       if (result && result.task) {
         setPaymentTask(result.task);
         setPaymentModal(true);
       }
-      
+
       setNewTask({
         title: '',
         description: '',
@@ -283,18 +273,16 @@ attachment_urls: uploadedFileUrls,
         attachments: [],
         attachmentFiles: [],
         requirements: '',
-        // estimated_hours: ''
       });
       loadTasks();
     } catch (error) {
       console.error('Task creation error:', error.response?.data);
       const errorMessage = error.response?.data?.detail || error.message || 'Unknown error';
-      
-      // Parse validation errors if present
+
       if (error.response?.data?.detail && Array.isArray(error.response.data.detail)) {
-        const validationErrors = error.response.data.detail.map(err => 
-          `${err.loc?.join('.')}: ${err.msg}`
-        ).join(', ');
+        const validationErrors = error.response.data.detail
+          .map((err) => `${err.loc?.join('.')}: ${err.msg}`)
+          .join(', ');
         showNotification('Validation error: ' + validationErrors, 'error');
       } else {
         showNotification('Failed to create task: ' + errorMessage, 'error');
@@ -312,56 +300,51 @@ attachment_urls: uploadedFileUrls,
       showNotification('Failed to accept task: ' + (error.response?.data?.detail || error.message), 'error');
     }
   };
- const [paymentModal, setPaymentModal] = useState(false);
+  const [paymentModal, setPaymentModal] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
- const handleSubmitTask = async () => {
-  setLoading(true);
-  try {
-     // Upload files first if any
-    let uploadedFileUrls = [];
-    if (submissionData.attachmentFiles && submissionData.attachmentFiles.length > 0) {
-      try {
-        const uploadResults = await uploadMultipleFiles(submissionData.attachmentFiles, 'task-attachments', 'submission-files');
-        uploadedFileUrls = uploadResults.map(result => result.url);
-        showNotification('Files uploaded successfully!', 'success');
-      } catch (uploadError) {
-        console.error('File upload error:', uploadError);
-        showNotification('Failed to upload files: ' + uploadError.message, 'error');
-        setLoading(false);
-        return; // Don't proceed if file upload fails
+  const handleSubmitTask = async () => {
+    setLoading(true);
+    try {
+      let uploadedFileUrls = [];
+      if (submissionData.attachmentFiles && submissionData.attachmentFiles.length > 0) {
+        try {
+          const uploadResults = await uploadMultipleFiles(
+            submissionData.attachmentFiles,
+            'task-attachments',
+            'submission-files'
+          );
+          uploadedFileUrls = uploadResults.map((result) => result.url);
+          showNotification('Files uploaded successfully!', 'success');
+        } catch (uploadError) {
+          console.error('File upload error:', uploadError);
+          showNotification('Failed to upload files: ' + uploadError.message, 'error');
+          setLoading(false);
+          return;
+        }
       }
+
+      const result = await taskService.submitTask(selectedTask.id, {
+        message: submissionData.message,
+        attachments: uploadedFileUrls,
+      });
+
+      const plagiarismScore = result?.plagiarism_report?.similarity_score || 0;
+
+      if (result?.plagiarism_report?.flagged) {
+        showNotification(`Task submitted but flagged for review (${plagiarismScore}% similarity)`, 'error');
+      } else {
+        showNotification('Task submitted successfully!', 'success');
+      }
+
+      setSubmissionModal(false);
+      setSubmissionData({ message: '', attachments: [], attachmentFiles: [] });
+      loadTasks();
+    } catch (error) {
+      showNotification('Failed to submit task: ' + (error.response?.data?.detail || error.message), 'error');
     }
-    
-    const result = await taskService.submitTask(selectedTask.id, {
-      message: submissionData.message,
-      attachments: uploadedFileUrls
-    });
 
-
-    const plagiarismScore = result?.plagiarism_report?.similarity_score || 0;
-
-    if (result?.plagiarism_report?.flagged) {
-      showNotification(
-        `Task submitted but flagged for review (${plagiarismScore}% similarity)`,
-        'error'
-      );
-    } else {
-      showNotification('Task submitted successfully!', 'success');
-    }
-
-    setSubmissionModal(false);
-   setSubmissionData({ message: '', attachments: [], attachmentFiles: [] });
-    loadTasks();
-
-  } catch (error) {
-    showNotification(
-      'Failed to submit task: ' + (error.response?.data?.detail || error.message),
-      'error'
-    );
-  }
-
-  setLoading(false);
-};
+    setLoading(false);
+  };
 
   const handleCompleteTask = async (taskId) => {
     try {
@@ -369,11 +352,11 @@ attachment_urls: uploadedFileUrls,
       showNotification('Submission approved and payment released!', 'success');
       loadTasks();
     } catch (error) {
-       showNotification('Failed to approve task: ' + (error.response?.data?.detail || error.message), 'error');
+      showNotification('Failed to approve task: ' + (error.response?.data?.detail || error.message), 'error');
     }
   };
 
-    const handleViewSubmissions = async (task) => {
+  const handleViewSubmissions = async (task) => {
     try {
       setSelectedTask(task);
       const submissions = await taskService.getTaskSubmissions(task.id);
@@ -398,7 +381,7 @@ attachment_urls: uploadedFileUrls,
     });
   };
 
-   const handlePayEscrow = async () => {
+  const handlePayEscrow = async () => {
     if (!paymentTask) return;
     setPaymentLoading(true);
     try {
@@ -431,13 +414,13 @@ attachment_urls: uploadedFileUrls,
             loadTasks();
           } catch (error) {
             showNotification('Payment verification failed', 'error');
-    }
-     },
+          }
+        },
         prefill: {
           name: user?.full_name || user?.username || 'TalentConnect User',
           email: user?.email || '',
         },
-        theme: { color: '#4f46e5' },
+        theme: { color: '#22d3ee' },
       };
 
       const razorpayCheckout = new window.Razorpay(options);
@@ -460,73 +443,106 @@ attachment_urls: uploadedFileUrls,
     }
   };
 
-  const getDifficultyColor = (level) => {
-    switch(level?.toLowerCase()) {
-      case 'easy': return 'bg-green-100 text-green-600 border-green-200 dark:bg-green-900/30 dark:text-green-400';
-      case 'medium': return 'bg-yellow-100 text-yellow-600 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400';
-      case 'hard': return 'bg-orange-100 text-orange-600 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400';
-      default: return 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-700 dark:text-gray-400';
+  // Difficulty pill — uses chip system
+  const getDifficultyPill = (level) => {
+    switch ((level || '').toLowerCase()) {
+      case 'easy':
+        return 'chip bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 ring-1 ring-emerald-500/20';
+      case 'medium':
+        return 'chip chip-cyan';
+      case 'hard':
+        return 'chip chip-coral';
+      default:
+        return 'chip chip-ink';
     }
   };
 
-  const getStatusColor = (status) => {
-    switch(status) {
-      case 'pending_payment': return 'bg-yellow-100 text-yellow-600 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400';
-      case 'open': return 'bg-green-100 text-green-600 border-green-200 dark:bg-green-900/30 dark:text-green-400';
-      case 'accepted': return 'bg-blue-100 text-blue-600 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400';
-      case 'in_progress': return 'bg-purple-100 text-purple-600 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400';
-      case 'submitted': return 'bg-yellow-100 text-yellow-600 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400';
-      case 'completed': return 'bg-indigo-100 text-indigo-600 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400';
-      default: return 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-700 dark:text-gray-400';
+  const getStatusPill = (status) => {
+    switch (status) {
+      case 'pending_payment':
+        return 'chip bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-1 ring-amber-500/20';
+      case 'open':
+        return 'chip bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 ring-1 ring-emerald-500/20';
+      case 'accepted':
+        return 'chip chip-cyan';
+      case 'in_progress':
+        return 'chip bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 ring-1 ring-indigo-500/20';
+      case 'submitted':
+        return 'chip bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-1 ring-amber-500/20';
+      case 'completed':
+        return 'chip chip-coral';
+      default:
+        return 'chip chip-ink';
+    }
+  };
+
+  const getStatusAccent = (status) => {
+    switch (status) {
+      case 'open':
+        return 'from-emerald-400 to-cyan-500';
+      case 'accepted':
+        return 'from-cyan-400 to-indigo-500';
+      case 'in_progress':
+        return 'from-indigo-400 to-coral-400';
+      case 'submitted':
+        return 'from-amber-400 to-coral-400';
+      case 'completed':
+        return 'from-coral-400 to-pink-500';
+      case 'pending_payment':
+        return 'from-amber-400 to-orange-500';
+      default:
+        return 'from-ink-400 to-ink-600';
     }
   };
 
   const getStatusIcon = (status) => {
-    switch(status) {
-      case 'open': return Target;
-      case 'accepted': return CheckCircle;
-      case 'in_progress': return TrendingUp;
-      case 'submitted': return Send;
-      case 'completed': return Award;
-      default: return Briefcase;
+    switch (status) {
+      case 'open':
+        return Target;
+      case 'accepted':
+        return CheckCircle;
+      case 'in_progress':
+        return TrendingUp;
+      case 'submitted':
+        return Send;
+      case 'completed':
+        return Award;
+      default:
+        return Briefcase;
     }
   };
 
   const filterTasks = (tasksList) => {
     let filtered = [...tasksList];
 
-    // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(task => 
-        task.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        task.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        task.subject?.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(
+        (task) =>
+          task.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          task.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          task.subject?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Difficulty filter
     if (filterDifficulty !== 'all') {
-      filtered = filtered.filter(task => task.difficulty_level === filterDifficulty);
+      filtered = filtered.filter((task) => task.difficulty_level === filterDifficulty);
     }
 
-    // Price filter
     if (filterPrice !== 'all') {
-      
-      switch(filterPrice) {
+      switch (filterPrice) {
         case 'low':
-          filtered = filtered.filter(task => task.price < 500);
+          filtered = filtered.filter((task) => task.price < 500);
           break;
         case 'medium':
-          filtered = filtered.filter(task => task.price >= 500 && task.price < 1000);
+          filtered = filtered.filter((task) => task.price >= 500 && task.price < 1000);
           break;
         case 'high':
-          filtered = filtered.filter(task => task.price >= 1000);
+          filtered = filtered.filter((task) => task.price >= 1000);
           break;
       }
     }
 
-    // Sort
-    switch(sortBy) {
+    switch (sortBy) {
       case 'newest':
         filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         break;
@@ -551,153 +567,178 @@ attachment_urls: uploadedFileUrls,
 
   const stats = {
     total: tasks.length,
-    open: tasks.filter(t => t.status === 'open').length,
-    accepted: tasks.filter(t => t.status === 'accepted' || t.status === 'in_progress').length,
-    completed: tasks.filter(t => t.status === 'completed').length,
-    totalEarnings: tasks.filter(t => t.status === 'completed').reduce((sum, t) => sum + (t.price || 0), 0)
+    open: tasks.filter((t) => t.status === 'open').length,
+    accepted: tasks.filter((t) => t.status === 'accepted' || t.status === 'in_progress').length,
+    completed: tasks.filter((t) => t.status === 'completed').length,
+    totalEarnings: tasks.filter((t) => t.status === 'completed').reduce((sum, t) => sum + (t.price || 0), 0),
   };
+
+  const inputClass =
+    'w-full px-4 py-3 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur text-ink-950 dark:text-white placeholder:text-ink-400 focus:outline-none focus:border-cyan-400 focus:shadow-glow transition';
 
   return (
     <div className="min-h-screen relative aurora-bg grid-bg overflow-hidden text-ink-950 dark:text-white" data-testid="task-marketplace-page">
       <Navbar />
 
-      {/* Decorative blobs matching Landing/Login aesthetic */}
+      {/* Decorative blobs matching Landing/Dashboard aesthetic */}
       <div className="blob w-[520px] h-[520px] -left-40 -top-32 bg-cyan-400/30 pointer-events-none" />
       <div className="blob w-[440px] h-[440px] -right-32 top-48 bg-coral-400/25 pointer-events-none" style={{ animationDelay: '-6s' }} />
-      {/* Notification Toast */}
+      <div className="blob w-[380px] h-[380px] left-[40%] bottom-[-8rem] bg-indigo-500/20 pointer-events-none" style={{ animationDelay: '-9s' }} />
+
+      {/* Notification toast */}
       {notification.show && (
-        <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-lg animate-slide-in ${
-          notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-        } text-white flex items-center gap-3`}>
-          {notification.type === 'success' ? (
-            <CheckCircle className="w-5 h-5" />
-          ) : (
-            <AlertCircle className="w-5 h-5" />
-          )}
-          {notification.message}
+        <div className={`fixed top-6 right-6 z-[60] glass-strong rounded-2xl px-5 py-4 shadow-soft-lg flex items-center gap-3 animate-scale-in border ${
+          notification.type === 'success' ? 'border-emerald-400/40' : 'border-coral-400/40'
+        }`}>
+          <span className={`w-9 h-9 rounded-xl grid place-items-center text-white shadow-soft ${
+            notification.type === 'success' ? 'bg-gradient-to-br from-emerald-400 to-cyan-500' : 'bg-gradient-to-br from-coral-400 to-pink-500'
+          }`}>
+            {notification.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+          </span>
+          <p className="text-sm font-medium text-ink-950 dark:text-white pr-2">{notification.message}</p>
         </div>
       )}
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">Task Marketplace</h1>
-            <p className="text-gray-600 dark:text-gray-400">Find tasks to earn or get help with your projects</p>
-          </div>
-          
-          <div className="flex items-center gap-3">
-             
-            <button
-              onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-              className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all"
-              title={viewMode === 'grid' ? 'Switch to list view' : 'Switch to grid view'}
-            >
-              {viewMode === 'grid' ? <List className="w-5 h-5 text-gray-600 dark:text-gray-400" /> : <Grid className="w-5 h-5 text-gray-600 dark:text-gray-400" />}
-            </button>
-            <button
-              onClick={loadTasks}
-              className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all"
-              title="Refresh"
-            >
-              <RefreshCw className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            </button>
-            <button
-              onClick={() => setShowCreateTask(true)}
-              className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg shadow-indigo-600/25"
-              data-testid="create-task-button"
-            >
-              <Plus className="w-5 h-5" />
-              Create Task
-            </button>
+        {/* Hero banner */}
+        <div className="relative mb-10 animate-scale-in">
+          <div className="relative overflow-hidden rounded-[28px] bg-ink-950 text-white p-8 md:p-10 shadow-soft-lg">
+            <div
+              className="absolute inset-0 opacity-60"
+              style={{
+                background:
+                  'radial-gradient(600px 400px at 10% -10%, rgba(34,211,238,.28), transparent 60%), radial-gradient(600px 500px at 95% 110%, rgba(255,106,91,.22), transparent 60%)',
+              }}
+            />
+            <div className="relative flex items-center justify-between flex-wrap gap-8">
+              <div className="flex-1 min-w-[260px]">
+                <span className="chip chip-cyan mb-4">
+                  <Briefcase className="w-3 h-3" /> task marketplace
+                </span>
+                <h1 className="font-display text-5xl md:text-6xl leading-[1] tracking-tight">
+                  Find work.
+                  <br />
+                  Get help.{' '}
+                  <span className="italic text-gradient">Earn together.</span>
+                </h1>
+                <p className="mt-5 max-w-xl text-ink-300 text-base md:text-lg leading-relaxed">
+                  Post a task or pick one up. Escrow keeps payments safe — your skills do the rest.
+                </p>
+
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                  <button
+                    onClick={() => setShowCreateTask(true)}
+                    className="btn btn-coral px-6 py-3"
+                    data-testid="create-task-button"
+                  >
+                    <Plus className="w-4 h-4" /> Create task
+                  </button>
+                  <button
+                    onClick={loadTasks}
+                    className="btn btn-ghost px-5 py-3 text-white border-white/20 hover:bg-white/10"
+                    title="Refresh"
+                  >
+                    <RefreshCw className="w-4 h-4" /> Refresh
+                  </button>
+                  <button
+                    onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                    className="btn btn-ghost px-5 py-3 text-white border-white/20 hover:bg-white/10"
+                    title={viewMode === 'grid' ? 'Switch to list view' : 'Switch to grid view'}
+                  >
+                    {viewMode === 'grid' ? <><List className="w-4 h-4" /> List</> : <><Grid className="w-4 h-4" /> Grid</>}
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick metric card */}
+              <div className="hidden lg:block max-w-xs w-full">
+                <div className="relative glass rounded-[24px] p-6 bg-white/5 border-white/10">
+                  <div className="flex items-center gap-2 text-cyan-300 text-xs uppercase tracking-widest">
+                    <Zap className="w-3.5 h-3.5" /> live
+                  </div>
+                  <p className="font-display text-5xl mt-2 leading-none">{stats.open}</p>
+                  <p className="mt-2 text-sm text-ink-300">open tasks waiting for talent like you</p>
+                  <div className="mt-4 flex items-center gap-2">
+                    <span className="chip chip-coral"><Sparkles className="w-3 h-3" /> earn ₹{stats.totalEarnings || 0}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-gradient-to-br from-pink-200 via-rose-200 to-purple-200 dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <Briefcase className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-              <span className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</span>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Total Tasks</p>
-          </div>
-          
-          <div className="bg-gradient-to-br from-green-200 via-emerald-200 to-teal-200 dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <Target className="w-8 h-8 text-green-600 dark:text-green-400" />
-              <span className="text-2xl font-bold text-gray-900 dark:text-white">{stats.open}</span>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Open Tasks</p>
-          </div>
-          
-          <div className="bg-gradient-to-br from-yellow-200 via-amber-200 to-orange-200 dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <TrendingUp className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
-              <span className="text-2xl font-bold text-gray-900 dark:text-white">{stats.accepted}</span>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">In Progress</p>
-          </div>
-          
-          <div className="bg-gradient-to-br from-blue-200 via-cyan-200 to-indigo-200 dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <DollarSign className="w-8 h-8 text-green-600 dark:text-green-400" />
-              <span className="text-2xl font-bold text-gray-900 dark:text-white">₹{stats.totalEarnings}</span>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Total Earned</p>
-          </div>
+        {/* Stats grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5 mb-10">
+          {[
+            { icon: Briefcase, label: 'Total Tasks', value: stats.total, iconBg: 'from-cyan-400 to-cyan-600' },
+            { icon: Target, label: 'Open Tasks', value: stats.open, iconBg: 'from-emerald-400 to-cyan-500' },
+            { icon: TrendingUp, label: 'In Progress', value: stats.accepted, iconBg: 'from-indigo-400 to-indigo-600' },
+            { icon: DollarSign, label: 'Total Earned', value: `₹${stats.totalEarnings}`, iconBg: 'from-coral-400 to-pink-500' },
+          ].map((stat, idx) => {
+            const Icon = stat.icon;
+            return (
+              <div
+                key={idx}
+                className="bento bento-glow p-6 animate-scale-in"
+                style={{ animationDelay: `${idx * 0.07}s` }}
+              >
+                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${stat.iconBg} text-white grid place-items-center shadow-soft`}>
+                  <Icon className="w-6 h-6" />
+                </div>
+                <p className="mt-5 text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300">{stat.label}</p>
+                <p className="font-display text-4xl md:text-5xl mt-1 leading-none">{stat.value}</p>
+              </div>
+            );
+          })}
         </div>
 
         {/* Tabs */}
-        <div className="flex space-x-4 mb-8 border-b border-gray-200 dark:border-gray-700" data-testid="task-tabs">
+        <div className="bento p-2 mb-6 flex flex-wrap items-center gap-1.5" data-testid="task-tabs">
           {[
             { id: 'all', label: 'All Tasks', icon: Briefcase },
-            // { id: 'open', label: 'Open', icon: Target },
             { id: 'my-tasks', label: 'My Tasks', icon: User },
             { id: 'accepted', label: 'Accepted', icon: CheckCircle },
             { id: 'completed', label: 'Completed', icon: Award },
           ].map((tab) => {
             const Icon = tab.icon;
+            const active = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 pb-3 px-4 font-medium transition-all relative ${
-                  activeTab === tab.id
-                    ? 'text-indigo-600 dark:text-indigo-400'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-semibold transition-all ${
+                  active
+                    ? 'bg-ink-950 text-white shadow-soft dark:bg-white dark:text-ink-950'
+                    : 'text-ink-600 dark:text-ink-200 hover:bg-black/5 dark:hover:bg-white/5'
                 }`}
                 data-testid={`${tab.id}-tasks-tab`}
               >
-                <Icon className="w-5 h-5" />
+                <Icon className="w-4 h-4" />
                 {tab.label}
-                {activeTab === tab.id && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400"></div>
-                )}
               </button>
             );
           })}
         </div>
 
-        {/* Search and Filters */}
-        <div className="bg-gradient-to-br from-pink-200 via-rose-200 to-purple-200 dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
+        {/* Search & Filters */}
+        <div className="bento p-6 mb-8">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-400" />
               <input
                 type="text"
-                placeholder="Search tasks by title, description, or subject..."
-                className="w-full pl-12 pr-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Search tasks by title, description, or subject…"
+                className={`${inputClass} pl-12`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            
-            <div className="flex gap-3">
+
+            <div className="flex flex-wrap gap-3">
               <select
                 value={filterDifficulty}
                 onChange={(e) => setFilterDifficulty(e.target.value)}
-                className="px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className={inputClass}
               >
                 <option value="all">All Difficulties</option>
                 <option value="easy">Easy</option>
@@ -708,346 +749,308 @@ attachment_urls: uploadedFileUrls,
               <select
                 value={filterPrice}
                 onChange={(e) => setFilterPrice(e.target.value)}
-                className="px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className={inputClass}
               >
                 <option value="all">All Prices</option>
                 <option value="low">Under ₹500</option>
-                <option value="medium">₹500 - ₹1000</option>
+                <option value="medium">₹500 — ₹1000</option>
                 <option value="high">Above ₹1000</option>
               </select>
 
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className={inputClass}
               >
-                <option value="newest">Newest First</option>
-                <option value="oldest">Oldest First</option>
-                <option value="price-high">Price: High to Low</option>
-                <option value="price-low">Price: Low to High</option>
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="price-high">Price: High → Low</option>
+                <option value="price-low">Price: Low → High</option>
                 <option value="deadline">Deadline</option>
               </select>
             </div>
           </div>
         </div>
 
-     {/* Tasks Grid - Improved Card Design */}
-{loading ? (
-  <div className="flex justify-center py-12">
-    <div className="relative">
-      <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-8 h-8 bg-white dark:bg-gray-800 rounded-full animate-pulse"></div>
-      </div>
-    </div>
-  </div>
-) : displayedTasks.length === 0 ? (
-  <div className="bg-white dark:bg-gray-800 rounded-xl p-16 text-center shadow-lg" data-testid="no-tasks">
-    <div className="w-24 h-24 mx-auto bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mb-4">
-      <Briefcase className="w-12 h-12 text-indigo-600 dark:text-indigo-400" />
-    </div>
-    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Tasks Found</h3>
-    <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-      {searchTerm || filterDifficulty !== 'all' || filterPrice !== 'all'
-        ? "No tasks match your search criteria. Try adjusting your filters."
-        : activeTab === 'my-tasks' 
-          ? "You haven't created any tasks yet. Create your first task to get help!"
-          : "No tasks available at the moment. Check back later or create a new task."}
-    </p>
-    {(searchTerm || filterDifficulty !== 'all' || filterPrice !== 'all') && (
-      <button
-        onClick={() => {
-          setSearchTerm('');
-          setFilterDifficulty('all');
-          setFilterPrice('all');
-        }}
-        className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-      >
-        Clear Filters
-      </button>
-    )}
-  </div>
-) : (
-  <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'} gap-6`}>
-    {displayedTasks.map((task) => {
-      const StatusIcon = getStatusIcon(task.status);
-      const DifficultyIcon = getDifficultyColor(task.difficulty_level) ? Award : Target;
-      
-      return (
-        <div
-          key={task.id}
-          className="group relative bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden cursor-pointer border border-gray-100 dark:border-gray-700 hover:border-indigo-200 dark:hover:border-indigo-700"
-          onClick={() => {
-            setSelectedTask(task);
-            setShowTaskDetails(true);
-          }}
-          data-testid="task-card"
-        >
-          {/* Premium Gradient Border Effect */}
-          <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" style={{ padding: '2px', mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}></div>
-          
-          {/* Card Header with Dynamic Gradient */}
-          <div className={`relative h-28 p-5 ${
-            task.status === 'open' ? 'bg-gradient-to-r from-emerald-500 to-teal-500' :
-            task.status === 'accepted' ? 'bg-gradient-to-r from-blue-500 to-indigo-500' :
-            task.status === 'in_progress' ? 'bg-gradient-to-r from-orange-500 to-red-500' :
-            task.status === 'completed' ? 'bg-gradient-to-r from-purple-500 to-pink-500' :
-            'bg-gradient-to-r from-gray-500 to-gray-600'
-          }`}>
-            <div className="absolute inset-0 bg-black/10"></div>
-            <div className="relative flex justify-between items-start">
-              <div className="flex flex-col gap-1">
-                <span className="text-xs font-mono bg-white/20 backdrop-blur px-2 py-1 rounded-lg text-white">
-                  #{task.id?.slice(0, 8)}
-                </span>
-                <h3 className="text-white font-bold text-lg leading-tight line-clamp-1 mt-1">
-                  {task.title}
-                </h3>
-              </div>
-              <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold backdrop-blur-sm flex items-center gap-1 ${
-                task.status === 'open' ? 'bg-emerald-500/90 text-white' :
-                task.status === 'accepted' ? 'bg-blue-500/90 text-white' :
-                task.status === 'in_progress' ? 'bg-orange-500/90 text-white' :
-                task.status === 'completed' ? 'bg-purple-500/90 text-white' :
-                'bg-gray-500/90 text-white'
-              }`}>
-                <StatusIcon className="w-3 h-3" />
-                {task.status.replace('_', ' ')}
-              </span>
-            </div>
+        {/* Tasks grid */}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-5">
+            <div className="tc-spinner" />
+            <p className="font-display text-xl text-ink-600 dark:text-ink-200">Loading tasks…</p>
           </div>
-
-          {/* Card Body */}
-          <div className="p-5">
-            {/* Subject & Difficulty Row */}
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {task.subject || 'General'}
-                </span>
-              </div>
-              <div className={`px-2 py-1 rounded-lg text-xs font-semibold ${
-                task.difficulty_level === 'easy' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                task.difficulty_level === 'medium' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-              }`}>
-                {task.difficulty_level === 'easy' && '🌱 Easy'}
-                {task.difficulty_level === 'medium' && '📈 Medium'}
-                {task.difficulty_level === 'hard' && '🚀 Hard'}
-              </div>
+        ) : displayedTasks.length === 0 ? (
+          <div className="bento p-16 text-center" data-testid="no-tasks">
+            <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-br from-cyan-400 to-indigo-500 grid place-items-center shadow-soft">
+              <Briefcase className="w-10 h-10 text-white" />
             </div>
-
-            {/* Description */}
-            <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2 leading-relaxed">
-              {task.description}
+            <h3 className="font-display text-3xl mt-6">
+              No tasks <span className="italic text-gradient-cyan">found</span>
+            </h3>
+            <p className="mt-3 text-ink-500 dark:text-ink-300 max-w-md mx-auto">
+              {searchTerm || filterDifficulty !== 'all' || filterPrice !== 'all'
+                ? "No tasks match your filters. Try adjusting your search."
+                : activeTab === 'my-tasks'
+                ? "You haven't created any tasks yet. Create your first one to get help."
+                : 'No tasks available right now. Check back soon, or post a new one.'}
             </p>
-
-            {/* Price & Deadline Cards */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-3 text-center border border-green-100 dark:border-green-800">
-                <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400 mx-auto mb-1" />
-                <p className="text-xl font-bold text-gray-900 dark:text-white">₹{task.price}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Budget</p>
-              </div>
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-3 text-center border border-blue-100 dark:border-blue-800">
-                <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400 mx-auto mb-1" />
-                <p className="text-sm font-bold text-gray-900 dark:text-white">
-                  {new Date(task.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Deadline</p>
-              </div>
-            </div>
-
-            {/* Additional Info Badges */}
-            <div className="flex flex-wrap gap-2 mb-4">
-              {/* {task.estimated_hours && (
-                <span className="px-2 py-1 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 rounded-lg text-xs font-medium flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {task.estimated_hours} hrs
-                </span>
-              )} */}
-              {task.attachment_urls?.length > 0 && (
-                <span className="px-2 py-1 bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 rounded-lg text-xs font-medium flex items-center gap-1">
-                  <Paperclip className="w-3 h-3" />
-                  {task.attachment_urls.length} file{task.attachment_urls.length !== 1 ? 's' : ''}
-                </span>
-              )}
-            </div>
-
-            {/* Creator & Action Row */}
-            <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-md">
-                  {task.creator_name?.charAt(0).toUpperCase() || 'U'}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {task.creator_name || 'Anonymous'}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {new Date(task.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              {task.status === 'pending_payment' && task.creator_id === user?.id && (
+            <div className="mt-6 flex justify-center gap-3">
+              {(searchTerm || filterDifficulty !== 'all' || filterPrice !== 'all') && (
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setPaymentTask(task);
-                    setPaymentModal(true);
+                  onClick={() => {
+                    setSearchTerm('');
+                    setFilterDifficulty('all');
+                    setFilterPrice('all');
                   }}
-                  className="px-3 py-1.5 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-all shadow-md text-sm font-medium flex items-center gap-1"
-                  data-testid="pay-now-button"
+                  className="btn btn-ghost"
                 >
-                  <Wallet className="w-3.5 h-3.5" />
-                  Pay Now
+                  Clear filters
                 </button>
               )}
-              
-              {task.status === 'open' && task.creator_id !== user?.id && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAcceptTask(task.id);
-                  }}
-                  className="px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md text-sm font-medium flex items-center gap-1"
-                  data-testid="accept-task-button"
-                >
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  Accept
-                </button>
-              )}
-
-              {task.status === 'accepted' && task.acceptor_id === user?.id && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSubmissionModal(true);
-                    setShowTaskDetails(false);
-                  }}
-                  className="px-3 py-1.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all shadow-md text-sm font-medium flex items-center gap-1"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  Submit
-                </button>
-              )}
-
-              {/* View Details Button */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedTask(task);
-                  setShowTaskDetails(true);
-                }}
-                className="px-3 py-1.5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors text-sm font-medium"
-              >
-                Details →
+              <button onClick={() => setShowCreateTask(true)} className="btn btn-cyan">
+                <Plus className="w-4 h-4" /> Create task
               </button>
             </div>
           </div>
+        ) : (
+          <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'} gap-5`}>
+            {displayedTasks.map((task, idx) => {
+              const StatusIcon = getStatusIcon(task.status);
+              const accent = getStatusAccent(task.status);
+              return (
+                <div
+                  key={task.id}
+                  onClick={() => {
+                    setSelectedTask(task);
+                    setShowTaskDetails(true);
+                  }}
+                  className="group bento bento-glow p-0 overflow-hidden cursor-pointer animate-scale-in"
+                  style={{ animationDelay: `${idx * 0.04}s` }}
+                  data-testid="task-card"
+                >
+                  {/* Accent header strip */}
+                  <div className={`relative h-28 bg-gradient-to-br ${accent} overflow-hidden`}>
+                    <div className="absolute inset-0 opacity-40" style={{
+                      background: 'radial-gradient(400px 200px at 90% -10%, rgba(255,255,255,.35), transparent 60%)'
+                    }} />
+                    <div className="relative h-full p-5 flex justify-between items-start">
+                      <div className="flex flex-col gap-2 min-w-0">
+                        <span className="text-[11px] font-mono bg-black/20 backdrop-blur px-2 py-0.5 rounded-md text-white w-fit">
+                          #{task.id?.slice(0, 8)}
+                        </span>
+                        <h3 className="font-display text-xl text-white leading-tight line-clamp-2 pr-3">
+                          {task.title}
+                        </h3>
+                      </div>
+                      <span className="chip bg-black/25 ring-1 ring-white/20 text-white whitespace-nowrap shrink-0">
+                        <StatusIcon className="w-3 h-3" />
+                        {task.status?.replace('_', ' ')}
+                      </span>
+                    </div>
+                  </div>
 
-          {/* Hover Overlay Effect */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-        </div>
-      );
-    })}
-  </div>
-)}
+                  {/* Body */}
+                  <div className="p-5">
+                    <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                      <span className="inline-flex items-center gap-1.5 text-sm text-ink-600 dark:text-ink-200">
+                        <BookOpen className="w-4 h-4 text-cyan-500" />
+                        {task.subject || 'General'}
+                      </span>
+                      <span className={getDifficultyPill(task.difficulty_level)}>
+                        {task.difficulty_level === 'easy' && '🌱 Easy'}
+                        {task.difficulty_level === 'medium' && '📈 Medium'}
+                        {task.difficulty_level === 'hard' && '🚀 Hard'}
+                        {!['easy', 'medium', 'hard'].includes(task.difficulty_level) && (task.difficulty_level || '—')}
+                      </span>
+                    </div>
+
+                    <p className="text-sm text-ink-600 dark:text-ink-300 leading-relaxed line-clamp-2 mb-4">
+                      {task.description}
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="rounded-2xl glass p-3 text-center">
+                        <DollarSign className="w-4 h-4 text-emerald-500 mx-auto mb-1" />
+                        <p className="font-display text-2xl leading-none">₹{task.price}</p>
+                        <p className="text-[11px] uppercase tracking-widest text-ink-500 dark:text-ink-300 mt-1">Budget</p>
+                      </div>
+                      <div className="rounded-2xl glass p-3 text-center">
+                        <Calendar className="w-4 h-4 text-cyan-500 mx-auto mb-1" />
+                        <p className="font-display text-base leading-none mt-1">
+                          {new Date(task.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </p>
+                        <p className="text-[11px] uppercase tracking-widest text-ink-500 dark:text-ink-300 mt-1">Deadline</p>
+                      </div>
+                    </div>
+
+                    {task.attachment_urls?.length > 0 && (
+                      <div className="mb-4">
+                        <span className="chip chip-ink">
+                          <Paperclip className="w-3 h-3" />
+                          {task.attachment_urls.length} file{task.attachment_urls.length !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between pt-4 border-t border-black/5 dark:border-white/10 gap-3 flex-wrap">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-indigo-500 grid place-items-center text-white font-display text-sm shadow-soft shrink-0">
+                          {task.creator_name?.charAt(0).toUpperCase() || 'U'}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold truncate">{task.creator_name || 'Anonymous'}</p>
+                          <p className="text-[11px] text-ink-500 dark:text-ink-300">{new Date(task.created_at).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {task.status === 'pending_payment' && task.creator_id === user?.id && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPaymentTask(task);
+                              setPaymentModal(true);
+                            }}
+                            className="btn btn-coral px-3 py-1.5 text-xs"
+                            data-testid="pay-now-button"
+                          >
+                            <Wallet className="w-3.5 h-3.5" /> Pay
+                          </button>
+                        )}
+                        {task.status === 'open' && task.creator_id !== user?.id && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAcceptTask(task.id);
+                            }}
+                            className="btn btn-cyan px-3 py-1.5 text-xs"
+                            data-testid="accept-task-button"
+                          >
+                            <CheckCircle className="w-3.5 h-3.5" /> Accept
+                          </button>
+                        )}
+                        {task.status === 'accepted' && task.acceptor_id === user?.id && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSubmissionModal(true);
+                              setShowTaskDetails(false);
+                            }}
+                            className="btn btn-primary px-3 py-1.5 text-xs"
+                          >
+                            <Send className="w-3.5 h-3.5" /> Submit
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedTask(task);
+                            setShowTaskDetails(true);
+                          }}
+                          className="btn btn-ghost px-3 py-1.5 text-xs"
+                        >
+                          Details <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Create Task Modal */}
         {showCreateTask && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowCreateTask(false)} data-testid="create-task-modal">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-              {/* Modal Header */}
-              <div className="relative h-24 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-t-2xl p-6">
-                <div className="absolute inset-0 bg-black/20 rounded-t-2xl"></div>
+          <div
+            className="fixed inset-0 bg-ink-950/60 backdrop-blur-md z-50 flex items-center justify-center p-4"
+            onClick={() => setShowCreateTask(false)}
+            data-testid="create-task-modal"
+          >
+            <div
+              className="bento bg-white dark:bg-ink-900 max-w-2xl w-full max-h-[92vh] overflow-y-auto p-0"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="relative overflow-hidden rounded-t-[28px] bg-ink-950 text-white p-7">
+                <div className="absolute inset-0 opacity-60" style={{
+                  background: 'radial-gradient(500px 300px at 0% 0%, rgba(34,211,238,.3), transparent 60%), radial-gradient(500px 300px at 100% 100%, rgba(255,106,91,.25), transparent 60%)'
+                }} />
                 <div className="relative flex justify-between items-start">
-                  <h2 className="text-2xl font-bold text-white">Create New Task</h2>
+                  <div>
+                    <span className="chip chip-cyan mb-3"><Sparkles className="w-3 h-3" /> new task</span>
+                    <h2 className="font-display text-3xl md:text-4xl leading-tight">Create a <span className="italic text-gradient">task</span></h2>
+                    <p className="mt-2 text-sm text-ink-300">Post the work, set the price, attract talent.</p>
+                  </div>
                   <button
                     onClick={() => setShowCreateTask(false)}
-                    className="p-2 bg-white/20 backdrop-blur rounded-lg hover:bg-white/30 transition-colors"
+                    className="w-9 h-9 rounded-full glass grid place-items-center text-white/90 hover:text-white"
                   >
-                    <X className="w-5 h-5 text-white" />
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
-              {/* Modal Body */}
-              <form onSubmit={handleCreateTask} className="p-6 space-y-4">
-                               <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Task Title * <span className="text-xs text-gray-500">(min 10 characters)</span>
-                  </label>
+              <form onSubmit={handleCreateTask} className="p-7 space-y-5">
+                <div>
+                  <span className="text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300">
+                    Task Title * <span className="text-ink-400 normal-case tracking-normal">(min 10 chars)</span>
+                  </span>
                   <input
                     type="text"
                     required
                     minLength="10"
                     maxLength="500"
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="e.g., Help with Python Assignment"
+                    className={`${inputClass} mt-1.5`}
+                    placeholder="e.g. Help with Python data-cleaning assignment"
                     value={newTask.title}
                     onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
                     data-testid="task-title-input"
                   />
                   {newTask.title && newTask.title.length < 10 && (
-                    <p className="text-xs text-red-500 mt-1">
-                      Title must be at least 10 characters ({newTask.title.length}/10)
-                    </p>
+                    <p className="text-xs text-coral-500 mt-1.5">Title must be at least 10 characters ({newTask.title.length}/10)</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Description *
-                  </label>
+                  <span className="text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300">Description *</span>
                   <textarea
                     required
                     rows="4"
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Describe the task in detail. Include specific requirements, expectations, and any relevant information..."
+                    className={`${inputClass} mt-1.5`}
+                    placeholder="Describe the task in detail. Include specific requirements, expectations, and any relevant info…"
                     value={newTask.description}
                     onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
                     data-testid="task-description-input"
-                  ></textarea>
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Requirements
-                  </label>
+                  <span className="text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300">Requirements</span>
                   <textarea
                     rows="3"
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="List any specific requirements, skills needed, or prerequisites..."
+                    className={`${inputClass} mt-1.5`}
+                    placeholder="List any specific skills, tools, or prerequisites…"
                     value={newTask.requirements}
                     onChange={(e) => setNewTask({ ...newTask, requirements: e.target.value })}
-                  ></textarea>
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Subject
-                    </label>
+                    <span className="text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300">Subject</span>
                     <input
                       type="text"
-                      className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      placeholder="e.g., Computer Science"
+                      className={`${inputClass} mt-1.5`}
+                      placeholder="e.g. Computer Science"
                       value={newTask.subject}
                       onChange={(e) => setNewTask({ ...newTask, subject: e.target.value })}
                       data-testid="task-subject-input"
                     />
                   </div>
-
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Difficulty Level
-                    </label>
+                    <span className="text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300">Difficulty</span>
                     <select
-                      className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className={`${inputClass} mt-1.5`}
                       value={newTask.difficulty_level}
                       onChange={(e) => setNewTask({ ...newTask, difficulty_level: e.target.value })}
                       data-testid="task-difficulty-select"
@@ -1061,68 +1064,48 @@ attachment_urls: uploadedFileUrls,
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Price (₹) *
-                    </label>
+                    <span className="text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300">Price (₹) *</span>
                     <input
                       type="number"
                       required
                       min="1"
-                      className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className={`${inputClass} mt-1.5`}
                       placeholder="500"
                       value={newTask.price}
                       onChange={(e) => setNewTask({ ...newTask, price: e.target.value })}
                       data-testid="task-price-input"
                     />
                   </div>
-
-                  {/* <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Estimated Hours
-                    </label>
+                  <div>
+                    <span className="text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300">Deadline *</span>
                     <input
-                      type="number"
-                      min="1"
-                      className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      placeholder="e.g., 5"
-                      value={newTask.estimated_hours}
-                      onChange={(e) => setNewTask({ ...newTask, estimated_hours: e.target.value })}
+                      type="datetime-local"
+                      required
+                      min={new Date().toISOString().slice(0, 16)}
+                      className={`${inputClass} mt-1.5`}
+                      value={newTask.deadline}
+                      onChange={(e) => setNewTask({ ...newTask, deadline: e.target.value })}
+                      data-testid="task-deadline-input"
                     />
-                  </div> */}
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Deadline *
-                  </label>
-                  <input
-                    type="datetime-local"
-                    required
-                    min={new Date().toISOString().slice(0, 16)}
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={newTask.deadline}
-                    onChange={(e) => setNewTask({ ...newTask, deadline: e.target.value })}
-                    data-testid="task-deadline-input"
-                  />
+                  <span className="text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300">Attachments</span>
+                  <div className="mt-1.5">
+                    <FileUploadZone
+                      onFilesSelected={(files) => setNewTask({ ...newTask, attachmentFiles: files })}
+                      maxFiles={5}
+                      existingFiles={newTask.attachmentFiles}
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Attachments
-                  </label>
-                   <FileUploadZone
-                    onFilesSelected={(files) => setNewTask({ ...newTask, attachmentFiles: files })}
-                    maxFiles={5}
-                    existingFiles={newTask.attachmentFiles}
-                  />
-                
-                </div>
-
-                <div className="flex gap-3 pt-4">
+                <div className="flex gap-3 pt-3">
                   <button
                     type="button"
                     onClick={() => setShowCreateTask(false)}
-                    className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    className="flex-1 btn btn-ghost py-3"
                     data-testid="cancel-button"
                   >
                     Cancel
@@ -1130,18 +1113,16 @@ attachment_urls: uploadedFileUrls,
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 transition-all shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2"
+                    className="flex-1 btn btn-coral py-3 disabled:opacity-50"
                     data-testid="submit-task-button"
                   >
                     {loading ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Creating...
+                        <Loader2 className="w-4 h-4 animate-spin" /> Creating…
                       </>
                     ) : (
                       <>
-                        <Plus className="w-4 h-4" />
-                        Create Task
+                        <Plus className="w-4 h-4" /> Create task
                       </>
                     )}
                   </button>
@@ -1153,64 +1134,60 @@ attachment_urls: uploadedFileUrls,
 
         {/* Task Details Modal */}
         {showTaskDetails && selectedTask && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowTaskDetails(false)}>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-              {/* Modal Header */}
-              <div className="relative h-32 bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
-                <div className="absolute inset-0 bg-black/20 rounded-t-2xl"></div>
-                <div className="relative flex justify-between items-start">
-                  <div>
-                    <span className="px-3 py-1 bg-white/20 backdrop-blur rounded-full text-white text-xs">
+          <div
+            className="fixed inset-0 bg-ink-950/60 backdrop-blur-md z-50 flex items-center justify-center p-4"
+            onClick={() => setShowTaskDetails(false)}
+          >
+            <div
+              className="bento bg-white dark:bg-ink-900 max-w-3xl w-full max-h-[92vh] overflow-y-auto p-0"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className={`relative overflow-hidden rounded-t-[28px] bg-gradient-to-br ${getStatusAccent(selectedTask.status)} text-white p-7`}>
+                <div className="absolute inset-0 opacity-50" style={{
+                  background: 'radial-gradient(500px 300px at 100% -10%, rgba(255,255,255,.35), transparent 60%)'
+                }} />
+                <div className="relative flex justify-between items-start gap-4">
+                  <div className="min-w-0">
+                    <span className="text-[11px] font-mono bg-black/20 backdrop-blur px-2 py-0.5 rounded-md text-white">
                       Task #{selectedTask.id?.slice(0, 8)}
                     </span>
-                    <h2 className="text-2xl font-bold text-white mt-2">{selectedTask.title}</h2>
+                    <h2 className="font-display text-3xl md:text-4xl leading-tight mt-3">{selectedTask.title}</h2>
                   </div>
                   <button
                     onClick={() => setShowTaskDetails(false)}
-                    className="p-2 bg-white/20 backdrop-blur rounded-lg hover:bg-white/30 transition-colors"
+                    className="w-9 h-9 rounded-full bg-black/25 ring-1 ring-white/20 grid place-items-center text-white/90 hover:text-white shrink-0"
                   >
-                    <X className="w-5 h-5 text-white" />
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
-              {/* Modal Body */}
-              <div className="p-6">
-                {/* Status Badge */}
-                <div className="flex justify-between items-center mb-6">
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedTask.status)}`}>
-                    {selectedTask.status}
+              <div className="p-7">
+                {/* Status + Price */}
+                <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
+                  <span className={getStatusPill(selectedTask.status)}>
+                    {selectedTask.status?.replace('_', ' ')}
                   </span>
-                  <span className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    ₹{selectedTask.price}
-                  </span>
+                  <span className="font-display text-3xl text-emerald-600 dark:text-emerald-400">₹{selectedTask.price}</span>
                 </div>
 
-                {/* Description */}
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Description</h3>
-                  <p className="text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
-                    {selectedTask.description}
-                  </p>
+                  <h3 className="font-display text-2xl mb-2">Description</h3>
+                  <p className="text-ink-600 dark:text-ink-200 whitespace-pre-wrap leading-relaxed">{selectedTask.description}</p>
                 </div>
 
-                {/* Requirements */}
                 {selectedTask.requirements && (
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Requirements</h3>
-                    <p className="text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
-                      {selectedTask.requirements}
-                    </p>
+                    <h3 className="font-display text-2xl mb-2">Requirements</h3>
+                    <p className="text-ink-600 dark:text-ink-200 whitespace-pre-wrap leading-relaxed">{selectedTask.requirements}</p>
                   </div>
                 )}
 
-                
-                {/* Task Attachments */}
                 {selectedTask.attachment_urls && selectedTask.attachment_urls.length > 0 && (
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                      <FileText className="w-5 h-5" />
-                      Task Attachments
+                    <h3 className="font-display text-2xl mb-3 flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-cyan-500" /> Task Attachments
                     </h3>
                     <div className="space-y-2">
                       {selectedTask.attachment_urls.map((url, index) => {
@@ -1221,18 +1198,18 @@ attachment_urls: uploadedFileUrls,
                             href={url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors group"
+                            className="group flex items-center justify-between p-3 rounded-2xl glass hover:shadow-soft transition-all border border-transparent hover:border-cyan-400/30"
                           >
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-                                <FileText className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-indigo-500 grid place-items-center shrink-0">
+                                <FileText className="w-5 h-5 text-white" />
                               </div>
-                              <div>
-                                <p className="font-medium text-gray-900 dark:text-white text-sm">{filename}</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Click to view/download</p>
+                              <div className="min-w-0">
+                                <p className="font-medium text-sm truncate">{filename}</p>
+                                <p className="text-[11px] text-ink-500 dark:text-ink-300">Click to view / download</p>
                               </div>
                             </div>
-                            <DownloadIcon className="w-5 h-5 text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" />
+                            <DownloadIcon className="w-5 h-5 text-ink-400 group-hover:text-cyan-500 transition-colors shrink-0" />
                           </a>
                         );
                       })}
@@ -1240,87 +1217,71 @@ attachment_urls: uploadedFileUrls,
                   </div>
                 )}
 
-                {/* Details Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Subject</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{selectedTask.subject || 'General'}</p>
-                  </div>
-                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Difficulty</p>
-                    <p className={`font-medium ${getDifficultyColor(selectedTask.difficulty_level)}`}>
-                      {selectedTask.difficulty_level}
-                    </p>
-                  </div>
-                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Deadline</p>
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      {new Date(selectedTask.deadline).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Created</p>
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      {new Date(selectedTask.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                  {[
+                    { label: 'Subject', value: selectedTask.subject || 'General' },
+                    { label: 'Difficulty', value: selectedTask.difficulty_level || '—' },
+                    { label: 'Deadline', value: new Date(selectedTask.deadline).toLocaleString() },
+                    { label: 'Created', value: new Date(selectedTask.created_at).toLocaleDateString() },
+                  ].map((d, i) => (
+                    <div key={i} className="rounded-2xl glass p-3.5">
+                      <p className="text-[11px] uppercase tracking-widest text-ink-500 dark:text-ink-300 mb-1">{d.label}</p>
+                      <p className="font-medium text-sm">{d.value}</p>
+                    </div>
+                  ))}
                 </div>
 
-                {/* Creator Info */}
-                <div className="mb-6 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Task Creator</h3>
+                {/* Creator */}
+                <div className="mb-6 p-5 rounded-2xl glass border border-cyan-400/20">
+                  <h3 className="font-display text-xl mb-3">Task creator</h3>
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-500 grid place-items-center text-white font-display text-xl shadow-soft">
                       {selectedTask.creator_name?.charAt(0).toUpperCase() || 'U'}
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-900 dark:text-white">{selectedTask.creator_name || 'Anonymous'}</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Member since {new Date(selectedTask.creator_joined)?.toLocaleDateString() || 'N/A'}</p>
+                      <p className="font-semibold">{selectedTask.creator_name || 'Anonymous'}</p>
+                      <p className="text-xs text-ink-500 dark:text-ink-300">
+                        Member since {selectedTask.creator_joined ? new Date(selectedTask.creator_joined).toLocaleDateString() : 'N/A'}
+                      </p>
                     </div>
                   </div>
                 </div>
 
-                                {/* Action Buttons */}
+                {/* Action buttons */}
                 <div className="space-y-3">
-                   {/* Payment Button - For task creator when task needs payment */}
                   {selectedTask.status === 'pending_payment' && selectedTask.creator_id === user?.id && (
                     <button
                       onClick={() => {
                         setPaymentModal(true);
                         setShowTaskDetails(false);
                       }}
-                      className="w-full bg-gradient-to-r from-yellow-600 to-orange-600 text-white py-3 rounded-xl hover:from-yellow-700 hover:to-orange-700 transition-all shadow-lg shadow-yellow-600/25 flex items-center justify-center gap-2"
+                      className="w-full btn btn-coral py-3"
                       data-testid="pay-now-modal-button"
                     >
-                      <Wallet className="w-5 h-5" />
-                      Pay Now to Publish Task
-                    </button>
-                  )}
-                  {/* View Applicants - Only for task creator when task is open */}
-                  {selectedTask.status === 'open' && selectedTask.creator_id === user?.id && (
-                    <button
-                      onClick={() => {
-                        handleOpenApplicants(selectedTask);
-                      }}
-                      className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2"
-                      data-testid="view-applicants-button"
-                    >
-                      <Users className="w-5 h-5" />
-                      View Applicants
+                      <Wallet className="w-5 h-5" /> Pay now to publish task
                     </button>
                   )}
 
-                  <div className="flex gap-3">
+                  {selectedTask.status === 'open' && selectedTask.creator_id === user?.id && (
+                    <button
+                      onClick={() => handleOpenApplicants(selectedTask)}
+                      className="w-full btn btn-primary py-3"
+                      data-testid="view-applicants-button"
+                    >
+                      <Users className="w-5 h-5" /> View applicants
+                    </button>
+                  )}
+
+                  <div className="flex flex-wrap gap-3">
                     {selectedTask.status === 'open' && selectedTask.creator_id !== user?.id && (
                       <button
                         onClick={() => {
                           handleAcceptTask(selectedTask.id);
                           setShowTaskDetails(false);
                         }}
-                        className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2"
+                        className="flex-1 btn btn-cyan py-3"
                       >
-                        <CheckCircle className="w-5 h-5" />
-                        Accept Task
+                        <CheckCircle className="w-5 h-5" /> Accept task
                       </button>
                     )}
 
@@ -1330,68 +1291,59 @@ attachment_urls: uploadedFileUrls,
                           setSubmissionModal(true);
                           setShowTaskDetails(false);
                         }}
-                        className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg shadow-green-600/25 flex items-center justify-center gap-2"
+                        className="flex-1 btn btn-primary py-3"
                       >
-                        <Send className="w-5 h-5" />
-                        Submit Work
+                        <Send className="w-5 h-5" /> Submit work
                       </button>
                     )}
 
                     {selectedTask.status === 'accepted' && selectedTask.creator_id === user?.id && (
                       <button
-                        onClick={() => {
-                          setPaymentModal(true);
-                        }}
-                        className="flex-1 bg-gradient-to-r from-indigo-600 to-blue-600 text-white py-3 rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-all shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2"
+                        onClick={() => setPaymentModal(true)}
+                        className="flex-1 btn btn-cyan py-3"
                         data-testid="open-escrow-payment-modal-button"
                       >
-                        <Wallet className="w-5 h-5" />
-                        Pay Escrow
+                        <Wallet className="w-5 h-5" /> Pay escrow
                       </button>
                     )}
 
                     {selectedTask.status === 'submitted' && selectedTask.creator_id === user?.id && (
-                       <>
+                      <>
                         <button
                           onClick={() => {
                             handleViewSubmissions(selectedTask);
                             setShowTaskDetails(false);
                           }}
-                          className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-3 rounded-xl hover:from-blue-700 hover:to-cyan-700 transition-all shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2"
+                          className="flex-1 btn btn-cyan py-3"
                           data-testid="view-submissions-button"
                         >
-                          <Eye className="w-5 h-5" />
-                          View Submission
+                          <Eye className="w-5 h-5" /> View submission
                         </button>
-                      <button
-                        onClick={() => handleCompleteTask(selectedTask.id)}
-                        className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg shadow-purple-600/25 flex items-center justify-center gap-2"
-                      >
-                        <Award className="w-5 h-5" />
-                            Approve & Complete
-                      </button>
-                        </>
+                        <button
+                          onClick={() => handleCompleteTask(selectedTask.id)}
+                          className="flex-1 btn btn-coral py-3"
+                        >
+                          <Award className="w-5 h-5" /> Approve & complete
+                        </button>
+                      </>
                     )}
 
-                    {/* Chat Button - Show when task is accepted or submitted */}
-                    {(selectedTask.status === 'accepted' || selectedTask.status === 'submitted') && 
-                     (selectedTask.creator_id === user?.id || selectedTask.acceptor_id === user?.id) && (
-                      <button 
-                        onClick={() => {
-                          handleOpenChat(selectedTask);
-                          setShowTaskDetails(false);
-                        }}
-                        className="flex-1 border-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 py-3 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors flex items-center justify-center gap-2"
-                        data-testid="open-task-chat-button"
-                      >
-                        <MessageSquare className="w-5 h-5" />
-                        Chat
-                      </button>
-                    )}
+                    {(selectedTask.status === 'accepted' || selectedTask.status === 'submitted') &&
+                      (selectedTask.creator_id === user?.id || selectedTask.acceptor_id === user?.id) && (
+                        <button
+                          onClick={() => {
+                            handleOpenChat(selectedTask);
+                            setShowTaskDetails(false);
+                          }}
+                          className="flex-1 btn btn-ghost py-3"
+                          data-testid="open-task-chat-button"
+                        >
+                          <MessageSquare className="w-5 h-5" /> Chat
+                        </button>
+                      )}
                   </div>
-                    {/* Cancel & Report Buttons */}
-                  <div className="flex gap-3 pt-2">
-                    {/* Cancel Button - Task creator can cancel if task is not completed */}
+
+                  <div className="flex flex-wrap gap-3 pt-1">
                     {selectedTask.status !== 'completed' && selectedTask.creator_id === user?.id && (
                       <button
                         onClick={() => {
@@ -1399,31 +1351,29 @@ attachment_urls: uploadedFileUrls,
                           setShowCancelModal(true);
                           setShowTaskDetails(false);
                         }}
-                        className="flex-1 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white py-3 rounded-xl transition-all shadow-lg shadow-red-600/25 flex items-center justify-center gap-2"
+                        className="flex-1 btn py-3 bg-coral-500 text-white hover:bg-coral-600"
                         data-testid="cancel-task-button"
                       >
-                        <XCircle className="w-5 h-5" />
-                        Cancel Task
+                        <XCircle className="w-5 h-5" /> Cancel task
                       </button>
                     )}
 
-                    {/* Report Button - Both parties can report */}
                     {(selectedTask.creator_id === user?.id || selectedTask.acceptor_id === user?.id) && (
                       <button
                         onClick={() => {
-                          const otherUser = selectedTask.creator_id === user?.id 
-                            ? { id: selectedTask.acceptor_id, username: 'Task Acceptor' }
-                            : { id: selectedTask.creator_id, username: selectedTask.creator_name || 'Task Creator' };
+                          const otherUser =
+                            selectedTask.creator_id === user?.id
+                              ? { id: selectedTask.acceptor_id, username: 'Task Acceptor' }
+                              : { id: selectedTask.creator_id, username: selectedTask.creator_name || 'Task Creator' };
                           setReportUser(otherUser);
                           setReportTask(selectedTask);
                           setShowReportModal(true);
                           setShowTaskDetails(false);
                         }}
-                        className="flex-1 border-2 border-orange-600 text-orange-600 dark:text-orange-400 py-3 rounded-xl hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors flex items-center justify-center gap-2"
+                        className="flex-1 btn btn-ghost py-3 text-coral-600 dark:text-coral-300 hover:bg-coral-500/10"
                         data-testid="report-user-button"
                       >
-                        <Flag className="w-5 h-5" />
-                        Report User
+                        <Flag className="w-5 h-5" /> Report user
                       </button>
                     )}
                   </div>
@@ -1435,69 +1385,68 @@ attachment_urls: uploadedFileUrls,
 
         {/* Submission Modal */}
         {submissionModal && selectedTask && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSubmissionModal(false)}>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full" onClick={e => e.stopPropagation()}>
-              {/* Modal Header */}
-              <div className="relative h-24 bg-gradient-to-r from-green-600 to-emerald-600 rounded-t-2xl p-6">
-                <div className="absolute inset-0 bg-black/20 rounded-t-2xl"></div>
+          <div
+            className="fixed inset-0 bg-ink-950/60 backdrop-blur-md z-50 flex items-center justify-center p-4"
+            onClick={() => setSubmissionModal(false)}
+          >
+            <div className="bento bg-white dark:bg-ink-900 max-w-md w-full p-0" onClick={(e) => e.stopPropagation()}>
+              <div className="relative overflow-hidden rounded-t-[28px] bg-ink-950 text-white p-6">
+                <div className="absolute inset-0 opacity-60" style={{
+                  background: 'radial-gradient(400px 250px at 0% 0%, rgba(34,211,238,.3), transparent 60%), radial-gradient(400px 250px at 100% 100%, rgba(255,106,91,.2), transparent 60%)'
+                }} />
                 <div className="relative flex justify-between items-start">
-                  <h2 className="text-2xl font-bold text-white">Submit Work</h2>
+                  <div>
+                    <span className="chip chip-cyan mb-2"><Send className="w-3 h-3" /> submission</span>
+                    <h2 className="font-display text-2xl">Submit your <span className="italic text-gradient-cyan">work</span></h2>
+                  </div>
                   <button
                     onClick={() => setSubmissionModal(false)}
-                    className="p-2 bg-white/20 backdrop-blur rounded-lg hover:bg-white/30 transition-colors"
+                    className="w-9 h-9 rounded-full glass grid place-items-center"
                   >
-                    <X className="w-5 h-5 text-white" />
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
-              {/* Modal Body */}
               <div className="p-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Submission Message
-                  </label>
+                  <span className="text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300">Submission message</span>
                   <textarea
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className={`${inputClass} mt-1.5`}
                     rows="4"
-                    placeholder="Add a message about your work..."
+                    placeholder="Add a message about your work…"
                     value={submissionData.message}
                     onChange={(e) => setSubmissionData({ ...submissionData, message: e.target.value })}
-                  ></textarea>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Attachments
-                  </label>
-                   <FileUploadZone
-                    onFilesSelected={(files) => setSubmissionData({ ...submissionData, attachmentFiles: files })}
-                    maxFiles={5}
-                    existingFiles={submissionData.attachmentFiles}
                   />
                 </div>
 
-                <div className="flex gap-3 pt-4">
-                  <button
-                    onClick={() => setSubmissionModal(false)}
-                    className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  >
+                <div>
+                  <span className="text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300">Attachments</span>
+                  <div className="mt-1.5">
+                    <FileUploadZone
+                      onFilesSelected={(files) => setSubmissionData({ ...submissionData, attachmentFiles: files })}
+                      maxFiles={5}
+                      existingFiles={submissionData.attachmentFiles}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button onClick={() => setSubmissionModal(false)} className="flex-1 btn btn-ghost py-3">
                     Cancel
                   </button>
                   <button
                     onClick={handleSubmitTask}
                     disabled={loading}
-                    className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-3 rounded-xl hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 transition-all shadow-lg shadow-green-600/25 flex items-center justify-center gap-2"
+                    className="flex-1 btn btn-primary py-3 disabled:opacity-50"
                   >
                     {loading ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Submitting...
+                        <Loader2 className="w-4 h-4 animate-spin" /> Submitting…
                       </>
                     ) : (
                       <>
-                        <Send className="w-4 h-4" />
-                        Submit
+                        <Send className="w-4 h-4" /> Submit
                       </>
                     )}
                   </button>
@@ -1507,77 +1456,79 @@ attachment_urls: uploadedFileUrls,
           </div>
         )}
 
-
-         {/* View Submissions Modal */}
+        {/* View Submissions Modal */}
         {viewSubmissionsModal && selectedTask && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setViewSubmissionsModal(false)}>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-              {/* Modal Header */}
-              <div className="relative h-24 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-t-2xl p-6">
-                <div className="absolute inset-0 bg-black/20 rounded-t-2xl"></div>
+          <div
+            className="fixed inset-0 bg-ink-950/60 backdrop-blur-md z-50 flex items-center justify-center p-4"
+            onClick={() => setViewSubmissionsModal(false)}
+          >
+            <div className="bento bg-white dark:bg-ink-900 max-w-4xl w-full max-h-[92vh] overflow-y-auto p-0" onClick={(e) => e.stopPropagation()}>
+              <div className="relative overflow-hidden rounded-t-[28px] bg-ink-950 text-white p-6">
+                <div className="absolute inset-0 opacity-60" style={{
+                  background: 'radial-gradient(500px 300px at 0% 0%, rgba(34,211,238,.3), transparent 60%), radial-gradient(500px 300px at 100% 100%, rgba(99,102,241,.25), transparent 60%)'
+                }} />
                 <div className="relative flex justify-between items-start">
-                  <h2 className="text-2xl font-bold text-white">Task Submissions</h2>
+                  <div>
+                    <span className="chip chip-cyan mb-2"><Eye className="w-3 h-3" /> review</span>
+                    <h2 className="font-display text-3xl">Task <span className="italic text-gradient-cyan">submissions</span></h2>
+                  </div>
                   <button
                     onClick={() => setViewSubmissionsModal(false)}
-                    className="p-2 bg-white/20 backdrop-blur rounded-lg hover:bg-white/30 transition-colors"
+                    className="w-9 h-9 rounded-full glass grid place-items-center"
                   >
-                    <X className="w-5 h-5 text-white" />
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
-              {/* Modal Body */}
               <div className="p-6">
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">{selectedTask.title}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Task ID: #{selectedTask.id?.slice(0, 8)}</p>
+                <div className="mb-5">
+                  <h3 className="font-display text-xl">{selectedTask.title}</h3>
+                  <p className="text-xs text-ink-500 dark:text-ink-300 mt-1 font-mono">#{selectedTask.id?.slice(0, 8)}</p>
                 </div>
 
                 {taskSubmissions.length === 0 ? (
                   <div className="text-center py-12">
-                    <div className="w-16 h-16 mx-auto bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
-                      <FileText className="w-8 h-8 text-gray-400" />
+                    <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-ink-400 to-ink-600 grid place-items-center">
+                      <FileText className="w-8 h-8 text-white" />
                     </div>
-                    <p className="text-gray-600 dark:text-gray-400">No submissions yet</p>
+                    <p className="mt-4 text-ink-500 dark:text-ink-300">No submissions yet</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {taskSubmissions.map((submission, index) => (
-                      <div key={submission.id} className="border border-gray-200 dark:border-gray-700 rounded-xl p-6 bg-gray-50 dark:bg-gray-700/50">
-                        {/* Submitter Info */}
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-lg flex items-center justify-center text-white font-bold">
+                    {taskSubmissions.map((submission) => (
+                      <div key={submission.id} className="rounded-2xl glass p-5 border border-black/5 dark:border-white/10">
+                        <div className="flex items-center gap-3 mb-4 flex-wrap">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-indigo-500 grid place-items-center text-white font-display shadow-soft">
                             {submission.submitter?.full_name?.charAt(0) || submission.submitter?.username?.charAt(0) || 'U'}
                           </div>
-                          <div className="flex-1">
-                            <p className="font-semibold text-gray-900 dark:text-white">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold truncate">
                               {submission.submitter?.full_name || submission.submitter?.username || 'Anonymous'}
                             </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                              Submitted on {new Date(submission.submitted_at).toLocaleString()}
+                            <p className="text-xs text-ink-500 dark:text-ink-300">
+                              Submitted {new Date(submission.submitted_at).toLocaleString()}
                             </p>
                           </div>
                           {submission.is_approved && (
-                            <span className="px-3 py-1 bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 rounded-full text-xs font-medium">
-                              ✓ Approved
+                            <span className="chip bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 ring-1 ring-emerald-500/20">
+                              <Check className="w-3 h-3" /> Approved
                             </span>
                           )}
                         </div>
 
-                        {/* Submission Text */}
                         {submission.submission_text && (
                           <div className="mb-4">
-                            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Message:</h4>
-                            <p className="text-gray-600 dark:text-gray-400 whitespace-pre-wrap bg-white dark:bg-gray-800 p-4 rounded-lg">
+                            <p className="text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300 mb-2">Message</p>
+                            <p className="text-sm whitespace-pre-wrap p-4 rounded-xl bg-white/60 dark:bg-white/5 border border-black/5 dark:border-white/10">
                               {submission.submission_text}
                             </p>
                           </div>
                         )}
 
-                        {/* Submission Files */}
                         {submission.submission_files && submission.submission_files.length > 0 && (
                           <div>
-                            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Attachments:</h4>
+                            <p className="text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300 mb-2">Attachments</p>
                             <div className="space-y-2">
                               {submission.submission_files.map((fileUrl, fileIndex) => (
                                 <a
@@ -1585,39 +1536,34 @@ attachment_urls: uploadedFileUrls,
                                   href={fileUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-500 transition-colors group"
+                                  className="group flex items-center gap-3 p-3 rounded-xl glass hover:shadow-soft transition-all border border-transparent hover:border-cyan-400/30"
                                 >
-                                  <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                                  <span className="flex-1 text-sm text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400">
-                                    Attachment {fileIndex + 1}
-                                  </span>
-                                  <Download className="w-4 h-4 text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
+                                  <FileText className="w-5 h-5 text-cyan-500" />
+                                  <span className="flex-1 text-sm">Attachment {fileIndex + 1}</span>
+                                  <Download className="w-4 h-4 text-ink-400 group-hover:text-cyan-500" />
                                 </a>
                               ))}
                             </div>
                           </div>
                         )}
 
-                        {/* Review Notes */}
                         {submission.review_notes && (
-                          <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                            <h4 className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-1">Review Notes:</h4>
-                            <p className="text-sm text-blue-700 dark:text-blue-400">{submission.review_notes}</p>
+                          <div className="mt-4 p-4 rounded-xl bg-cyan-500/10 border border-cyan-400/20">
+                            <p className="text-xs uppercase tracking-widest text-cyan-700 dark:text-cyan-300 mb-1">Review notes</p>
+                            <p className="text-sm">{submission.review_notes}</p>
                           </div>
                         )}
 
-                        {/* Action Button */}
                         {!submission.is_approved && selectedTask.creator_id === user?.id && (
-                          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                          <div className="mt-4 pt-4 border-t border-black/5 dark:border-white/10">
                             <button
                               onClick={() => {
                                 handleCompleteTask(selectedTask.id);
                                 setViewSubmissionsModal(false);
                               }}
-                              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg shadow-green-600/25 flex items-center justify-center gap-2"
+                              className="w-full btn btn-coral py-3"
                             >
-                              <CheckCircle className="w-5 h-5" />
-                              Approve & Complete Task
+                              <CheckCircle className="w-5 h-5" /> Approve & complete task
                             </button>
                           </div>
                         )}
@@ -1629,38 +1575,49 @@ attachment_urls: uploadedFileUrls,
             </div>
           </div>
         )}
-         {paymentModal && paymentTask && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setPaymentModal(false)} data-testid="escrow-payment-modal">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full" onClick={e => e.stopPropagation()}>
-              <div className="relative h-24 bg-gradient-to-r from-indigo-600 to-blue-600 rounded-t-2xl p-6">
-                <div className="absolute inset-0 bg-black/20 rounded-t-2xl"></div>
+
+        {/* Escrow Payment Modal */}
+        {paymentModal && paymentTask && (
+          <div
+            className="fixed inset-0 bg-ink-950/60 backdrop-blur-md z-50 flex items-center justify-center p-4"
+            onClick={() => setPaymentModal(false)}
+            data-testid="escrow-payment-modal"
+          >
+            <div className="bento bg-white dark:bg-ink-900 max-w-md w-full p-0" onClick={(e) => e.stopPropagation()}>
+              <div className="relative overflow-hidden rounded-t-[28px] bg-ink-950 text-white p-6">
+                <div className="absolute inset-0 opacity-60" style={{
+                  background: 'radial-gradient(400px 250px at 0% 0%, rgba(34,211,238,.3), transparent 60%), radial-gradient(400px 250px at 100% 100%, rgba(99,102,241,.25), transparent 60%)'
+                }} />
                 <div className="relative flex justify-between items-start">
-                  <h2 className="text-2xl font-bold text-white">Pay to Publish Task</h2>
+                  <div>
+                    <span className="chip chip-cyan mb-2"><Wallet className="w-3 h-3" /> escrow</span>
+                    <h2 className="font-display text-2xl">Pay to <span className="italic text-gradient-cyan">publish</span></h2>
+                  </div>
                   <button
                     onClick={() => setPaymentModal(false)}
-                    className="p-2 bg-white/20 backdrop-blur rounded-lg hover:bg-white/30 transition-colors"
+                    className="w-9 h-9 rounded-full glass grid place-items-center"
                     data-testid="close-escrow-payment-modal"
                   >
-                    <X className="w-5 h-5 text-white" />
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
               <div className="p-6 space-y-5">
-                <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Task</p>
-                  <p className="font-semibold text-gray-900 dark:text-white" data-testid="escrow-task-title">{paymentTask.title}</p>
-                  <p className="text-2xl font-bold text-indigo-600 mt-2" data-testid="escrow-payment-amount">₹{paymentTask.price}</p>
+                <div className="rounded-2xl glass p-4 border border-black/5 dark:border-white/10">
+                  <p className="text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300 mb-1">Task</p>
+                  <p className="font-semibold" data-testid="escrow-task-title">{paymentTask.title}</p>
+                  <p className="font-display text-3xl text-cyan-500 mt-2" data-testid="escrow-payment-amount">₹{paymentTask.price}</p>
                 </div>
 
-                <p className="text-sm text-gray-600 dark:text-gray-300" data-testid="escrow-payment-note">
-                  Payment will be held in escrow and released when you approve the submitted work.
+                <p className="text-sm text-ink-600 dark:text-ink-200" data-testid="escrow-payment-note">
+                  Payment will be held in escrow and released once you approve the submitted work.
                 </p>
 
                 <div className="flex gap-3">
                   <button
                     onClick={() => setPaymentModal(false)}
-                    className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    className="flex-1 btn btn-ghost py-3"
                     data-testid="escrow-payment-cancel-button"
                   >
                     Cancel
@@ -1668,18 +1625,16 @@ attachment_urls: uploadedFileUrls,
                   <button
                     onClick={handlePayEscrow}
                     disabled={paymentLoading}
-                    className="flex-1 bg-gradient-to-r from-indigo-600 to-blue-600 text-white px-4 py-3 rounded-xl hover:from-indigo-700 hover:to-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="flex-1 btn btn-cyan py-3 disabled:opacity-50"
                     data-testid="escrow-payment-confirm-button"
                   >
                     {paymentLoading ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Processing...
+                        <Loader2 className="w-4 h-4 animate-spin" /> Processing…
                       </>
                     ) : (
                       <>
-                        <Wallet className="w-4 h-4" />
-                        Pay with Razorpay
+                        <Wallet className="w-4 h-4" /> Pay with Razorpay
                       </>
                     )}
                   </button>
@@ -1690,11 +1645,10 @@ attachment_urls: uploadedFileUrls,
         )}
       </div>
 
-
-          {/* Chat Modal */}
+      {/* Chat Modal */}
       {showChat && chatTask && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-2xl h-[600px]">
+        <div className="fixed inset-0 bg-ink-950/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bento bg-white dark:bg-ink-900 w-full max-w-2xl h-[600px] p-0 overflow-hidden">
             <RealtimeChat
               roomType="task"
               roomId={chatTask.id}
@@ -1712,14 +1666,15 @@ attachment_urls: uploadedFileUrls,
         onApplicantAssigned={handleApplicantAssigned}
       />
 
-      {/* Payment Modal */}
+      {/* Payment Modal (component) */}
       <PaymentModal
         task={paymentTask}
         isOpen={showPayment}
         onClose={() => setShowPayment(false)}
         onSuccess={handlePaymentSuccess}
       />
-        {/* Cancel Task Modal */}
+
+      {/* Cancel Task Modal */}
       <TaskCancelModal
         task={cancelTask}
         isOpen={showCancelModal}
@@ -1737,37 +1692,11 @@ attachment_urls: uploadedFileUrls,
         task={reportTask}
         isOpen={showReportModal}
         onClose={() => setShowReportModal(false)}
-        onSuccess={(response) => {
+        onSuccess={() => {
           showNotification('Report submitted successfully. Our team will review it.', 'success');
           setShowReportModal(false);
         }}
       />
-      <style jsx>{`
-        @keyframes blob {
-          0%, 100% { transform: translate(0px, 0px) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-        }
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        @keyframes slide-in {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-        .animate-slide-in {
-          animation: slide-in 0.3s ease-out forwards;
-        }
-      `}</style>
     </div>
   );
 };
