@@ -9,47 +9,28 @@ import {
   Calendar,
   Clock,
   Video,
-  MapPin,
   User,
   Star,
-  Award,
   CheckCircle,
-  XCircle,
-  AlertCircle,
   Loader2,
   Calendar as CalendarIcon,
-  ChevronRight,
   Filter,
   Search,
   RefreshCw,
   Download,
-  MoreVertical,
-  ExternalLink,
-  MessageSquare,
-  ThumbsUp,
-  Share2,
-  BookOpen,
-  Users,
-  Trophy,
-  TrendingUp,
-  Zap,
-  Sparkles,
-  Bell,
-  Settings,
-  LogOut,
-  Menu,
   X,
-  Phone,
-  Mail,
   Link as LinkIcon,
   Copy,
   Check,
-  Clock as ClockIcon,
   CalendarCheck,
   CalendarX,
   CalendarClock,
   Video as VideoIcon,
-  MapPinned
+  BookOpen,
+  Sparkles,
+  ArrowRight,
+  Grid as GridIcon,
+  List as ListIcon,
 } from 'lucide-react';
 
 const SessionBooking = () => {
@@ -61,7 +42,7 @@ const SessionBooking = () => {
   const [selectedSession, setSelectedSession] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
   const [copied, setCopied] = useState(false);
-    const [meetingModal, setMeetingModal] = useState(false);
+  const [meetingModal, setMeetingModal] = useState(false);
   const [meetingForm, setMeetingForm] = useState({
     provider: 'google_meet',
     date: '',
@@ -73,9 +54,8 @@ const SessionBooking = () => {
     completed: 0,
     scheduled: 0,
     cancelled: 0,
-    pending: 0
+    pending: 0,
   });
-
 
   const [showChat, setShowChat] = useState(false);
   const [chatSession, setChatSession] = useState(null);
@@ -92,10 +72,10 @@ const SessionBooking = () => {
     if (sessions.length > 0) {
       const newStats = {
         total: sessions.length,
-        completed: sessions.filter(s => s.status === 'completed').length,
-        scheduled: sessions.filter(s => s.status === 'scheduled').length,
-        cancelled: sessions.filter(s => s.status === 'cancelled').length,
-        pending: sessions.filter(s => s.status === 'pending').length
+        completed: sessions.filter((s) => s.status === 'completed').length,
+        scheduled: sessions.filter((s) => s.status === 'scheduled').length,
+        cancelled: sessions.filter((s) => s.status === 'cancelled').length,
+        pending: sessions.filter((s) => s.status === 'pending').length,
       };
       setStats(newStats);
     }
@@ -104,13 +84,11 @@ const SessionBooking = () => {
   const loadSessions = async () => {
     setLoading(true);
     try {
-      // Load both learning sessions and skill exchange sessions
       const [learningSessionsData, exchangeSessionsData] = await Promise.all([
         sessionService.getMySessions().catch(() => []),
-        sessionService.getSkillExchangeSessions().catch(() => [])
+        sessionService.getSkillExchangeSessions().catch(() => []),
       ]);
-      
-      // Normalize learning sessions
+
       const normalizedLearningSessions = Array.isArray(learningSessionsData)
         ? learningSessionsData.map((item) => {
             if (item?.session) {
@@ -119,14 +97,13 @@ const SessionBooking = () => {
                 role: item.role,
                 mentor_name: item.mentor?.full_name || item.mentor?.username,
                 learner_name: item.learner?.full_name || item.learner?.username,
-                session_type: 'learning'
+                session_type: 'learning',
               };
             }
             return { ...item, session_type: 'learning' };
           })
         : [];
-      
-      // Normalize skill exchange sessions
+
       const normalizedExchangeSessions = Array.isArray(exchangeSessionsData)
         ? exchangeSessionsData.map((item) => {
             const session = item.session || item;
@@ -139,12 +116,11 @@ const SessionBooking = () => {
               other_participant_photo: otherParticipant?.profile_photo,
               other_participant_id: otherParticipant?.id,
               skill_offered: task?.skill_offered,
-              skill_requested: task?.skill_requested
+              skill_requested: task?.skill_requested,
             };
           })
         : [];
-      
-      // Combine both types of sessions
+
       const allSessions = [...normalizedLearningSessions, ...normalizedExchangeSessions];
       setSessions(allSessions);
     } catch (error) {
@@ -154,23 +130,17 @@ const SessionBooking = () => {
     setLoading(false);
   };
 
-  // Mark skill exchange session as complete - Updates leaderboard!
   const handleMarkComplete = async (session) => {
     try {
       setLoading(true);
       const result = await sessionService.markSessionComplete(session.id);
-      
       toast.success(result.message);
-      
-      // Reload sessions to get updated status
       await loadSessions();
-      
-      // If both completed, show rating modal
       if (result.both_completed && result.can_rate) {
         setRatingSessionData({
           sessionId: session.id,
           receiverId: session.other_participant_id,
-          receiverName: session.other_participant_name
+          receiverName: session.other_participant_name,
         });
         setShowRatingModal(true);
       }
@@ -182,20 +152,18 @@ const SessionBooking = () => {
     }
   };
 
-  // Open rating modal for a completed session
   const handleRatePartner = (session) => {
     setRatingSessionData({
       sessionId: session.id,
       receiverId: session.other_participant_id,
-      receiverName: session.other_participant_name
+      receiverName: session.other_participant_name,
     });
     setShowRatingModal(true);
   };
 
-  // Handle successful rating submission
   const handleRatingSuccess = () => {
     toast.success('Rating submitted successfully! Thank you for your feedback.');
-    loadSessions(); // Reload to update any changes
+    loadSessions();
   };
 
   const handleCopyLink = (link) => {
@@ -204,7 +172,7 @@ const SessionBooking = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-   const openMeetingModal = (session) => {
+  const openMeetingModal = (session) => {
     setSelectedSession(session);
     const scheduleDate = session?.scheduled_at ? new Date(session.scheduled_at) : null;
     setMeetingForm({
@@ -243,118 +211,105 @@ const SessionBooking = () => {
     setLoading(false);
   };
 
-  const getStatusIcon = (status) => {
-    switch(status) {
-      case 'completed': return CheckCircle;
-      case 'scheduled': return CalendarCheck;
-      case 'cancelled': return CalendarX;
-      default: return CalendarClock;
-    }
-  };
-
-  const getStatusColor = (status) => {
-    switch(status) {
+  const getStatusMeta = (status) => {
+    switch (status) {
       case 'completed':
-        return {
-          bg: 'bg-green-100 dark:bg-green-900/30',
-          text: 'text-green-600 dark:text-green-400',
-          border: 'border-green-200 dark:border-green-800',
-          icon: CheckCircle
-        };
+        return { icon: CheckCircle, label: 'Completed', tint: 'from-emerald-400 to-cyan-500', text: 'text-emerald-500' };
       case 'scheduled':
-        return {
-          bg: 'bg-blue-100 dark:bg-blue-900/30',
-          text: 'text-blue-600 dark:text-blue-400',
-          border: 'border-blue-200 dark:border-blue-800',
-          icon: CalendarCheck
-        };
+        return { icon: CalendarCheck, label: 'Scheduled', tint: 'from-cyan-400 to-indigo-500', text: 'text-cyan-500' };
       case 'cancelled':
-        return {
-          bg: 'bg-red-100 dark:bg-red-900/30',
-          text: 'text-red-600 dark:text-red-400',
-          border: 'border-red-200 dark:border-red-800',
-          icon: CalendarX
-        };
+        return { icon: CalendarX, label: 'Cancelled', tint: 'from-coral-400 to-coral-600', text: 'text-coral-500' };
       default:
-        return {
-          bg: 'bg-yellow-100 dark:bg-yellow-900/30',
-          text: 'text-yellow-600 dark:text-yellow-400',
-          border: 'border-yellow-200 dark:border-yellow-800',
-          icon: CalendarClock
-        };
+        return { icon: CalendarClock, label: status || 'Pending', tint: 'from-amber-300 to-coral-400', text: 'text-amber-500' };
     }
   };
 
-  const filteredSessions = sessions.filter(session => {
+  const filteredSessions = sessions.filter((session) => {
     if (filter !== 'all' && session.status !== filter) return false;
     if (searchTerm) {
-      return session.skill_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-             session.mentor_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      return (
+        session.skill_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        session.mentor_name?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
     return true;
   });
 
   const quickStats = [
-    { label: 'Total Sessions', value: stats.total, icon: Calendar, color: 'indigo' },
-    { label: 'Completed', value: stats.completed, icon: CheckCircle, color: 'green' },
-    { label: 'Scheduled', value: stats.scheduled, icon: CalendarCheck, color: 'blue' },
-    { label: 'Pending', value: stats.pending, icon: CalendarClock, color: 'yellow' },
+    { label: 'Total Sessions', value: stats.total, icon: Calendar, iconBg: 'from-indigo-400 to-indigo-600' },
+    { label: 'Completed', value: stats.completed, icon: CheckCircle, iconBg: 'from-emerald-400 to-cyan-500' },
+    { label: 'Scheduled', value: stats.scheduled, icon: CalendarCheck, iconBg: 'from-cyan-400 to-cyan-600' },
+    { label: 'Pending', value: stats.pending, icon: CalendarClock, iconBg: 'from-amber-300 to-coral-400' },
   ];
 
-  const upcomingSessions = sessions.filter(s => s.status === 'scheduled').slice(0, 3);
+  const upcomingSessions = sessions.filter((s) => s.status === 'scheduled').slice(0, 3);
 
   return (
     <div className="min-h-screen relative aurora-bg grid-bg overflow-hidden text-ink-950 dark:text-white" data-testid="session-booking-page">
       <div className="blob w-[520px] h-[520px] -left-40 -top-32 bg-cyan-400/30 pointer-events-none" />
       <div className="blob w-[440px] h-[440px] -right-32 top-40 bg-coral-400/25 pointer-events-none" style={{ animationDelay: '-6s' }} />
-      <Navbar />
-      
-      {/* Animated Background */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-indigo-200 dark:bg-indigo-500/20 rounded-full blur-3xl opacity-20 animate-blob"></div>
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-200 dark:bg-purple-500/20 rounded-full blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+      <div className="blob w-[420px] h-[420px] left-[40%] bottom-[-10rem] bg-indigo-500/20 pointer-events-none" style={{ animationDelay: '-8s' }} />
+
+      <div className="relative z-10">
+        <Navbar />
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">My Sessions</h1>
-            <p className="text-gray-600 dark:text-gray-400">Manage your learning sessions and track progress</p>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setView(view === 'list' ? 'grid' : 'list')}
-              className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all"
-            >
-              {view === 'list' ? 'Grid' : 'List'}
-            </button>
-            <button
-              onClick={loadSessions}
-              className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all"
-            >
-              <RefreshCw className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            </button>
+        {/* Hero header — ink-navy */}
+        <div className="relative mb-10 animate-scale-in">
+          <div className="relative overflow-hidden rounded-[28px] bg-ink-950 text-white p-8 md:p-10 shadow-soft-lg">
+            <div
+              className="absolute inset-0 opacity-60"
+              style={{
+                background:
+                  'radial-gradient(600px 400px at 10% -10%, rgba(34,211,238,.28), transparent 60%), radial-gradient(600px 500px at 95% 110%, rgba(255,106,91,.22), transparent 60%)',
+              }}
+            />
+            <div className="relative flex items-center justify-between flex-wrap gap-6">
+              <div>
+                <span className="chip chip-cyan mb-3"><Sparkles className="w-3 h-3" /> sessions</span>
+                <h1 className="font-display text-5xl md:text-6xl leading-[.95] tracking-tight">
+                  My <span className="italic text-gradient">sessions</span>,<br />
+                  <span className="italic text-gradient-cyan">on track</span>.
+                </h1>
+                <p className="mt-3 text-ink-300">Manage your learning sessions and track progress.</p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setView(view === 'list' ? 'grid' : 'list')}
+                  className="btn btn-ghost text-white border-white/15 bg-white/5 hover:bg-white/10"
+                >
+                  {view === 'list' ? <GridIcon className="w-4 h-4" /> : <ListIcon className="w-4 h-4" />}
+                  {view === 'list' ? 'Grid' : 'List'}
+                </button>
+                <button
+                  onClick={loadSessions}
+                  className="btn btn-ghost text-white border-white/15 bg-white/5 hover:bg-white/10"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Refresh
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5 mb-8">
           {quickStats.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <div key={index} className="bg-gradient-to-br from-pink-200 via-rose-200 to-purple-200 dark:bg-gray-800 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all group">
-                <div className="flex items-center justify-between mb-2">
-                  <div className={`p-2 bg-${stat.color}-100 dark:bg-${stat.color}-900/30 rounded-lg`}>
-                    <Icon className={`w-5 h-5 text-${stat.color}-600 dark:text-${stat.color}-400`} />
-                  </div>
-                  <span className="text-xs font-medium text-green-600 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full">
-                    Active
-                  </span>
+              <div
+                key={index}
+                className="bento bento-glow p-6 animate-scale-in"
+                style={{ animationDelay: `${index * 0.08}s` }}
+              >
+                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${stat.iconBg} text-white grid place-items-center shadow-soft`}>
+                  <Icon className="w-6 h-6" />
                 </div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</p>
+                <p className="mt-5 text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300">{stat.label}</p>
+                <p className="font-display text-5xl mt-1 leading-none">{stat.value}</p>
               </div>
             );
           })}
@@ -362,16 +317,27 @@ const SessionBooking = () => {
 
         {/* Upcoming Sessions Banner */}
         {upcomingSessions.length > 0 && (
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6 mb-8 text-white">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="flex items-center gap-3">
-                <Calendar className="w-8 h-8" />
+          <div className="relative overflow-hidden rounded-[28px] bg-ink-950 text-white p-6 md:p-8 mb-8 shadow-soft-lg">
+            <div
+              className="absolute inset-0 opacity-60"
+              style={{
+                background:
+                  'radial-gradient(500px 300px at 10% -10%, rgba(34,211,238,.3), transparent 60%), radial-gradient(400px 300px at 100% 110%, rgba(255,106,91,.22), transparent 60%)',
+              }}
+            />
+            <div className="relative flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-white/10 ring-1 ring-white/15 grid place-items-center backdrop-blur-md">
+                  <Calendar className="w-7 h-7 text-cyan-300" />
+                </div>
                 <div>
-                  <h3 className="text-lg font-semibold">Upcoming Sessions</h3>
-                  <p className="text-indigo-100">You have {upcomingSessions.length} session(s) scheduled</p>
+                  <span className="chip chip-cyan mb-2">upcoming</span>
+                  <h3 className="font-display text-2xl md:text-3xl leading-tight">
+                    {upcomingSessions.length} session{upcomingSessions.length !== 1 ? 's' : ''} <span className="italic text-gradient-cyan">scheduled</span>
+                  </h3>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 {upcomingSessions.map((session, index) => (
                   <button
                     key={index}
@@ -379,7 +345,7 @@ const SessionBooking = () => {
                       setSelectedSession(session);
                       setShowDetails(true);
                     }}
-                    className="px-3 py-1 bg-white/20 rounded-lg text-sm hover:bg-white/30 transition-colors"
+                    className="chip chip-ink ring-1 ring-white/10 bg-white/5 text-white hover:bg-white/10"
                   >
                     {new Date(session.scheduled_at).toLocaleDateString()}
                   </button>
@@ -390,24 +356,24 @@ const SessionBooking = () => {
         )}
 
         {/* Search and Filter */}
-        <div className="bg-gradient-to-br from-pink-200 via-rose-200 to-purple-200 dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-8">
+        <div className="bento p-6 mb-8">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
               <input
                 type="text"
                 placeholder="Search sessions by skill or mentor..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full pl-11 pr-4 py-3 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur text-sm outline-none focus:border-cyan-400 focus:shadow-glow transition"
               />
             </div>
-            
+
             <div className="flex gap-2">
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="px-4 py-3 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur text-sm outline-none focus:border-cyan-400 focus:shadow-glow transition"
               >
                 <option value="all">All Sessions</option>
                 <option value="scheduled">Scheduled</option>
@@ -415,49 +381,45 @@ const SessionBooking = () => {
                 <option value="cancelled">Cancelled</option>
                 <option value="pending">Pending</option>
               </select>
-              
-              <button className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                <Filter className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+
+              <button className="btn btn-ghost p-3" title="Filter">
+                <Filter className="w-4 h-4" />
               </button>
-              
-              <button className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                <Download className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+
+              <button className="btn btn-ghost p-3" title="Download">
+                <Download className="w-4 h-4" />
               </button>
             </div>
           </div>
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="relative">
-              <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-8 h-8 bg-gradient-to-br from-pink-200 via-rose-200 to-purple-200 dark:bg-gray-800 rounded-full animate-pulse"></div>
-              </div>
+          <div className="flex items-center justify-center py-20">
+            <div className="flex flex-col items-center gap-5">
+              <div className="tc-spinner" />
+              <p className="font-display text-xl text-ink-600 dark:text-ink-200">Loading your sessions…</p>
             </div>
           </div>
         ) : filteredSessions.length === 0 ? (
-          <div className="bg-gradient-to-br from-pink-200 via-rose-200 to-purple-200 dark:bg-gray-800 rounded-xl p-12 text-center shadow-lg" data-testid="no-sessions">
-            <div className="w-24 h-24 mx-auto bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mb-4">
-              <Calendar className="w-12 h-12 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Sessions Found</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-              {searchTerm || filter !== 'all' 
-                ? "No sessions match your search criteria. Try adjusting your filters."
+          <div className="empty-state" data-testid="no-sessions">
+            <Calendar className="w-12 h-12 text-ink-400" />
+            <p className="font-display text-3xl">No sessions found</p>
+            <p className="text-sm text-ink-500 max-w-sm">
+              {searchTerm || filter !== 'all'
+                ? 'No sessions match your search criteria. Try adjusting your filters.'
                 : "You don't have any sessions yet. Start by exploring mentors and booking your first session!"}
             </p>
-            <div className="flex gap-3 justify-center">
-              <button className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
-                Browse Mentors
+            <div className="flex gap-3 mt-2">
+              <button className="btn btn-cyan">
+                Browse Mentors <ArrowRight className="w-4 h-4" />
               </button>
-              {searchTerm && (
-                <button 
+              {(searchTerm || filter !== 'all') && (
+                <button
                   onClick={() => {
                     setSearchTerm('');
                     setFilter('all');
                   }}
-                  className="px-6 py-2 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  className="btn btn-ghost"
                 >
                   Clear Filters
                 </button>
@@ -465,170 +427,132 @@ const SessionBooking = () => {
             </div>
           </div>
         ) : (
-          <div className={`grid ${view === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'} gap-6`}>
+          <div className={`grid ${view === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'} gap-5`}>
             {filteredSessions.map((session) => {
-              const StatusIcon = getStatusIcon(session.status);
-              const statusColors = getStatusColor(session.status);
-              
+              const meta = getStatusMeta(session.status);
+              const StatusIcon = meta.icon;
+
               return (
                 <div
                   key={session.id}
-                  className="group bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
+                  className="bento bento-glow p-0 overflow-hidden flex flex-col"
                   data-testid="session-card"
                 >
-                  {/* Card Header */}
-                  <div className="relative h-32 bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
-                    <div className="absolute inset-0 bg-black/20"></div>
-                    <div className="relative flex justify-between items-start">
-                      <div>
-                        <span className="px-3 py-1 bg-white/20 backdrop-blur rounded-full text-white text-sm">
-                          Session #{session.id.slice(0, 8)}
-                        </span>
-                      </div>
-                      <button className="p-2 bg-white/20 backdrop-blur rounded-lg hover:bg-white/30 transition-colors">
-                        <MoreVertical className="w-4 h-4 text-white" />
-                      </button>
+                  {/* Card top — ink-navy */}
+                  <div className="relative overflow-hidden bg-ink-950 text-white p-6">
+                    <div
+                      className="absolute inset-0 opacity-60"
+                      style={{
+                        background:
+                          'radial-gradient(400px 240px at 0% 0%, rgba(34,211,238,.3), transparent 60%), radial-gradient(400px 240px at 100% 100%, rgba(255,106,91,.22), transparent 60%)',
+                      }}
+                    />
+                    <div className="relative flex justify-between items-start mb-3">
+                      <span className="chip chip-cyan text-[10px]">
+                        Session #{session.id?.slice(0, 8)}
+                      </span>
+                      <span className={`chip ${session.status === 'completed' ? 'chip-cyan' : session.status === 'cancelled' ? 'chip-coral' : 'chip-ink'} ring-1 ring-white/15 bg-white/10`}>
+                        <StatusIcon className="w-3 h-3" /> {meta.label}
+                      </span>
                     </div>
-                    <div className="relative mt-2">
-                      <h3 className="text-xl font-bold text-white mb-1">{session.skill_name}</h3>
-                      <p className="text-indigo-100 text-sm">with {session.mentor_name || 'Mentor'}</p>
+                    <div className="relative">
+                      <h3 className="font-display text-2xl leading-tight">{session.skill_name}</h3>
+                      <p className="text-ink-300 text-sm mt-1">with {session.mentor_name || session.other_participant_name || 'Mentor'}</p>
                     </div>
                   </div>
 
-                  {/* Card Body */}
-                  <div className="p-6">
-                    {/* Status Badge */}
-                    <div className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium mb-4 ${statusColors.bg} ${statusColors.text} border ${statusColors.border}`}>
-                      <StatusIcon className="w-3 h-3" />
-                      <span className="capitalize">{session.status}</span>
-                    </div>
-
-                                       {/* Session Details */}
-                    <div className="space-y-3 mb-4">
-                      <div className="flex items-center gap-3 text-sm">
-                        <Clock className="w-4 h-4 text-gray-400" />
-                        <span className="text-gray-600 dark:text-gray-400">
-                          Duration: {session.meeting_duration_minutes || session.duration_minutes || 60} minutes
-                        </span>
+                  {/* Card body */}
+                  <div className="p-6 flex-1">
+                    <div className="space-y-3 mb-5">
+                      <div className="flex items-center gap-3 text-sm text-ink-600 dark:text-ink-300">
+                        <Clock className="w-4 h-4 text-ink-400" />
+                        <span>Duration: {session.meeting_duration_minutes || session.duration_minutes || 60} minutes</span>
                       </div>
-                      
-                      {/* Meeting Date/Time Display - Fixed to show meeting_date */}
-                      <div className="flex items-center gap-3 text-sm">
-                        <CalendarIcon className="w-4 h-4 text-gray-400" />
-                        <span className="text-gray-600 dark:text-gray-400">
-                          {session.meeting_date 
+
+                      <div className="flex items-center gap-3 text-sm text-ink-600 dark:text-ink-300">
+                        <CalendarIcon className="w-4 h-4 text-ink-400" />
+                        <span>
+                          {session.meeting_date
                             ? new Date(session.meeting_date).toLocaleString('en-US', {
                                 weekday: 'short',
                                 year: 'numeric',
                                 month: 'short',
                                 day: 'numeric',
                                 hour: '2-digit',
-                                minute: '2-digit'
+                                minute: '2-digit',
                               })
-                            : session.scheduled_at 
-                              ? new Date(session.scheduled_at).toLocaleString()
-                              : 'Not scheduled'}
+                            : session.scheduled_at
+                            ? new Date(session.scheduled_at).toLocaleString()
+                            : 'Not scheduled'}
                         </span>
                       </div>
 
                       {session.meeting_link && (
-                        <div className="flex items-center gap-3 text-sm">
-                          <VideoIcon className="w-4 h-4 text-gray-400" />
-                          <span className="text-gray-600 dark:text-gray-400 truncate flex-1">
-                            {session.meeting_link}
-                          </span>
+                        <div className="flex items-center gap-3 text-sm text-ink-600 dark:text-ink-300">
+                          <VideoIcon className="w-4 h-4 text-ink-400" />
+                          <span className="truncate flex-1">{session.meeting_link}</span>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleCopyLink(session.meeting_link);
                             }}
-                            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                            className="w-8 h-8 rounded-full grid place-items-center hover:bg-black/5 dark:hover:bg-white/10 transition"
                           >
-                            {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-400" />}
+                            {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-ink-400" />}
                           </button>
                         </div>
                       )}
-                      
-                      {/* Meeting Topic Display */}
+
                       {session.meeting_topic && (
-                        <div className="flex items-center gap-3 text-sm">
-                          <BookOpen className="w-4 h-4 text-gray-400" />
-                          <span className="text-gray-600 dark:text-gray-400">
-                            {session.meeting_topic}
-                          </span>
+                        <div className="flex items-center gap-3 text-sm text-ink-600 dark:text-ink-300">
+                          <BookOpen className="w-4 h-4 text-ink-400" />
+                          <span>{session.meeting_topic}</span>
                         </div>
                       )}
                     </div>
 
                     {/* Action Buttons */}
-                     <div className="flex gap-2 flex-wrap">
-                      {/* View Profile Button */}
-                      {/* <button
-                        onClick={() => {
-                          setSelectedUserId(session.mentor_id || session.learner_id);
-                          setShowProfileModal(true);
-                        }}
-                        className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                        data-testid="view-profile-button"
-                      >
-                        <User className="w-4 h-4" />
-                        View Profile
-                      </button> */}
+                    <div className="flex gap-2 flex-wrap">
                       {session.meeting_link && (session.status === 'scheduled' || session.status === 'accepted') && (
-                        
                         <a
                           href={session.meeting_link}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                          className="btn btn-cyan flex-1 min-w-[120px]"
                         >
                           <Video className="w-4 h-4" />
                           Join Meeting
                         </a>
                       )}
-                       {selectedSession && !selectedSession.meeting_link && selectedSession.role === 'mentor' && (
-                    <button
-                      onClick={() => {
-                        setShowDetails(false);
-                        openMeetingModal(selectedSession);
-                      }}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                      data-testid="details-set-meeting-link-button"
-                    >
-                      <LinkIcon className="w-5 h-5" />
-                      Set Meeting Link
-                    </button>
-                  )}
-                       {!session.meeting_link && session.role === 'mentor' && (
+
+                      {!session.meeting_link && session.role === 'mentor' && (
                         <button
                           onClick={() => openMeetingModal(session)}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                          className="btn btn-cyan flex-1 min-w-[120px]"
                           data-testid="session-set-meeting-link-button"
                         >
                           <LinkIcon className="w-4 h-4" />
                           Set Meeting Link
                         </button>
                       )}
-                      
-                      
+
                       <button
                         onClick={() => {
                           setSelectedSession(session);
                           setShowDetails(true);
                         }}
-                        className="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                        className="btn btn-ghost"
                       >
                         Details
                       </button>
 
-                           {/* Mark as Complete button for skill exchange sessions */}
                       {session.session_type === 'skill_exchange' && session.status === 'scheduled' && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleMarkComplete(session);
                           }}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                          className="btn btn-coral flex-1 min-w-[140px]"
                           data-testid="mark-complete-button"
                         >
                           <CheckCircle className="w-4 h-4" />
@@ -636,14 +560,13 @@ const SessionBooking = () => {
                         </button>
                       )}
 
-                      {/* Rate Partner button for completed sessions */}
                       {session.status === 'completed' && session.session_type === 'skill_exchange' && (
-                        <button 
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleRatePartner(session);
                           }}
-                          className="flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+                          className="btn btn-coral"
                           data-testid="rate-partner-button"
                         >
                           <Star className="w-4 h-4" />
@@ -661,102 +584,91 @@ const SessionBooking = () => {
         {/* Session Details Modal */}
         {showDetails && selectedSession && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowDetails(false)}>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-              {/* Modal Header */}
-              <div className="relative h-32 bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
-                <div className="absolute inset-0 bg-black/20"></div>
+            <div className="bento p-0 max-w-2xl w-full max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900" onClick={(e) => e.stopPropagation()}>
+              {/* Modal Header — ink-navy */}
+              <div className="relative overflow-hidden bg-ink-950 text-white p-6 md:p-8 rounded-t-[28px]">
+                <div
+                  className="absolute inset-0 opacity-60"
+                  style={{
+                    background:
+                      'radial-gradient(500px 300px at 10% -10%, rgba(34,211,238,.3), transparent 60%), radial-gradient(400px 240px at 100% 110%, rgba(255,106,91,.22), transparent 60%)',
+                  }}
+                />
                 <div className="relative flex justify-between items-start">
                   <div>
-                    <span className="px-3 py-1 bg-white/20 backdrop-blur rounded-full text-white text-sm">
-                      Session Details
-                    </span>
+                    <span className="chip chip-cyan mb-3">session details</span>
+                    <h3 className="font-display text-3xl md:text-4xl leading-tight">{selectedSession.skill_name}</h3>
                   </div>
                   <button
                     onClick={() => setShowDetails(false)}
-                    className="p-2 bg-white/20 backdrop-blur rounded-lg hover:bg-white/30 transition-colors"
+                    className="w-9 h-9 rounded-full grid place-items-center bg-white/10 hover:bg-white/20 transition"
                   >
                     <X className="w-5 h-5 text-white" />
                   </button>
                 </div>
-                <div className="relative mt-4">
-                  <h3 className="text-2xl font-bold text-white">{selectedSession.skill_name}</h3>
-                </div>
               </div>
 
               {/* Modal Body */}
-              <div className="p-6">
+              <div className="p-6 md:p-8">
                 <div className="grid md:grid-cols-2 gap-6">
-                  {/* Session Info */}
                   <div className="space-y-4">
-                    <h4 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                      <Calendar className="w-5 h-5 text-indigo-600" />
-                      Session Information
+                    <h4 className="font-display text-2xl flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-cyan-500" />
+                      Information
                     </h4>
-                    
+
                     <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Status</span>
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          selectedSession.status === 'completed' ? 'bg-green-100 text-green-600' :
-                          selectedSession.status === 'scheduled' ? 'bg-blue-100 text-blue-600' :
-                          selectedSession.status === 'cancelled' ? 'bg-red-100 text-red-600' :
-                          'bg-yellow-100 text-yellow-600'
-                        }`}>
-                          {selectedSession.status}
-                        </span>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-ink-500 dark:text-ink-300">Status</span>
+                        <span className="chip chip-ink capitalize">{selectedSession.status}</span>
                       </div>
-                      
+
                       <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Duration</span>
-                        <span className="text-gray-900 dark:text-white">{selectedSession.duration_minutes} minutes</span>
+                        <span className="text-sm text-ink-500 dark:text-ink-300">Duration</span>
+                        <span className="font-semibold">{selectedSession.duration_minutes} minutes</span>
                       </div>
-                      
+
                       <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Scheduled</span>
-                        <span className="text-gray-900 dark:text-white">
+                        <span className="text-sm text-ink-500 dark:text-ink-300">Scheduled</span>
+                        <span className="font-semibold text-right">
                           {selectedSession.scheduled_at ? new Date(selectedSession.scheduled_at).toLocaleString() : 'Not scheduled'}
                         </span>
                       </div>
-                      
+
                       <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Created</span>
-                        <span className="text-gray-900 dark:text-white">
-                          {new Date(selectedSession.created_at).toLocaleDateString()}
-                        </span>
+                        <span className="text-sm text-ink-500 dark:text-ink-300">Created</span>
+                        <span className="font-semibold">{new Date(selectedSession.created_at).toLocaleDateString()}</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Mentor Info */}
                   <div className="space-y-4">
-                    <h4 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                      <User className="w-5 h-5 text-indigo-600" />
-                      Mentor Information
+                    <h4 className="font-display text-2xl flex items-center gap-2">
+                      <User className="w-5 h-5 text-cyan-500" />
+                      Mentor
                     </h4>
-                    
-                    <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                      <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
+
+                    <div className="flex items-center gap-3 p-4 rounded-2xl bg-black/5 dark:bg-white/5">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-500 grid place-items-center text-white font-bold text-xl">
                         {selectedSession.mentor_name?.charAt(0) || 'M'}
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-900 dark:text-white">{selectedSession.mentor_name || 'Mentor'}</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">ID: {selectedSession.mentor_id?.slice(0, 8)}</p>
+                        <p className="font-semibold">{selectedSession.mentor_name || 'Mentor'}</p>
+                        <p className="text-xs text-ink-500 dark:text-ink-300">ID: {selectedSession.mentor_id?.slice(0, 8)}</p>
                       </div>
                     </div>
 
                     {selectedSession.meeting_link && (
                       <div className="space-y-2">
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Meeting Link</p>
-                        <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                          <LinkIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                          <span className="text-sm text-gray-600 dark:text-gray-400 truncate flex-1">
-                            {selectedSession.meeting_link}
-                          </span>
+                        <p className="text-xs uppercase tracking-widest text-ink-500">Meeting Link</p>
+                        <div className="flex items-center gap-2 p-3 rounded-2xl bg-black/5 dark:bg-white/5">
+                          <LinkIcon className="w-4 h-4 text-ink-400 flex-shrink-0" />
+                          <span className="text-sm truncate flex-1 text-ink-600 dark:text-ink-200">{selectedSession.meeting_link}</span>
                           <button
                             onClick={() => handleCopyLink(selectedSession.meeting_link)}
-                            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
+                            className="w-8 h-8 rounded-full grid place-items-center hover:bg-black/5 dark:hover:bg-white/10 transition"
                           >
-                            {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-400" />}
+                            {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-ink-400" />}
                           </button>
                         </div>
                       </div>
@@ -765,57 +677,69 @@ const SessionBooking = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex gap-3 mt-8 pt-6 border-t border-black/5 dark:border-white/10 flex-wrap">
                   {selectedSession.meeting_link && (selectedSession.status === 'scheduled' || selectedSession.status === 'accepted') && (
                     <a
                       href={selectedSession.meeting_link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                      className="btn btn-cyan flex-1 min-w-[140px]"
                     >
-                      <Video className="w-5 h-5" />
+                      <Video className="w-4 h-4" />
                       Join Meeting
                     </a>
                   )}
 
-                     {selectedSession && !selectedSession.meeting_link && selectedSession.role === 'mentor' && (
+                  {selectedSession && !selectedSession.meeting_link && selectedSession.role === 'mentor' && (
                     <button
                       onClick={() => {
                         setShowDetails(false);
                         openMeetingModal(selectedSession);
                       }}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                      className="btn btn-cyan flex-1 min-w-[140px]"
                       data-testid="details-set-meeting-link-button"
                     >
-                      <LinkIcon className="w-5 h-5" />
+                      <LinkIcon className="w-4 h-4" />
                       Set Meeting Link
                     </button>
                   )}
-                  
-                  
-                  
-                  <button className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                    Reschedule
-                  </button>
-                  
+
+                  <button className="btn btn-ghost flex-1 min-w-[140px]">Reschedule</button>
+
                   {selectedSession.status !== 'cancelled' && (
-                    <button className="px-4 py-3 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                      Cancel
-                    </button>
+                    <button className="btn btn-ghost text-coral-500 border-coral-300/50">Cancel</button>
                   )}
                 </div>
               </div>
             </div>
           </div>
         )}
-          {meetingModal && selectedSession && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setMeetingModal(false)} data-testid="meeting-link-setup-modal">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full" onClick={e => e.stopPropagation()}>
-              <div className="relative h-24 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-t-2xl p-6">
-                <div className="absolute inset-0 bg-black/20"></div>
+
+        {/* Meeting Link Modal */}
+        {meetingModal && selectedSession && (
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setMeetingModal(false)}
+            data-testid="meeting-link-setup-modal"
+          >
+            <div className="bento p-0 max-w-md w-full bg-white dark:bg-gray-900" onClick={(e) => e.stopPropagation()}>
+              <div className="relative overflow-hidden bg-ink-950 text-white p-6 rounded-t-[28px]">
+                <div
+                  className="absolute inset-0 opacity-60"
+                  style={{
+                    background:
+                      'radial-gradient(400px 240px at 10% -10%, rgba(34,211,238,.3), transparent 60%), radial-gradient(400px 240px at 100% 110%, rgba(255,106,91,.22), transparent 60%)',
+                  }}
+                />
                 <div className="relative flex justify-between items-start">
-                  <h2 className="text-2xl font-bold text-white">Set Meeting Link</h2>
-                  <button onClick={() => setMeetingModal(false)} className="p-2 bg-white/20 rounded-lg">
+                  <div>
+                    <span className="chip chip-cyan mb-2">setup</span>
+                    <h2 className="font-display text-3xl">Set Meeting Link</h2>
+                  </div>
+                  <button
+                    onClick={() => setMeetingModal(false)}
+                    className="w-9 h-9 rounded-full grid place-items-center bg-white/10 hover:bg-white/20 transition"
+                  >
                     <X className="w-5 h-5 text-white" />
                   </button>
                 </div>
@@ -823,11 +747,11 @@ const SessionBooking = () => {
 
               <div className="p-6 space-y-4">
                 <div>
-                  <label className="block text-sm mb-1 text-gray-700 dark:text-gray-300">Provider</label>
+                  <label className="block text-xs uppercase tracking-widest text-ink-500 mb-2">Provider</label>
                   <select
                     value={meetingForm.provider}
                     onChange={(e) => setMeetingForm({ ...meetingForm, provider: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900"
+                    className="w-full px-4 py-3 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur text-sm outline-none focus:border-cyan-400 focus:shadow-glow transition"
                     data-testid="meeting-provider-select"
                   >
                     <option value="google_meet">Google Meet</option>
@@ -838,22 +762,22 @@ const SessionBooking = () => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm mb-1 text-gray-700 dark:text-gray-300">Date</label>
+                    <label className="block text-xs uppercase tracking-widest text-ink-500 mb-2">Date</label>
                     <input
                       type="date"
                       value={meetingForm.date}
                       onChange={(e) => setMeetingForm({ ...meetingForm, date: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900"
+                      className="w-full px-4 py-3 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur text-sm outline-none focus:border-cyan-400 focus:shadow-glow transition"
                       data-testid="meeting-date-input"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm mb-1 text-gray-700 dark:text-gray-300">Time</label>
+                    <label className="block text-xs uppercase tracking-widest text-ink-500 mb-2">Time</label>
                     <input
                       type="time"
                       value={meetingForm.time}
                       onChange={(e) => setMeetingForm({ ...meetingForm, time: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900"
+                      className="w-full px-4 py-3 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur text-sm outline-none focus:border-cyan-400 focus:shadow-glow transition"
                       data-testid="meeting-time-input"
                     />
                   </div>
@@ -862,14 +786,14 @@ const SessionBooking = () => {
                 <div className="flex gap-3 pt-2">
                   <button
                     onClick={() => setMeetingModal(false)}
-                    className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl"
+                    className="btn btn-ghost flex-1"
                     data-testid="meeting-modal-cancel-button"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleSaveMeetingLink}
-                    className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700"
+                    className="btn btn-cyan flex-1"
                     data-testid="meeting-modal-save-button"
                   >
                     Save Link
@@ -881,30 +805,11 @@ const SessionBooking = () => {
         )}
       </div>
 
-      <style jsx>{`
-        @keyframes blob {
-          0%, 100% { transform: translate(0px, 0px) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-        }
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-      `}</style>
-
-
       {/* Chat Modal for Sessions */}
       {showChat && chatSession && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-2xl h-[600px]">
-            <RealtimeChat
-              roomType="session"
-              roomId={chatSession.id}
-              onClose={() => setShowChat(false)}
-            />
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bento p-0 w-full max-w-2xl h-[600px] bg-white dark:bg-gray-900 overflow-hidden">
+            <RealtimeChat roomType="session" roomId={chatSession.id} onClose={() => setShowChat(false)} />
           </div>
         </div>
       )}
@@ -920,7 +825,8 @@ const SessionBooking = () => {
           }}
         />
       )}
-        {/* Rating Modal - Shows after session completion */}
+
+      {/* Rating Modal */}
       {showRatingModal && ratingSessionData && (
         <RatingModal
           isOpen={showRatingModal}

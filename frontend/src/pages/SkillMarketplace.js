@@ -11,52 +11,37 @@ import {
   CheckCircle,
   Award,
   Star,
-  MapPin,
-  User,
   Clock,
   TrendingUp,
   Filter,
-  Grid,
-  List,
+  Grid as GridIcon,
+  List as ListIcon,
   BookOpen,
   GraduationCap,
   Sparkles,
-  Zap,
   Shield,
   Users,
-  MessageSquare,
   Calendar,
   ChevronRight,
-  MoreVertical,
-  ThumbsUp,
-  Share2,
-  Download,
   RefreshCw,
   AlertCircle,
   Loader2,
   Check,
-  Globe,
-  Mail,
-  Phone,
-  Video,
   Briefcase,
-  Heart,
   Crown,
-  Medal,
   Target,
-  Brain,
-  Rocket,
   Compass,
-  Edit2
+  Edit2,
+  ArrowRight,
 } from 'lucide-react';
 
 const SkillMarketplace = () => {
   const [activeTab, setActiveTab] = useState('my-skills');
   const [mySkills, setMySkills] = useState([]);
   const [mentors, setMentors] = useState([]);
-    const [recommendations, setRecommendations] = useState([]);
-    const [skillSuggestions, setSkillSuggestions] = useState([]); // Suggestions for "Want to Learn"
-  const [mentorLearnerMatches, setMentorLearnerMatches] = useState({ recommended_mentors: [], recommended_learners: [] }); // Mentor/Learner matches
+  const [recommendations, setRecommendations] = useState([]);
+  const [skillSuggestions, setSkillSuggestions] = useState([]);
+  const [mentorLearnerMatches, setMentorLearnerMatches] = useState({ recommended_mentors: [], recommended_learners: [] });
   const [showAddSkill, setShowAddSkill] = useState(false);
   const [searchSkill, setSearchSkill] = useState('');
   const [newSkill, setNewSkill] = useState({
@@ -64,10 +49,10 @@ const SkillMarketplace = () => {
     skill_type: 'offered',
     skill_level: 'intermediate',
     description: '',
-years_experience: ''
+    years_experience: '',
   });
   const [loading, setLoading] = useState(false);
-    const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   const [viewMode, setViewMode] = useState('grid');
   const [filterLevel, setFilterLevel] = useState('all');
@@ -81,30 +66,28 @@ years_experience: ''
     date: '',
     time: '',
     duration: 60,
-    message: ''
+    message: '',
   });
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [editSkill, setEditSkill] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
   const [findMentorModal, setFindMentorModal] = useState({ show: false, skill: '' });
-    const [skillQuizModal, setSkillQuizModal] = useState({ show: false, skill: '', level: 'intermediate' });
-   const [selectedMentorDetail, setSelectedMentorDetail] = useState(null);
+  const [skillQuizModal, setSkillQuizModal] = useState({ show: false, skill: '', level: 'intermediate' });
+  const [selectedMentorDetail, setSelectedMentorDetail] = useState(null);
   const [showMentorDetailModal, setShowMentorDetailModal] = useState(false);
 
   const handleAddSkill = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-       // Build skill data object - only include years_experience and hourly_rate for "offered" skills
       const skillData = {
         skill_name: newSkill.skill_name,
         skill_type: newSkill.skill_type,
         skill_level: newSkill.skill_level,
-        description: newSkill.description || undefined
+        description: newSkill.description || undefined,
       };
 
-      // Only add years_experience for "Can Teach" (offered) skills
       if (newSkill.skill_type === 'offered') {
         if (newSkill.years_experience) {
           skillData.years_experience = parseInt(newSkill.years_experience);
@@ -113,12 +96,12 @@ years_experience: ''
 
       await skillService.addSkill(skillData);
       setShowAddSkill(false);
-      setNewSkill({ 
-        skill_name: '', 
-        skill_type: 'offered', 
+      setNewSkill({
+        skill_name: '',
+        skill_type: 'offered',
         skill_level: 'intermediate',
         description: '',
-        years_experience: ''
+        years_experience: '',
       });
       showNotification('Skill added successfully!', 'success');
       loadMySkills();
@@ -132,15 +115,13 @@ years_experience: ''
     e.preventDefault();
     setLoading(true);
     try {
-       // Build skill data object - only include years_experience for "offered" skills
       const skillData = {
         skill_name: newSkill.skill_name,
         skill_type: newSkill.skill_type,
         skill_level: newSkill.skill_level,
-        description: newSkill.description || undefined
+        description: newSkill.description || undefined,
       };
 
-      // Only add years_experience for "Can Teach" (offered) skills
       if (newSkill.skill_type === 'offered') {
         if (newSkill.years_experience) {
           skillData.years_experience = parseInt(newSkill.years_experience);
@@ -175,7 +156,7 @@ years_experience: ''
       await skillService.requestSession({
         mentor_id: selectedMentor.user_id,
         skill_id: selectedMentor.skill_id,
-        ...requestData
+        ...requestData,
       });
       setRequestModal(false);
       showNotification('Session request sent successfully!', 'success');
@@ -215,7 +196,7 @@ years_experience: ''
     setTimeout(() => setNotification({ show: false, message: '', type: '' }), 3000);
   };
 
-    const loadRecommendations = async () => {
+  const loadRecommendations = async () => {
     try {
       const data = await skillService.getRecommendations();
       setRecommendations(Array.isArray(data) ? data : []);
@@ -230,8 +211,7 @@ years_experience: ''
     try {
       await skillService.addRecommendedSkill(skillName);
       showNotification(`${skillName} added to your skills!`, 'success');
-      // Remove from recommendations
-      setRecommendations(recommendations.filter(r => r.skill_name !== skillName));
+      setRecommendations(recommendations.filter((r) => r.skill_name !== skillName));
       await loadMySkills();
     } catch (error) {
       showNotification('Failed to add skill: ' + (error.response?.data?.detail || error.message), 'error');
@@ -239,7 +219,6 @@ years_experience: ''
     setLoading(false);
   };
 
-  // Load skill suggestions for "Want to Learn"
   const loadSkillSuggestions = async () => {
     setLoadingSuggestions(true);
     try {
@@ -252,7 +231,6 @@ years_experience: ''
     setLoadingSuggestions(false);
   };
 
-  // Load mentor/learner matches
   const loadMentorLearnerMatches = async () => {
     setLoading(true);
     try {
@@ -265,7 +243,6 @@ years_experience: ''
     setLoading(false);
   };
 
-  // Handle clicking on a suggestion chip (auto-add to "Want to Learn")
   const handleAddSuggestionAsSkill = async (suggestion) => {
     setLoading(true);
     try {
@@ -273,11 +250,10 @@ years_experience: ''
         skill_name: suggestion.skill_name,
         skill_type: 'wanted',
         skill_level: suggestion.difficulty || 'beginner',
-        description: suggestion.description || ''
+        description: suggestion.description || '',
       });
       showNotification(`${suggestion.skill_name} added to "Want to Learn"!`, 'success');
-      // Remove from suggestions
-      setSkillSuggestions(skillSuggestions.filter(s => s.skill_name !== suggestion.skill_name));
+      setSkillSuggestions(skillSuggestions.filter((s) => s.skill_name !== suggestion.skill_name));
       await loadMySkills();
     } catch (error) {
       showNotification('Failed to add skill: ' + (error.response?.data?.detail || error.message), 'error');
@@ -290,40 +266,49 @@ years_experience: ''
       loadMySkills();
     } else if (activeTab === 'recommendations') {
       loadRecommendations();
-         loadMentorLearnerMatches();
+      loadMentorLearnerMatches();
     } else if (activeTab === 'matches') {
       loadMentorLearnerMatches();
     }
   }, [activeTab]);
 
-  // Load suggestions when "Add Skill" modal opens and skill type is "wanted"
   useEffect(() => {
     if (showAddSkill && newSkill.skill_type === 'wanted') {
       loadSkillSuggestions();
     }
   }, [showAddSkill, newSkill.skill_type]);
 
-
-  const getLevelColor = (level) => {
-    switch(level?.toLowerCase()) {
-      case 'beginner': return 'bg-green-100 text-green-600 border-green-200 dark:bg-green-900/30 dark:text-green-400';
-      case 'intermediate': return 'bg-yellow-100 text-yellow-600 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400';
-      case 'advanced': return 'bg-orange-100 text-orange-600 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400';
-      case 'expert': return 'bg-purple-100 text-purple-600 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400';
-      default: return 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-700 dark:text-gray-400';
+  const getLevelChip = (level) => {
+    switch (level?.toLowerCase()) {
+      case 'beginner':
+        return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
+      case 'intermediate':
+        return 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400';
+      case 'advanced':
+        return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
+      case 'expert':
+        return 'bg-coral-100 text-coral-700 dark:bg-coral-900/30 dark:text-coral-400';
+      default:
+        return 'bg-black/5 text-ink-600 dark:bg-white/10 dark:text-ink-200';
     }
   };
 
   const getLevelIcon = (level) => {
-    switch(level?.toLowerCase()) {
-      case 'beginner': return GraduationCap;
-      case 'intermediate': return TrendingUp;
-      case 'advanced': return Award;
-      case 'expert': return Crown;
-      default: return Target;
+    switch (level?.toLowerCase()) {
+      case 'beginner':
+        return GraduationCap;
+      case 'intermediate':
+        return TrendingUp;
+      case 'advanced':
+        return Award;
+      case 'expert':
+        return Crown;
+      default:
+        return Target;
     }
   };
-   const getInitials = (name) => {
+
+  const getInitials = (name) => {
     if (!name) return '?';
     const parts = name.trim().split(' ');
     if (parts.length >= 2) {
@@ -334,25 +319,27 @@ years_experience: ''
 
   const getAvatarColor = (name) => {
     const colors = [
-      'from-pink-500 to-rose-500',
-      'from-purple-500 to-indigo-500',
-      'from-blue-500 to-cyan-500',
-      'from-green-500 to-emerald-500',
-      'from-yellow-500 to-orange-500',
-      'from-red-500 to-pink-500',
+      'from-coral-400 to-pink-500',
+      'from-cyan-400 to-indigo-500',
+      'from-emerald-400 to-cyan-500',
+      'from-amber-300 to-coral-400',
+      'from-indigo-400 to-indigo-600',
+      'from-cyan-400 to-cyan-600',
     ];
     const index = (name || '').length % colors.length;
     return colors[index];
   };
 
   const sortMentors = (mentorsList) => {
-    switch(sortBy) {
+    switch (sortBy) {
       case 'rating':
         return [...mentorsList].sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
       case 'sessions':
         return [...mentorsList].sort((a, b) => (b.total_sessions || 0) - (a.total_sessions || 0));
       case 'name':
-        return [...mentorsList].sort((a, b) => (a.full_name || a.username || '').localeCompare(b.full_name || b.username || ''));
+        return [...mentorsList].sort((a, b) =>
+          (a.full_name || a.username || '').localeCompare(b.full_name || b.username || '')
+        );
       default:
         return mentorsList;
     }
@@ -360,87 +347,97 @@ years_experience: ''
 
   const filterMentorsByLevel = (mentorsList) => {
     if (filterLevel === 'all') return mentorsList;
-    return mentorsList.filter(m => m.skill_level?.toLowerCase() === filterLevel);
+    return mentorsList.filter((m) => m.skill_level?.toLowerCase() === filterLevel);
   };
 
   const filterMentorsByType = (mentorsList) => {
     if (filterType === 'all') return mentorsList;
-    return mentorsList.filter(m => m.verification_status === (filterType === 'verified'));
+    return mentorsList.filter((m) => m.verification_status === (filterType === 'verified'));
   };
 
   const displayedMentors = filterMentorsByType(filterMentorsByLevel(sortMentors(mentors)));
 
   return (
     <div className="min-h-screen relative aurora-bg grid-bg overflow-hidden text-ink-950 dark:text-white" data-testid="skill-marketplace-page">
-      <Navbar />
-
-      {/* Decorative blobs matching Landing/Login aesthetic */}
       <div className="blob w-[520px] h-[520px] -left-40 -top-32 bg-cyan-400/30 pointer-events-none" />
       <div className="blob w-[440px] h-[440px] -right-32 top-40 bg-coral-400/25 pointer-events-none" style={{ animationDelay: '-6s' }} />
+      <div className="blob w-[420px] h-[420px] left-[40%] bottom-[-10rem] bg-indigo-500/20 pointer-events-none" style={{ animationDelay: '-8s' }} />
+
+      <div className="relative z-10">
+        <Navbar />
+      </div>
 
       {/* Notification Toast */}
       {notification.show && (
-        <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-lg animate-slide-in ${
-          notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-        } text-white flex items-center gap-3`}>
-          {notification.type === 'success' ? (
-            <CheckCircle className="w-5 h-5" />
-          ) : (
-            <AlertCircle className="w-5 h-5" />
-          )}
-          {notification.message}
+        <div
+          className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-2xl shadow-soft-lg animate-scale-in ${
+            notification.type === 'success' ? 'bg-emerald-500' : 'bg-coral-500'
+          } text-white flex items-center gap-3`}
+        >
+          {notification.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+          <span className="text-sm font-medium">{notification.message}</span>
         </div>
       )}
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">Skill Marketplace</h1>
-            <p className="text-gray-600 dark:text-gray-400">Discover, learn, and grow with our community</p>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-              className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all"
-              title={viewMode === 'grid' ? 'Switch to list view' : 'Switch to grid view'}
-            >
-              {viewMode === 'grid' ? <List className="w-5 h-5 text-gray-600 dark:text-gray-400" /> : <Grid className="w-5 h-5 text-gray-600 dark:text-gray-400" />}
-            </button>
-            <button
-              onClick={() => activeTab === 'my-skills' ? loadMySkills() : searchMentors()}
-              className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all"
-              title="Refresh"
-            >
-              <RefreshCw className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            </button>
+        {/* Hero header — ink-navy */}
+        <div className="relative mb-10 animate-scale-in">
+          <div className="relative overflow-hidden rounded-[28px] bg-ink-950 text-white p-8 md:p-10 shadow-soft-lg">
+            <div
+              className="absolute inset-0 opacity-60"
+              style={{
+                background:
+                  'radial-gradient(600px 400px at 10% -10%, rgba(34,211,238,.28), transparent 60%), radial-gradient(600px 500px at 95% 110%, rgba(255,106,91,.22), transparent 60%)',
+              }}
+            />
+            <div className="relative flex items-center justify-between flex-wrap gap-6">
+              <div>
+                <span className="chip chip-cyan mb-3"><Sparkles className="w-3 h-3" /> skill exchange</span>
+                <h1 className="font-display text-5xl md:text-6xl leading-[.95] tracking-tight">
+                  Skill <span className="italic text-gradient-cyan">marketplace</span>,<br />
+                  <span className="italic text-gradient">your way</span>.
+                </h1>
+                <p className="mt-3 text-ink-300">Discover, learn, and grow with our community.</p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                  className="btn btn-ghost text-white border-white/15 bg-white/5 hover:bg-white/10"
+                  title={viewMode === 'grid' ? 'Switch to list view' : 'Switch to grid view'}
+                >
+                  {viewMode === 'grid' ? <ListIcon className="w-4 h-4" /> : <GridIcon className="w-4 h-4" />}
+                </button>
+                <button
+                  onClick={() => (activeTab === 'my-skills' ? loadMySkills() : searchMentors())}
+                  className="btn btn-ghost text-white border-white/15 bg-white/5 hover:bg-white/10"
+                  title="Refresh"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Refresh
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Tabs with Icons */}
-        <div className="flex space-x-4 mb-8 border-b border-gray-200 dark:border-gray-700" data-testid="skill-tabs">
-          {[
-            { id: 'my-skills', label: 'My Skills', icon: BookOpen },
-            // { id: 'recommendations', label: 'Recommended', icon: Sparkles },
-            // { id: 'find-mentors', label: 'Find Mentors', icon: Compass },
-          ].map((tab) => {
+        {/* Tabs */}
+        <div className="flex space-x-1 mb-8 border-b border-black/5 dark:border-white/10" data-testid="skill-tabs">
+          {[{ id: 'my-skills', label: 'My Skills', icon: BookOpen }].map((tab) => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 pb-3 px-4 font-medium transition-all relative ${
-                  activeTab === tab.id
-                    ? 'text-indigo-600 dark:text-indigo-400'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                className={`flex items-center gap-2 pb-3 px-4 text-sm font-semibold transition-all relative ${
+                  activeTab === tab.id ? 'text-cyan-500' : 'text-ink-500 dark:text-ink-300 hover:text-ink-950 dark:hover:text-white'
                 }`}
                 data-testid={`${tab.id}-tab`}
               >
-                <Icon className="w-5 h-5" />
+                <Icon className="w-4 h-4" />
                 {tab.label}
                 {activeTab === tab.id && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400"></div>
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" style={{ background: 'linear-gradient(90deg,#22d3ee,#ff6a5b)' }}></div>
                 )}
               </button>
             );
@@ -451,34 +448,36 @@ years_experience: ''
         {activeTab === 'my-skills' && (
           <div className="space-y-8">
             {/* Header with Stats */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+            <div className="bento p-6">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">Your Skills</h2>
-                  <p className="text-gray-600 dark:text-gray-400">Manage your skills and expertise</p>
+                  <span className="chip chip-cyan mb-2">your skills</span>
+                  <h2 className="font-display text-3xl md:text-4xl leading-tight">
+                    Manage your <span className="italic text-gradient-cyan">expertise</span>
+                  </h2>
                 </div>
-                
+
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{mySkills.length}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Total Skills</p>
+                      <p className="font-display text-3xl leading-none">{mySkills.length}</p>
+                      <p className="text-[10px] uppercase tracking-widest text-ink-500 mt-1">Total</p>
                     </div>
-                    <div className="w-px h-10 bg-gray-200 dark:bg-gray-700"></div>
+                    <div className="w-px h-10 bg-black/10 dark:bg-white/10"></div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                        {mySkills.filter(s => s.is_verified).length}
+                      <p className="font-display text-3xl leading-none text-emerald-500">
+                        {mySkills.filter((s) => s.is_verified).length}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Verified</p>
+                      <p className="text-[10px] uppercase tracking-widest text-ink-500 mt-1">Verified</p>
                     </div>
                   </div>
-                  
+
                   <button
                     onClick={() => setShowAddSkill(true)}
-                    className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg shadow-indigo-600/25"
+                    className="btn btn-coral"
                     data-testid="add-skill-button"
                   >
-                    <Plus className="w-5 h-5" />
+                    <Plus className="w-4 h-4" />
                     Add Skill
                   </button>
                 </div>
@@ -486,331 +485,258 @@ years_experience: ''
             </div>
 
             {mySkills.length === 0 ? (
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-16 text-center shadow-lg" data-testid="no-skills">
-                <div className="w-24 h-24 mx-auto bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mb-4">
-                  <BookOpen className="w-12 h-12 text-indigo-600 dark:text-indigo-400" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Skills Added Yet</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+              <div className="empty-state" data-testid="no-skills">
+                <BookOpen className="w-12 h-12 text-ink-400" />
+                <p className="font-display text-3xl">No skills added yet</p>
+                <p className="text-sm text-ink-500 max-w-sm">
                   Start by adding your first skill. Showcase what you can teach or what you want to learn!
                 </p>
-                <button
-                  onClick={() => setShowAddSkill(true)}
-                  className="inline-flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-medium hover:gap-3 transition-all"
-                >
-                  Add your first skill
-                  <ChevronRight className="w-4 h-4" />
+                <button onClick={() => setShowAddSkill(true)} className="btn btn-cyan mt-2">
+                  Add your first skill <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             ) : (
               <>
-                {/* 🟢 SKILLS I CAN TEACH SECTION */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 border-b-2 border-green-200 dark:border-green-800 pb-3">
-                    <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                      <GraduationCap className="w-6 h-6 text-green-600 dark:text-green-400" />
+                {/* Skills I Can Teach */}
+                <div className="space-y-5">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-cyan-500 grid place-items-center text-white shadow-soft">
+                      <GraduationCap className="w-6 h-6" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white">Skills I Can Teach</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {mySkills.filter(s => s.skill_type === 'offered').length} skill(s) you can mentor others in
+                      <span className="chip chip-cyan mb-1.5">teaching</span>
+                      <h3 className="font-display text-3xl md:text-4xl leading-tight">
+                        Skills I can <span className="italic text-gradient-cyan">teach</span>
+                      </h3>
+                      <p className="text-sm text-ink-500 dark:text-ink-300 mt-1">
+                        {mySkills.filter((s) => s.skill_type === 'offered').length} skill(s) you can mentor in.
                       </p>
                     </div>
                   </div>
 
-                  {mySkills.filter(s => s.skill_type === 'offered').length === 0 ? (
-                    <div className="bg-green-50 dark:bg-green-900/10 border-2 border-dashed border-green-200 dark:border-green-800 rounded-xl p-8 text-center">
-                      <GraduationCap className="w-12 h-12 text-green-400 mx-auto mb-3" />
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">
+                  {mySkills.filter((s) => s.skill_type === 'offered').length === 0 ? (
+                    <div className="rounded-[24px] border-2 border-dashed border-emerald-300/50 dark:border-emerald-700/40 bg-emerald-50/50 dark:bg-emerald-900/10 p-10 text-center">
+                      <GraduationCap className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
+                      <p className="text-sm text-ink-500 dark:text-ink-300">
                         No teaching skills yet. Add skills you can mentor others in!
                       </p>
                       <button
                         onClick={() => setShowAddSkill(true)}
-                        className="mt-3 text-green-600 dark:text-green-400 text-sm font-medium hover:underline"
+                        className="btn btn-ghost mt-3 text-emerald-600 dark:text-emerald-400"
                       >
-                        + Add Teaching Skill
+                        <Plus className="w-3 h-3" /> Add Teaching Skill
                       </button>
                     </div>
                   ) : (
-                    <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'} gap-6`}>
-                      {mySkills.filter(s => s.skill_type === 'offered').map((skill) => {
-                        const LevelIcon = getLevelIcon(skill.skill_level);
-                        return (
-                          <div
-                            key={skill.id}
-                            className="group bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-2 border-green-200 dark:border-green-800 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-                            data-testid="skill-card"
-                          >
-  {/* Top Section */}
-  <div className="p-5 border-b border-gray-100 dark:border-gray-800">
-    <div className="flex items-start justify-between">
-      
-      {/* Title + Description */}
-      <div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          {skill.skill_name}
-        </h3>
+                    <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'} gap-5`}>
+                      {mySkills.filter((s) => s.skill_type === 'offered').map((skill) => (
+                        <div key={skill.id} className="bento bento-glow p-0 overflow-hidden" data-testid="skill-card">
+                          <div className="p-6 border-b border-black/5 dark:border-white/10">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-display text-2xl leading-tight truncate">{skill.skill_name}</h3>
+                                {skill.description && (
+                                  <p className="text-sm text-ink-500 dark:text-ink-300 mt-1 line-clamp-2">
+                                    {skill.description}
+                                  </p>
+                                )}
+                              </div>
 
-        {skill.description && (
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
-            {skill.description}
-          </p>
-        )}
-      </div>
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={() => {
+                                    setEditSkill(skill);
+                                    setShowEditModal(true);
+                                  }}
+                                  className="w-8 h-8 rounded-full grid place-items-center hover:bg-black/5 dark:hover:bg-white/10 transition"
+                                >
+                                  <Edit2 className="w-4 h-4 text-ink-500" />
+                                </button>
+                                <button
+                                  onClick={() => setDeleteConfirm(skill.id)}
+                                  className="w-8 h-8 rounded-full grid place-items-center hover:bg-coral-500/10 transition"
+                                >
+                                  <X className="w-4 h-4 text-ink-500 hover:text-coral-500" />
+                                </button>
+                              </div>
+                            </div>
 
-      {/* Actions */}
-      <div className="flex gap-1">
-        <button
-          onClick={() => {
-            setEditSkill(skill);
-            setShowEditModal(true);
-          }}
-          className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-        >
-          <Edit2 className="w-4 h-4 text-gray-500" />
-        </button>
+                            {deleteConfirm === skill.id && (
+                              <div className="mt-3 p-3 rounded-2xl bg-coral-500/10 border border-coral-300/30">
+                                <p className="text-sm text-coral-600 mb-2">Delete this skill?</p>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleDeleteSkill(skill.id)}
+                                    className="btn btn-coral px-3 py-1 text-xs"
+                                  >
+                                    Yes
+                                  </button>
+                                  <button
+                                    onClick={() => setDeleteConfirm(null)}
+                                    className="btn btn-ghost px-3 py-1 text-xs"
+                                  >
+                                    No
+                                  </button>
+                                </div>
+                              </div>
+                            )}
 
-        <button
-          onClick={() => setDeleteConfirm(skill.id)}
-          className="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition"
-        >
-          <X className="w-4 h-4 text-gray-500 hover:text-red-500" />
-        </button>
-      </div>
-    </div>
+                            <div className="flex flex-wrap gap-2 mt-4">
+                              <span className="chip chip-cyan">Can Teach</span>
+                              <span className={`chip ${getLevelChip(skill.skill_level)}`}>
+                                {skill.skill_level || 'Not specified'}
+                              </span>
+                              {skill.is_verified && (
+                                <span className="chip chip-cyan bg-emerald-100 text-emerald-700">
+                                  <Shield className="w-3 h-3" />
+                                  Verified
+                                </span>
+                              )}
+                            </div>
+                          </div>
 
-    {/* Delete Confirmation */}
-    {deleteConfirm === skill.id && (
-      <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-        <p className="text-sm text-red-600 dark:text-red-400 mb-2">
-          Delete this skill?
-        </p>
-        <div className="flex gap-2">
-          <button
-            onClick={() => handleDeleteSkill(skill.id)}
-            className="px-3 py-1 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700"
-          >
-            Yes
-          </button>
-          <button
-            onClick={() => setDeleteConfirm(null)}
-            className="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-xs rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
-          >
-            No
-          </button>
-        </div>
-      </div>
-    )}
+                          <div className="p-6 space-y-3">
+                            <div className="flex justify-between text-sm text-ink-500 dark:text-ink-300">
+                              {skill.years_experience && <span>{skill.years_experience} yrs experience</span>}
+                            </div>
 
-    {/* Badges */}
-    <div className="flex flex-wrap gap-2 mt-3">
-      <span className="px-3 py-1 text-xs rounded-full font-medium bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400">
-        Can Teach
-      </span>
+                            <div className="flex justify-between text-sm pt-3 border-t border-black/5 dark:border-white/10">
+                              <div className="flex items-center gap-1 text-ink-600 dark:text-ink-200">
+                                <Users className="w-4 h-4" />
+                                {skill.student_count || 0}
+                              </div>
+                              <div className="flex items-center gap-1 text-ink-600 dark:text-ink-200">
+                                <Star className="w-4 h-4 text-amber-400 fill-current" />
+                                {skill.average_rating?.toFixed(1) || '0.0'}
+                              </div>
+                            </div>
+                          </div>
 
-      <span
-        className={`px-3 py-1 text-xs rounded-full font-medium ${getLevelColor(
-          skill.skill_level
-        )}`}
-      >
-        {skill.skill_level || "Not specified"}
-      </span>
-
-      {skill.is_verified && (
-        <span className="px-3 py-1 text-xs rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center gap-1">
-          <Shield className="w-3 h-3" />
-          Verified
-        </span>
-      )}
-    </div>
-  </div>
-
-  {/* Middle Info */}
-  <div className="p-5 space-y-3">
-    <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-      {skill.years_experience && (
-        <span>{skill.years_experience} yrs experience</span>
-      )}
-
-
-    </div>
-
-    {/* Stats */}
-    <div className="flex justify-between text-sm pt-3 border-t border-gray-100 dark:border-gray-800">
-      <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-        <Users className="w-4 h-4" />
-        {skill.student_count || 0}
-      </div>
-
-      <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-        <Star className="w-4 h-4 text-yellow-400" />
-        {skill.average_rating?.toFixed(1) || "0.0"}
-      </div>
-    </div>
-  </div>
-
-  {/* Bottom Action */}
-  {!skill.is_verified && (
-    <div className="px-5 pb-5">
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setSkillQuizModal({
-            show: true,
-            skill: skill.skill_name,
-            level: skill.skill_level,
-          });
-        }}
-        className="w-full py-2.5 text-sm font-medium rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:opacity-90 transition"
-        data-testid="verify-skill-button"
-      >
-        Take Skill Assessment
-      </button>
-    </div>
-  )}
-</div>
-                        );
-                      })}
+                          {!skill.is_verified && (
+                            <div className="px-6 pb-6">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSkillQuizModal({
+                                    show: true,
+                                    skill: skill.skill_name,
+                                    level: skill.skill_level,
+                                  });
+                                }}
+                                className="btn btn-cyan w-full"
+                                data-testid="verify-skill-button"
+                              >
+                                Take Skill Assessment
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
 
-                {/* 🔵 SKILLS I WANT TO LEARN SECTION */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 border-b-2 border-blue-200 dark:border-blue-800 pb-3">
-                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                      <BookOpen className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                {/* Skills I Want to Learn */}
+                <div className="space-y-5">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-500 grid place-items-center text-white shadow-soft">
+                      <BookOpen className="w-6 h-6" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white">Skills I Want to Learn</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {mySkills.filter(s => s.skill_type === 'wanted').length} skill(s) you're learning
+                      <span className="chip chip-coral mb-1.5">learning</span>
+                      <h3 className="font-display text-3xl md:text-4xl leading-tight">
+                        Skills I want to <span className="italic text-gradient">learn</span>
+                      </h3>
+                      <p className="text-sm text-ink-500 dark:text-ink-300 mt-1">
+                        {mySkills.filter((s) => s.skill_type === 'wanted').length} skill(s) you're learning.
                       </p>
                     </div>
                   </div>
 
-                  {mySkills.filter(s => s.skill_type === 'wanted').length === 0 ? (
-                    <div className="bg-blue-50 dark:bg-blue-900/10 border-2 border-dashed border-blue-200 dark:border-blue-800 rounded-xl p-8 text-center">
-                      <BookOpen className="w-12 h-12 text-blue-400 mx-auto mb-3" />
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">
-                        No learning goals yet. Add skills you want to master!
-                      </p>
-                      <button
-                        onClick={() => setShowAddSkill(true)}
-                        className="mt-3 text-blue-600 dark:text-blue-400 text-sm font-medium hover:underline"
-                      >
-                        + Add Learning Goal
+                  {mySkills.filter((s) => s.skill_type === 'wanted').length === 0 ? (
+                    <div className="rounded-[24px] border-2 border-dashed border-cyan-300/50 dark:border-cyan-700/40 bg-cyan-50/50 dark:bg-cyan-900/10 p-10 text-center">
+                      <BookOpen className="w-10 h-10 text-cyan-400 mx-auto mb-3" />
+                      <p className="text-sm text-ink-500 dark:text-ink-300">No learning goals yet. Add skills you want to master!</p>
+                      <button onClick={() => setShowAddSkill(true)} className="btn btn-ghost mt-3 text-cyan-600 dark:text-cyan-400">
+                        <Plus className="w-3 h-3" /> Add Learning Goal
                       </button>
                     </div>
                   ) : (
-                    <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'} gap-6`}>
-                      {mySkills.filter(s => s.skill_type === 'wanted').map((skill) => {
-                        const LevelIcon = getLevelIcon(skill.skill_level);
-                        return (
-                          <div
-                            key={skill.id}
-                            className="group bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-2 border-blue-200 dark:border-blue-800 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-                            data-testid="skill-card"
-                          >
-  {/* Top Section */}
-  <div className="p-5 border-b border-gray-100 dark:border-gray-800">
-    <div className="flex items-start justify-between">
-      
-      {/* Title + Description */}
-      <div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          {skill.skill_name}
-        </h3>
+                    <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'} gap-5`}>
+                      {mySkills.filter((s) => s.skill_type === 'wanted').map((skill) => (
+                        <div key={skill.id} className="bento bento-glow p-0 overflow-hidden" data-testid="skill-card">
+                          <div className="p-6 border-b border-black/5 dark:border-white/10">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-display text-2xl leading-tight truncate">{skill.skill_name}</h3>
+                                {skill.description && (
+                                  <p className="text-sm text-ink-500 dark:text-ink-300 mt-1 line-clamp-2">{skill.description}</p>
+                                )}
+                              </div>
 
-        {skill.description && (
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
-            {skill.description}
-          </p>
-        )}
-      </div>
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={() => {
+                                    setEditSkill(skill);
+                                    setShowEditModal(true);
+                                  }}
+                                  className="w-8 h-8 rounded-full grid place-items-center hover:bg-black/5 dark:hover:bg-white/10 transition"
+                                >
+                                  <Edit2 className="w-4 h-4 text-ink-500" />
+                                </button>
+                                <button
+                                  onClick={() => setDeleteConfirm(skill.id)}
+                                  className="w-8 h-8 rounded-full grid place-items-center hover:bg-coral-500/10 transition"
+                                >
+                                  <X className="w-4 h-4 text-ink-500 hover:text-coral-500" />
+                                </button>
+                              </div>
+                            </div>
 
-      {/* Actions */}
-      <div className="flex gap-1">
-        <button
-          onClick={() => {
-            setEditSkill(skill);
-            setShowEditModal(true);
-          }}
-          className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-        >
-          <Edit2 className="w-4 h-4 text-gray-500" />
-        </button>
+                            {deleteConfirm === skill.id && (
+                              <div className="mt-3 p-3 rounded-2xl bg-coral-500/10 border border-coral-300/30">
+                                <p className="text-sm text-coral-600 mb-2">Delete this skill?</p>
+                                <div className="flex gap-2">
+                                  <button onClick={() => handleDeleteSkill(skill.id)} className="btn btn-coral px-3 py-1 text-xs">
+                                    Yes
+                                  </button>
+                                  <button onClick={() => setDeleteConfirm(null)} className="btn btn-ghost px-3 py-1 text-xs">
+                                    No
+                                  </button>
+                                </div>
+                              </div>
+                            )}
 
-        <button
-          onClick={() => setDeleteConfirm(skill.id)}
-          className="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition"
-        >
-          <X className="w-4 h-4 text-gray-500 hover:text-red-500" />
-        </button>
-      </div>
-    </div>
+                            <div className="flex flex-wrap gap-2 mt-4">
+                              <span className="chip chip-coral">Want to Learn</span>
+                              <span className={`chip ${getLevelChip(skill.skill_level)}`}>
+                                {skill.skill_level || 'Beginner'}
+                              </span>
+                            </div>
+                          </div>
 
-    {/* Delete Confirmation */}
-    {deleteConfirm === skill.id && (
-      <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-        <p className="text-sm text-red-600 dark:text-red-400 mb-2">
-          Delete this skill?
-        </p>
-        <div className="flex gap-2">
-          <button
-            onClick={() => handleDeleteSkill(skill.id)}
-            className="px-3 py-1 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700"
-          >
-            Yes
-          </button>
-          <button
-            onClick={() => setDeleteConfirm(null)}
-            className="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-xs rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
-          >
-            No
-          </button>
-        </div>
-      </div>
-    )}
+                          <div className="p-6 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-ink-500 dark:text-ink-300">
+                                Target Level:{' '}
+                                <span className="font-semibold text-ink-950 dark:text-white capitalize">
+                                  {skill.skill_level || 'Beginner'}
+                                </span>
+                              </span>
+                            </div>
+                          </div>
 
-    {/* Badges */}
-    <div className="flex flex-wrap gap-2 mt-3">
-      <span className="px-3 py-1 text-xs rounded-full font-medium bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-        Want to Learn
-      </span>
-
-      <span
-        className={`px-3 py-1 text-xs rounded-full font-medium ${getLevelColor(
-          skill.skill_level
-        )}`}
-      >
-        {skill.skill_level || "Beginner"}
-      </span>
-    </div>
-  </div>
-
-  {/* Middle Info */}
-  <div className="p-5 space-y-3">
-    <div className="flex items-center justify-between">
-      <span className="text-sm text-gray-600 dark:text-gray-400">
-        Target Level: <span className="font-semibold text-gray-900 dark:text-white capitalize">{skill.skill_level || 'Beginner'}</span>
-      </span>
-    </div>
-  </div>
-
-  {/* Bottom Action */}
-  <div className="px-5 pb-5">
-    <button
-      onClick={() => setFindMentorModal({ show: true, skill: skill.skill_name })}
-      className="w-full py-2.5 text-sm font-medium rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:opacity-90 transition flex items-center justify-center gap-2"
-    >
-      <Search className="w-4 h-4" />
-      Find Mentor
-    </button>
-  </div>
-</div>
-                        );
-                      })}
+                          <div className="px-6 pb-6">
+                            <button
+                              onClick={() => setFindMentorModal({ show: true, skill: skill.skill_name })}
+                              className="btn btn-cyan w-full"
+                            >
+                              <Search className="w-4 h-4" />
+                              Find Mentor
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -819,123 +745,125 @@ years_experience: ''
           </div>
         )}
 
-        {/* ===================================================================================================================================== */}
-
-        
- {/* Recommended Tab - Mentor/Learner Matches */}
+        {/* Recommendations Tab */}
         {activeTab === 'recommendations' && (
-          <div className="space-y-8">
-            {/* 👨‍🏫 RECOMMENDED MENTORS SECTION */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 border-b-2 border-green-200 dark:border-green-800 pb-3">
-                <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                  <GraduationCap className="w-6 h-6 text-green-600 dark:text-green-400" />
+          <div className="space-y-10">
+            {/* Recommended Mentors */}
+            <div className="space-y-5">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-cyan-500 grid place-items-center text-white shadow-soft">
+                  <GraduationCap className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Recommended Mentors</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <span className="chip chip-cyan mb-1.5">mentors</span>
+                  <h3 className="font-display text-3xl md:text-4xl leading-tight">
+                    Recommended <span className="italic text-gradient-cyan">mentors</span>
+                  </h3>
+                  <p className="text-sm text-ink-500 dark:text-ink-300 mt-1">
                     People who can teach what you want to learn ({mentorLearnerMatches.recommended_mentors?.length || 0})
                   </p>
                 </div>
               </div>
 
               {(!mentorLearnerMatches.recommended_mentors || mentorLearnerMatches.recommended_mentors.length === 0) ? (
-                <div className="bg-green-50 dark:bg-green-900/10 border-2 border-dashed border-green-200 dark:border-green-800 rounded-xl p-8 text-center">
-                  <Users className="w-12 h-12 text-green-400 mx-auto mb-3" />
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                <div className="rounded-[24px] border-2 border-dashed border-emerald-300/50 dark:border-emerald-700/40 bg-emerald-50/50 dark:bg-emerald-900/10 p-10 text-center">
+                  <Users className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
+                  <p className="text-sm text-ink-500 dark:text-ink-300">
                     No mentor matches yet. Add skills you want to learn to get personalized mentor recommendations!
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   {mentorLearnerMatches.recommended_mentors.map((mentor) => (
                     <div
                       key={mentor.user_id}
-                      className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-green-200 dark:border-green-800 cursor-pointer"
+                      className="bento bento-glow p-0 overflow-hidden cursor-pointer"
                       data-testid="mentor-card"
                       onClick={() => {
                         setSelectedMentorDetail(mentor);
                         setShowMentorDetailModal(true);
                       }}
                     >
-                      {/* Header with avatar and cover */}
-                      <div className="relative h-24 bg-gradient-to-r from-green-500 to-emerald-500 overflow-hidden">
+                      <div className="relative h-24 bg-ink-950 overflow-hidden">
+                        <div
+                          className="absolute inset-0 opacity-70"
+                          style={{
+                            background:
+                              'radial-gradient(400px 240px at 0% 0%, rgba(16,185,129,.45), transparent 60%), radial-gradient(400px 240px at 100% 100%, rgba(34,211,238,.35), transparent 60%)',
+                          }}
+                        />
                         {mentor.background_photo && (
-                          <img src={mentor.background_photo} alt="cover" className="w-full h-full object-cover absolute inset-0" />
+                          <img src={mentor.background_photo} alt="cover" className="w-full h-full object-cover absolute inset-0 opacity-70" />
                         )}
-                        <div className="absolute -bottom-10 left-6">
+                        <div className="absolute -bottom-10 left-6 z-10">
                           {mentor.profile_photo ? (
-                            <img src={mentor.profile_photo} alt={mentor.full_name || mentor.username} className="w-20 h-20 rounded-full object-cover shadow-lg ring-4 ring-white dark:ring-gray-800" />
+                            <img
+                              src={mentor.profile_photo}
+                              alt={mentor.full_name || mentor.username}
+                              className="w-20 h-20 rounded-full object-cover shadow-soft-lg ring-4 ring-white dark:ring-gray-900"
+                            />
                           ) : (
-                            <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${getAvatarColor(mentor.full_name || mentor.username)} flex items-center justify-center text-white text-2xl font-bold shadow-lg ring-4 ring-white dark:ring-gray-800`}>
+                            <div
+                              className={`w-20 h-20 rounded-full bg-gradient-to-br ${getAvatarColor(
+                                mentor.full_name || mentor.username
+                              )} flex items-center justify-center text-white text-2xl font-bold shadow-soft-lg ring-4 ring-white dark:ring-gray-900`}
+                            >
                               {getInitials(mentor.full_name || mentor.username)}
                             </div>
                           )}
                         </div>
                         {mentor.is_available && (
-                          <span className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 bg-green-500/90 backdrop-blur text-white rounded-full text-xs">
-                            <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
-                            Online
+                          <span className="absolute top-3 right-3 chip chip-cyan bg-emerald-500/90 text-white">
+                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Online
                           </span>
                         )}
                       </div>
 
-                      {/* Content */}
                       <div className="pt-14 p-6 space-y-4">
                         <div>
-                          <h4 className="text-lg font-bold text-gray-900 dark:text-white">
-                            {mentor.full_name || mentor.username}
-                          </h4>
+                          <h4 className="font-display text-xl leading-tight">{mentor.full_name || mentor.username}</h4>
                           {mentor.bio && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
-                              {mentor.bio}
-                            </p>
+                            <p className="text-sm text-ink-500 dark:text-ink-300 mt-1 line-clamp-2">{mentor.bio}</p>
                           )}
                         </div>
 
-                        {/* Skills */}
                         {mentor.matching_skills && mentor.matching_skills.length > 0 && (
                           <div className="flex flex-wrap gap-2">
                             {mentor.matching_skills.slice(0, 3).map((skill, idx) => (
-                              <span key={idx} className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                              <span key={idx} className="chip chip-cyan bg-emerald-100 text-emerald-700">
                                 {skill}
                               </span>
                             ))}
                             {mentor.matching_skills.length > 3 && (
-                              <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                                +{mentor.matching_skills.length - 3}
-                              </span>
+                              <span className="chip chip-ink">+{mentor.matching_skills.length - 3}</span>
                             )}
                           </div>
                         )}
 
-
-                        <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
-                     
-                          <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+                        <div className="flex items-center justify-between pt-3 border-t border-black/5 dark:border-white/10">
+                          <div className="flex items-center gap-1 text-sm text-ink-500 dark:text-ink-300">
                             <Briefcase className="w-4 h-4" />
                             <span>{mentor.total_sessions || 0} sessions</span>
                           </div>
-                          
                         </div>
 
-                        {/* Actions */}
                         <div className="flex gap-2">
                           <button
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setSelectedMentorDetail(mentor);
                               setShowMentorDetailModal(true);
                             }}
-                            className="flex-1 py-2 px-4 bg-green-600 hover:bg-green-700 text-white rounded-lg transition text-sm font-medium"
+                            className="btn btn-cyan flex-1"
                           >
                             View Profile
                           </button>
                           <button
-                            onClick={() => {
-                              /* TODO: Implement connect functionality */
+                            onClick={(e) => {
+                              e.stopPropagation();
                               showNotification('Connection request sent!', 'success');
                             }}
-                            className="py-2 px-4 border border-green-600 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition text-sm font-medium"
+                            className="btn btn-ghost"
                           >
                             Connect
                           </button>
@@ -947,116 +875,120 @@ years_experience: ''
               )}
             </div>
 
-            {/* 🧑‍🎓 RECOMMENDED LEARNERS SECTION */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 border-b-2 border-blue-200 dark:border-blue-800 pb-3">
-                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                  <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            {/* Recommended Learners */}
+            <div className="space-y-5">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-500 grid place-items-center text-white shadow-soft">
+                  <Users className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Recommended Learners</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <span className="chip chip-coral mb-1.5">learners</span>
+                  <h3 className="font-display text-3xl md:text-4xl leading-tight">
+                    Recommended <span className="italic text-gradient">learners</span>
+                  </h3>
+                  <p className="text-sm text-ink-500 dark:text-ink-300 mt-1">
                     People who want to learn what you can teach ({mentorLearnerMatches.recommended_learners?.length || 0})
                   </p>
                 </div>
               </div>
 
               {(!mentorLearnerMatches.recommended_learners || mentorLearnerMatches.recommended_learners.length === 0) ? (
-                <div className="bg-blue-50 dark:bg-blue-900/10 border-2 border-dashed border-blue-200 dark:border-blue-800 rounded-xl p-8 text-center">
-                  <Users className="w-12 h-12 text-blue-400 mx-auto mb-3" />
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                <div className="rounded-[24px] border-2 border-dashed border-cyan-300/50 dark:border-cyan-700/40 bg-cyan-50/50 dark:bg-cyan-900/10 p-10 text-center">
+                  <Users className="w-10 h-10 text-cyan-400 mx-auto mb-3" />
+                  <p className="text-sm text-ink-500 dark:text-ink-300">
                     No learner matches yet. Add skills you can teach to get personalized learner recommendations!
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   {mentorLearnerMatches.recommended_learners.map((learner) => (
-                                      <div
+                    <div
                       key={learner.user_id}
-                      className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-blue-200 dark:border-blue-800 cursor-pointer"
+                      className="bento bento-glow p-0 overflow-hidden cursor-pointer"
                       data-testid="learner-card"
                       onClick={() => {
                         setSelectedMentorDetail(learner);
                         setShowMentorDetailModal(true);
                       }}
                     >
-                      {/* Header with avatar and cover */}
-                      <div className="relative h-24 bg-gradient-to-r from-blue-500 to-indigo-500 overflow-hidden">
+                      <div className="relative h-24 bg-ink-950 overflow-hidden">
+                        <div
+                          className="absolute inset-0 opacity-70"
+                          style={{
+                            background:
+                              'radial-gradient(400px 240px at 0% 0%, rgba(34,211,238,.45), transparent 60%), radial-gradient(400px 240px at 100% 100%, rgba(99,102,241,.4), transparent 60%)',
+                          }}
+                        />
                         {learner.background_photo && (
-                          <img src={learner.background_photo} alt="cover" className="w-full h-full object-cover absolute inset-0" />
+                          <img src={learner.background_photo} alt="cover" className="w-full h-full object-cover absolute inset-0 opacity-70" />
                         )}
-                        <div className="absolute -bottom-10 left-6">
+                        <div className="absolute -bottom-10 left-6 z-10">
                           {learner.profile_photo ? (
-                            <img src={learner.profile_photo} alt={learner.full_name || learner.username} className="w-20 h-20 rounded-full object-cover shadow-lg ring-4 ring-white dark:ring-gray-800" />
+                            <img
+                              src={learner.profile_photo}
+                              alt={learner.full_name || learner.username}
+                              className="w-20 h-20 rounded-full object-cover shadow-soft-lg ring-4 ring-white dark:ring-gray-900"
+                            />
                           ) : (
-                            <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${getAvatarColor(learner.full_name || learner.username)} flex items-center justify-center text-white text-2xl font-bold shadow-lg ring-4 ring-white dark:ring-gray-800`}>
+                            <div
+                              className={`w-20 h-20 rounded-full bg-gradient-to-br ${getAvatarColor(
+                                learner.full_name || learner.username
+                              )} flex items-center justify-center text-white text-2xl font-bold shadow-soft-lg ring-4 ring-white dark:ring-gray-900`}
+                            >
                               {getInitials(learner.full_name || learner.username)}
                             </div>
                           )}
                         </div>
                         {learner.is_available && (
-                          <span className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 bg-green-500/90 backdrop-blur text-white rounded-full text-xs">
-                            <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
-                            Online
+                          <span className="absolute top-3 right-3 chip chip-cyan bg-emerald-500/90 text-white">
+                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Online
                           </span>
                         )}
                       </div>
 
-                      {/* Content */}
                       <div className="pt-14 p-6 space-y-4">
                         <div>
-                          <h4 className="text-lg font-bold text-gray-900 dark:text-white">
-                            {learner.full_name || learner.username}
-                          </h4>
+                          <h4 className="font-display text-xl leading-tight">{learner.full_name || learner.username}</h4>
                           {learner.bio && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
-                              {learner.bio}
-                            </p>
+                            <p className="text-sm text-ink-500 dark:text-ink-300 mt-1 line-clamp-2">{learner.bio}</p>
                           )}
                         </div>
 
-                        {/* Skills they want to learn */}
                         {learner.matching_skills && learner.matching_skills.length > 0 && (
                           <div className="flex flex-wrap gap-2">
                             {learner.matching_skills.slice(0, 3).map((skill, idx) => (
-                              <span key={idx} className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                                {skill}
-                              </span>
+                              <span key={idx} className="chip chip-cyan">{skill}</span>
                             ))}
                             {learner.matching_skills.length > 3 && (
-                              <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                                +{learner.matching_skills.length - 3}
-                              </span>
+                              <span className="chip chip-ink">+{learner.matching_skills.length - 3}</span>
                             )}
                           </div>
                         )}
 
-                       
-                        <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
-                          <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+                        <div className="flex items-center justify-between pt-3 border-t border-black/5 dark:border-white/10">
+                          <div className="flex items-center gap-1 text-sm text-ink-500 dark:text-ink-300">
                             <BookOpen className="w-4 h-4" />
                             <span>Learning {learner.matching_skills?.length || 0} skill(s)</span>
                           </div>
-                      
                         </div>
 
-                        {/* Actions */}
                         <div className="flex gap-2">
                           <button
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setSelectedMentorDetail(learner);
                               setShowMentorDetailModal(true);
                             }}
-                            className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition text-sm font-medium"
+                            className="btn btn-cyan flex-1"
                           >
                             View Profile
                           </button>
                           <button
-                            onClick={() => {
-                              /* TODO: Implement connect functionality */
+                            onClick={(e) => {
+                              e.stopPropagation();
                               showNotification('Connection request sent!', 'success');
                             }}
-                            className="py-2 px-4 border border-blue-600 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition text-sm font-medium"
+                            className="btn btn-ghost"
                           >
                             Connect
                           </button>
@@ -1073,15 +1005,14 @@ years_experience: ''
         {/* Find Mentors Tab */}
         {activeTab === 'find-mentors' && (
           <div className="space-y-6">
-            {/* Search Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+            <div className="bento p-6">
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1 relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
                   <input
                     type="text"
                     placeholder="Search for a skill (e.g., React, Python, Design)..."
-                    className="w-full pl-12 pr-4 py-4 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full pl-11 pr-4 py-3 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur text-sm outline-none focus:border-cyan-400 focus:shadow-glow transition"
                     value={searchSkill}
                     onChange={(e) => setSearchSkill(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && searchMentors()}
@@ -1091,35 +1022,34 @@ years_experience: ''
                 <button
                   onClick={searchMentors}
                   disabled={loading}
-                  className="flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 transition-all shadow-lg shadow-indigo-600/25"
+                  className="btn btn-coral px-6"
                   data-testid="search-mentors-button"
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                       Searching...
                     </>
                   ) : (
                     <>
-                      <Search className="w-5 h-5" />
+                      <Search className="w-4 h-4" />
                       Find Mentors
                     </>
                   )}
                 </button>
               </div>
 
-              {/* Filters */}
               {mentors.length > 0 && (
-                <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                    <Filter className="w-4 h-4" />
+                <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-black/5 dark:border-white/10">
+                  <span className="text-xs uppercase tracking-widest text-ink-500 flex items-center gap-1">
+                    <Filter className="w-3.5 h-3.5" />
                     Filter:
                   </span>
-                  
+
                   <select
                     value={filterLevel}
                     onChange={(e) => setFilterLevel(e.target.value)}
-                    className="px-3 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="px-3 py-1.5 rounded-full border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 text-xs outline-none focus:border-cyan-400"
                   >
                     <option value="all">All Levels</option>
                     <option value="beginner">Beginner</option>
@@ -1131,7 +1061,7 @@ years_experience: ''
                   <select
                     value={filterType}
                     onChange={(e) => setFilterType(e.target.value)}
-                    className="px-3 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="px-3 py-1.5 rounded-full border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 text-xs outline-none focus:border-cyan-400"
                   >
                     <option value="all">All Mentors</option>
                     <option value="verified">Verified Only</option>
@@ -1141,7 +1071,7 @@ years_experience: ''
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="px-3 py-1.5 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="px-3 py-1.5 rounded-full border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 text-xs outline-none focus:border-cyan-400"
                   >
                     <option value="rating">Sort by Rating</option>
                     <option value="sessions">Sort by Sessions</option>
@@ -1152,15 +1082,13 @@ years_experience: ''
             </div>
 
             {mentors.length === 0 ? (
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-16 text-center shadow-lg" data-testid="no-mentors">
-                <div className="w-24 h-24 mx-auto bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mb-4">
-                  <Search className="w-12 h-12 text-indigo-600 dark:text-indigo-400" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Find Your Mentor</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+              <div className="empty-state" data-testid="no-mentors">
+                <Search className="w-12 h-12 text-ink-400" />
+                <p className="font-display text-3xl">Find your mentor</p>
+                <p className="text-sm text-ink-500 max-w-sm">
                   Enter a skill above to discover expert mentors ready to guide you.
                 </p>
-                <div className="flex flex-wrap gap-2 justify-center">
+                <div className="flex flex-wrap gap-2 justify-center mt-2">
                   {['React', 'Python', 'Design', 'Marketing'].map((skill) => (
                     <button
                       key={skill}
@@ -1168,7 +1096,7 @@ years_experience: ''
                         setSearchSkill(skill);
                         searchMentors();
                       }}
-                      className="px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                      className="chip chip-ink hover:bg-cyan-500/10 transition"
                     >
                       {skill}
                     </button>
@@ -1176,116 +1104,104 @@ years_experience: ''
                 </div>
               </div>
             ) : (
-              <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'} gap-6`}>
+              <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'} gap-5`}>
                 {displayedMentors.map((mentor) => {
                   const LevelIcon = getLevelIcon(mentor.skill_level);
                   return (
-                    <div
-                      key={mentor.user_id}
-                      className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-200 dark:border-gray-700"
-                      data-testid="mentor-card"
-                    >
-                                      {/* Header with avatar */}
-                      <div className="relative h-24 bg-gradient-to-r from-indigo-600 to-purple-600 overflow-hidden">
+                    <div key={mentor.user_id} className="bento bento-glow p-0 overflow-hidden" data-testid="mentor-card">
+                      <div className="relative h-24 bg-ink-950 overflow-hidden">
+                        <div
+                          className="absolute inset-0 opacity-70"
+                          style={{
+                            background:
+                              'radial-gradient(400px 240px at 0% 0%, rgba(34,211,238,.45), transparent 60%), radial-gradient(400px 240px at 100% 100%, rgba(255,106,91,.35), transparent 60%)',
+                          }}
+                        />
                         {mentor.background_photo && (
-                          <img src={mentor.background_photo} alt="cover" className="w-full h-full object-cover absolute inset-0" />
+                          <img src={mentor.background_photo} alt="cover" className="w-full h-full object-cover absolute inset-0 opacity-70" />
                         )}
-                        <div className="absolute top-4 right-4 flex gap-2">
+                        <div className="absolute top-3 right-3 flex gap-2">
                           {mentor.is_verified && (
-                            <span className="flex items-center gap-1 px-2 py-1 bg-green-500/90 backdrop-blur text-white rounded-full text-xs font-medium">
-                              <Shield className="w-3 h-3" />
-                              Verified
+                            <span className="chip chip-cyan bg-emerald-500/90 text-white">
+                              <Shield className="w-3 h-3" /> Verified
                             </span>
                           )}
                           {mentor.is_available && (
-                            <span className="flex items-center gap-1 px-2 py-1 bg-green-500/90 backdrop-blur text-white rounded-full text-xs">
-                              <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
-                              Online
+                            <span className="chip chip-cyan bg-emerald-500/90 text-white">
+                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Online
                             </span>
                           )}
                         </div>
-                        
-                        {/* Avatar */}
-                        <div className="absolute -bottom-10 left-6">
+
+                        <div className="absolute -bottom-10 left-6 z-10">
                           {mentor.profile_photo ? (
-                            <img src={mentor.profile_photo} alt={mentor.full_name || mentor.username} className="w-20 h-20 rounded-full object-cover shadow-lg ring-4 ring-white dark:ring-gray-800" />
+                            <img
+                              src={mentor.profile_photo}
+                              alt={mentor.full_name || mentor.username}
+                              className="w-20 h-20 rounded-full object-cover shadow-soft-lg ring-4 ring-white dark:ring-gray-900"
+                            />
                           ) : (
-                            <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${getAvatarColor(mentor.full_name || mentor.username)} flex items-center justify-center text-white text-2xl font-bold shadow-lg ring-4 ring-white dark:ring-gray-800`}>
+                            <div
+                              className={`w-20 h-20 rounded-full bg-gradient-to-br ${getAvatarColor(
+                                mentor.full_name || mentor.username
+                              )} flex items-center justify-center text-white text-2xl font-bold shadow-soft-lg ring-4 ring-white dark:ring-gray-900`}
+                            >
                               {getInitials(mentor.full_name || mentor.username)}
                             </div>
                           )}
                         </div>
                       </div>
 
-                      {/* Content */}
                       <div className="pt-14 p-6 space-y-4">
                         <div>
-                          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                            {mentor.full_name || mentor.username}
-                          </h3>
+                          <h3 className="font-display text-xl leading-tight">{mentor.full_name || mentor.username}</h3>
                           {mentor.bio && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
-                              {mentor.bio}
-                            </p>
+                            <p className="text-sm text-ink-500 dark:text-ink-300 mt-1 line-clamp-2">{mentor.bio}</p>
                           )}
                         </div>
 
-                        {/* Skills */}
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Teaching:</span>
-                          <span className="px-3 py-1 text-xs rounded-full font-medium bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400">
-                            {mentor.skill_name}
-                          </span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs uppercase tracking-widest text-ink-500">Teaching</span>
+                          <span className="chip chip-cyan">{mentor.skill_name}</span>
                         </div>
 
-                        {/* Level Badge */}
-                        <div className="flex items-center gap-2">
-                          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getLevelColor(mentor.skill_level)}`}>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`chip ${getLevelChip(mentor.skill_level)}`}>
                             <LevelIcon className="w-3 h-3" />
                             <span className="capitalize">{mentor.skill_level || 'Intermediate'}</span>
                           </span>
                           {mentor.years_experience && (
-                            <span className="text-xs text-gray-600 dark:text-gray-400">
-                              {mentor.years_experience}+ yrs exp
-                            </span>
+                            <span className="text-xs text-ink-500 dark:text-ink-300">{mentor.years_experience}+ yrs exp</span>
                           )}
                         </div>
 
-                        {/* Stats */}
-                        <div className="grid grid-cols-3 gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div className="grid grid-cols-3 gap-2 p-4 rounded-2xl bg-black/5 dark:bg-white/5">
                           <div className="text-center">
-                            <div className="flex items-center justify-center gap-1 text-yellow-500">
+                            <div className="flex items-center justify-center gap-1 text-amber-500">
                               <Star className="w-4 h-4 fill-current" />
-                              <span className="font-bold text-gray-900 dark:text-white text-sm">
+                              <span className="font-display text-lg leading-none">
                                 {mentor.average_rating?.toFixed(1) || '0.0'}
                               </span>
                             </div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Rating</p>
+                            <p className="text-[10px] uppercase tracking-widest text-ink-500 mt-1">Rating</p>
                           </div>
-                          <div className="text-center border-x border-gray-200 dark:border-gray-600">
-                            <div className="font-bold text-gray-900 dark:text-white text-sm">
-                              {mentor.total_sessions || 0}
-                            </div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Sessions</p>
+                          <div className="text-center border-x border-black/10 dark:border-white/10">
+                            <div className="font-display text-lg leading-none">{mentor.total_sessions || 0}</div>
+                            <p className="text-[10px] uppercase tracking-widest text-ink-500 mt-1">Sessions</p>
                           </div>
                           <div className="text-center">
-                            <div className="font-bold text-gray-900 dark:text-white text-sm">
-                              {mentor.total_students || 0}
-                            </div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Students</p>
+                            <div className="font-display text-lg leading-none">{mentor.total_students || 0}</div>
+                            <p className="text-[10px] uppercase tracking-widest text-ink-500 mt-1">Students</p>
                           </div>
                         </div>
 
-   
-
-                        {/* Action Buttons */}
                         <div className="flex gap-2 pt-2">
                           <button
                             onClick={() => {
                               setSelectedMentorDetail(mentor);
                               setShowMentorDetailModal(true);
                             }}
-                            className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-2.5 px-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all font-medium text-sm"
+                            className="btn btn-cyan flex-1"
                             data-testid="view-profile-button"
                           >
                             View Profile
@@ -1295,7 +1211,7 @@ years_experience: ''
                               setSelectedMentor(mentor);
                               setRequestModal(true);
                             }}
-                            className="py-2.5 px-4 border-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all font-medium text-sm"
+                            className="btn btn-ghost"
                             data-testid="book-session-button"
                           >
                             Book
@@ -1313,31 +1229,36 @@ years_experience: ''
         {/* Add Skill Modal */}
         {showAddSkill && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowAddSkill(false)} data-testid="add-skill-modal">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full" onClick={e => e.stopPropagation()}>
-              {/* Modal Header */}
-              <div className="relative h-24 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-t-2xl p-6">
-                <div className="absolute inset-0 bg-black/20 rounded-t-2xl"></div>
+            <div className="bento p-0 max-w-md w-full bg-white dark:bg-gray-900" onClick={(e) => e.stopPropagation()}>
+              <div className="relative overflow-hidden bg-ink-950 text-white p-6 rounded-t-[28px]">
+                <div
+                  className="absolute inset-0 opacity-60"
+                  style={{
+                    background:
+                      'radial-gradient(400px 240px at 10% -10%, rgba(34,211,238,.3), transparent 60%), radial-gradient(400px 240px at 100% 110%, rgba(255,106,91,.22), transparent 60%)',
+                  }}
+                />
                 <div className="relative flex justify-between items-start">
-                  <h2 className="text-2xl font-bold text-white">Add New Skill</h2>
+                  <div>
+                    <span className="chip chip-cyan mb-2">new skill</span>
+                    <h2 className="font-display text-3xl">Add a skill</h2>
+                  </div>
                   <button
                     onClick={() => setShowAddSkill(false)}
-                    className="p-2 bg-white/20 backdrop-blur rounded-lg hover:bg-white/30 transition-colors"
+                    className="w-9 h-9 rounded-full grid place-items-center bg-white/10 hover:bg-white/20 transition"
                   >
                     <X className="w-5 h-5 text-white" />
                   </button>
                 </div>
               </div>
 
-              {/* Modal Body */}
               <form onSubmit={handleAddSkill} className="p-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Skill Name *
-                  </label>
+                  <label className="block text-xs uppercase tracking-widest text-ink-500 mb-2">Skill Name *</label>
                   <input
                     type="text"
                     required
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur text-sm outline-none focus:border-cyan-400 focus:shadow-glow transition"
                     placeholder="e.g., JavaScript, Photography"
                     value={newSkill.skill_name}
                     onChange={(e) => setNewSkill({ ...newSkill, skill_name: e.target.value })}
@@ -1346,11 +1267,9 @@ years_experience: ''
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Description
-                  </label>
+                  <label className="block text-xs uppercase tracking-widest text-ink-500 mb-2">Description</label>
                   <textarea
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur text-sm outline-none focus:border-cyan-400 focus:shadow-glow transition"
                     placeholder="Brief description of your skill..."
                     rows="3"
                     value={newSkill.description}
@@ -1359,79 +1278,60 @@ years_experience: ''
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Type *
-                  </label>
+                  <label className="block text-xs uppercase tracking-widest text-ink-500 mb-2">Type *</label>
                   <div className="grid grid-cols-2 gap-3">
                     {['offered', 'wanted'].map((type) => (
                       <button
                         key={type}
                         type="button"
                         onClick={() => setNewSkill({ ...newSkill, skill_type: type })}
-                        className={`px-4 py-3 rounded-xl border-2 transition-all ${
+                        className={`px-4 py-3 rounded-2xl border-2 text-sm font-semibold transition-all ${
                           newSkill.skill_type === type
                             ? type === 'offered'
-                              ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400'
-                              : 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                            : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
+                              ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
+                              : 'border-cyan-400 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400'
+                            : 'border-black/10 dark:border-white/10 text-ink-500 dark:text-ink-300'
                         }`}
                       >
-                        {type === 'offered' ? '📤 Can Teach' : '📥 Want to Learn'}
+                        {type === 'offered' ? 'Can Teach' : 'Want to Learn'}
                       </button>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Skill Level
-                  </label>
+                  <label className="block text-xs uppercase tracking-widest text-ink-500 mb-2">Skill Level</label>
                   <select
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur text-sm outline-none focus:border-cyan-400 focus:shadow-glow transition"
                     value={newSkill.skill_level}
                     onChange={(e) => setNewSkill({ ...newSkill, skill_level: e.target.value })}
                     data-testid="skill-level-select"
                   >
-                    <option value="beginner">🌱 Beginner</option>
-                    <option value="intermediate">📈 Intermediate</option>
-                    <option value="advanced">🚀 Advanced</option>
-                    <option value="expert">👑 Expert</option>
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                    <option value="expert">Expert</option>
                   </select>
                 </div>
-                   {/* Only show Years Experience for "Can Teach" skills */}
-                {newSkill.skill_type === 'offered' && (
 
-                <div>
+                {newSkill.skill_type === 'offered' && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Years Experience
-                    </label>
+                    <label className="block text-xs uppercase tracking-widest text-ink-500 mb-2">Years Experience</label>
                     <input
                       type="number"
-                      className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-4 py-3 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur text-sm outline-none focus:border-cyan-400 focus:shadow-glow transition"
                       placeholder="e.g., 5"
                       value={newSkill.years_experience}
                       onChange={(e) => setNewSkill({ ...newSkill, years_experience: e.target.value })}
                     />
                   </div>
-                </div>
-                   )}
+                )}
 
                 <div className="flex gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowAddSkill(false)}
-                    className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    data-testid="cancel-button"
-                  >
+                  <button type="button" onClick={() => setShowAddSkill(false)} className="btn btn-ghost flex-1" data-testid="cancel-button">
                     Cancel
                   </button>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 transition-all shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2"
-                    data-testid="submit-skill-button"
-                  >
+                  <button type="submit" disabled={loading} className="btn btn-coral flex-1" data-testid="submit-skill-button">
                     {loading ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -1453,42 +1353,45 @@ years_experience: ''
         {/* Edit Skill Modal */}
         {showEditModal && editSkill && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowEditModal(false)}>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full" onClick={e => e.stopPropagation()}>
-              {/* Modal Header */}
-              <div className="relative h-24 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-t-2xl p-6">
-                <div className="absolute inset-0 bg-black/20 rounded-t-2xl"></div>
+            <div className="bento p-0 max-w-md w-full bg-white dark:bg-gray-900" onClick={(e) => e.stopPropagation()}>
+              <div className="relative overflow-hidden bg-ink-950 text-white p-6 rounded-t-[28px]">
+                <div
+                  className="absolute inset-0 opacity-60"
+                  style={{
+                    background:
+                      'radial-gradient(400px 240px at 10% -10%, rgba(34,211,238,.3), transparent 60%), radial-gradient(400px 240px at 100% 110%, rgba(255,106,91,.22), transparent 60%)',
+                  }}
+                />
                 <div className="relative flex justify-between items-start">
-                  <h2 className="text-2xl font-bold text-white">Edit Skill</h2>
+                  <div>
+                    <span className="chip chip-cyan mb-2">edit</span>
+                    <h2 className="font-display text-3xl">Edit skill</h2>
+                  </div>
                   <button
                     onClick={() => setShowEditModal(false)}
-                    className="p-2 bg-white/20 backdrop-blur rounded-lg hover:bg-white/30 transition-colors"
+                    className="w-9 h-9 rounded-full grid place-items-center bg-white/10 hover:bg-white/20 transition"
                   >
                     <X className="w-5 h-5 text-white" />
                   </button>
                 </div>
               </div>
 
-              {/* Modal Body */}
               <form onSubmit={handleEditSkill} className="p-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Skill Name *
-                  </label>
+                  <label className="block text-xs uppercase tracking-widest text-ink-500 mb-2">Skill Name *</label>
                   <input
                     type="text"
                     required
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur text-sm outline-none focus:border-cyan-400 focus:shadow-glow transition"
                     value={editSkill.skill_name}
                     onChange={(e) => setEditSkill({ ...editSkill, skill_name: e.target.value })}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Description
-                  </label>
+                  <label className="block text-xs uppercase tracking-widest text-ink-500 mb-2">Description</label>
                   <textarea
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur text-sm outline-none focus:border-cyan-400 focus:shadow-glow transition"
                     rows="3"
                     value={editSkill.description || ''}
                     onChange={(e) => setEditSkill({ ...editSkill, description: e.target.value })}
@@ -1496,76 +1399,58 @@ years_experience: ''
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Type *
-                  </label>
+                  <label className="block text-xs uppercase tracking-widest text-ink-500 mb-2">Type *</label>
                   <div className="grid grid-cols-2 gap-3">
                     {['offered', 'wanted'].map((type) => (
                       <button
                         key={type}
                         type="button"
                         onClick={() => setEditSkill({ ...editSkill, skill_type: type })}
-                        className={`px-4 py-3 rounded-xl border-2 transition-all ${
+                        className={`px-4 py-3 rounded-2xl border-2 text-sm font-semibold transition-all ${
                           editSkill.skill_type === type
                             ? type === 'offered'
-                              ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400'
-                              : 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                            : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
+                              ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
+                              : 'border-cyan-400 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400'
+                            : 'border-black/10 dark:border-white/10 text-ink-500 dark:text-ink-300'
                         }`}
                       >
-                        {type === 'offered' ? '📤 Can Teach' : '📥 Want to Learn'}
+                        {type === 'offered' ? 'Can Teach' : 'Want to Learn'}
                       </button>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Skill Level
-                  </label>
+                  <label className="block text-xs uppercase tracking-widest text-ink-500 mb-2">Skill Level</label>
                   <select
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur text-sm outline-none focus:border-cyan-400 focus:shadow-glow transition"
                     value={editSkill.skill_level}
                     onChange={(e) => setEditSkill({ ...editSkill, skill_level: e.target.value })}
                   >
-                    <option value="beginner">🌱 Beginner</option>
-                    <option value="intermediate">📈 Intermediate</option>
-                    <option value="advanced">🚀 Advanced</option>
-                    <option value="expert">👑 Expert</option>
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                    <option value="expert">Expert</option>
                   </select>
                 </div>
 
-
-  {/* Only show Years Experience for "Can Teach" skills */}
                 {editSkill.skill_type === 'offered' && (
-                <div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Years Experience
-                    </label>
+                    <label className="block text-xs uppercase tracking-widest text-ink-500 mb-2">Years Experience</label>
                     <input
                       type="number"
-                      className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-4 py-3 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur text-sm outline-none focus:border-cyan-400 focus:shadow-glow transition"
                       value={editSkill.years_experience || ''}
                       onChange={(e) => setEditSkill({ ...editSkill, years_experience: e.target.value })}
                     />
                   </div>
-                </div>
-                    )}
+                )}
 
                 <div className="flex gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowEditModal(false)}
-                    className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  >
+                  <button type="button" onClick={() => setShowEditModal(false)} className="btn btn-ghost flex-1">
                     Cancel
                   </button>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 transition-all shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2"
-                  >
+                  <button type="submit" disabled={loading} className="btn btn-cyan flex-1">
                     {loading ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -1587,43 +1472,44 @@ years_experience: ''
         {/* Session Request Modal */}
         {requestModal && selectedMentor && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setRequestModal(false)}>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full" onClick={e => e.stopPropagation()}>
-              {/* Modal Header */}
-              <div className="relative h-24 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-t-2xl p-6">
-                <div className="absolute inset-0 bg-black/20 rounded-t-2xl"></div>
+            <div className="bento p-0 max-w-md w-full bg-white dark:bg-gray-900" onClick={(e) => e.stopPropagation()}>
+              <div className="relative overflow-hidden bg-ink-950 text-white p-6 rounded-t-[28px]">
+                <div
+                  className="absolute inset-0 opacity-60"
+                  style={{
+                    background:
+                      'radial-gradient(400px 240px at 10% -10%, rgba(34,211,238,.3), transparent 60%), radial-gradient(400px 240px at 100% 110%, rgba(255,106,91,.22), transparent 60%)',
+                  }}
+                />
                 <div className="relative flex justify-between items-start">
                   <div>
-                    <h2 className="text-2xl font-bold text-white">Request Session</h2>
-                    <p className="text-indigo-100 text-sm">with {selectedMentor.full_name || selectedMentor.username}</p>
+                    <span className="chip chip-cyan mb-2">request</span>
+                    <h2 className="font-display text-3xl">Request session</h2>
+                    <p className="text-ink-300 text-sm mt-1">with {selectedMentor.full_name || selectedMentor.username}</p>
                   </div>
                   <button
                     onClick={() => setRequestModal(false)}
-                    className="p-2 bg-white/20 backdrop-blur rounded-lg hover:bg-white/30 transition-colors"
+                    className="w-9 h-9 rounded-full grid place-items-center bg-white/10 hover:bg-white/20 transition"
                   >
                     <X className="w-5 h-5 text-white" />
                   </button>
                 </div>
               </div>
 
-              {/* Modal Body */}
               <div className="p-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Skill
-                  </label>
-                  <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-xl text-gray-900 dark:text-white">
+                  <label className="block text-xs uppercase tracking-widest text-ink-500 mb-2">Skill</label>
+                  <div className="px-4 py-3 rounded-2xl bg-black/5 dark:bg-white/5">
                     {selectedMentor.skill_name} ({selectedMentor.skill_level})
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Select Date
-                  </label>
+                  <label className="block text-xs uppercase tracking-widest text-ink-500 mb-2">Select Date</label>
                   <input
                     type="date"
                     min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur text-sm outline-none focus:border-cyan-400 focus:shadow-glow transition"
                     value={requestData.date}
                     onChange={(e) => setRequestData({ ...requestData, date: e.target.value })}
                     required
@@ -1631,12 +1517,10 @@ years_experience: ''
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Select Time
-                  </label>
+                  <label className="block text-xs uppercase tracking-widest text-ink-500 mb-2">Select Time</label>
                   <input
                     type="time"
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur text-sm outline-none focus:border-cyan-400 focus:shadow-glow transition"
                     value={requestData.time}
                     onChange={(e) => setRequestData({ ...requestData, time: e.target.value })}
                     required
@@ -1644,11 +1528,9 @@ years_experience: ''
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Duration (minutes)
-                  </label>
+                  <label className="block text-xs uppercase tracking-widest text-ink-500 mb-2">Duration (minutes)</label>
                   <select
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur text-sm outline-none focus:border-cyan-400 focus:shadow-glow transition"
                     value={requestData.duration}
                     onChange={(e) => setRequestData({ ...requestData, duration: parseInt(e.target.value) })}
                   >
@@ -1660,36 +1542,31 @@ years_experience: ''
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Message (Optional)
-                  </label>
+                  <label className="block text-xs uppercase tracking-widest text-ink-500 mb-2">Message (Optional)</label>
                   <textarea
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur text-sm outline-none focus:border-cyan-400 focus:shadow-glow transition"
                     rows="3"
                     placeholder="What would you like to learn? Any specific topics?"
                     value={requestData.message}
                     onChange={(e) => setRequestData({ ...requestData, message: e.target.value })}
                   ></textarea>
                 </div>
-                {/* Free Session Notice */}
-                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl">
-                  <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400 font-medium">
-                    <CheckCircle className="w-4 h-4" />
+
+                <div className="flex items-center gap-2 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+                  <CheckCircle className="w-4 h-4 text-emerald-500" />
+                  <span className="text-sm text-emerald-700 dark:text-emerald-400 font-medium">
                     This session is completely free!
-                  </div>
+                  </span>
                 </div>
 
-                <div className="flex gap-3 pt-4">
-                  <button
-                    onClick={() => setRequestModal(false)}
-                    className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  >
+                <div className="flex gap-3 pt-2">
+                  <button onClick={() => setRequestModal(false)} className="btn btn-ghost flex-1">
                     Cancel
                   </button>
                   <button
                     onClick={handleRequestSession}
                     disabled={loading || !requestData.date || !requestData.time}
-                    className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 transition-all shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2"
+                    className="btn btn-coral flex-1"
                   >
                     {loading ? (
                       <>
@@ -1709,24 +1586,24 @@ years_experience: ''
           </div>
         )}
       </div>
- {/* Find Mentor Modal */}
-      <FindMentorModal 
+
+      <FindMentorModal
         isOpen={findMentorModal.show}
         onClose={() => setFindMentorModal({ show: false, skill: '' })}
         skillName={findMentorModal.skill}
       />
-        {/* Skill Quiz Modal */}
-      <SkillQuizModal 
+
+      <SkillQuizModal
         isOpen={skillQuizModal.show}
         onClose={() => setSkillQuizModal({ show: false, skill: '', level: 'intermediate' })}
         skillName={skillQuizModal.skill}
         skillLevel={skillQuizModal.level}
         onSuccess={() => {
-          showNotification('Skill verified successfully! 🎉', 'success');
+          showNotification('Skill verified successfully!', 'success');
           loadMySkills();
         }}
       />
-       {/* Mentor Detail Modal */}
+
       {showMentorDetailModal && selectedMentorDetail && (
         <MentorDetailModal
           isOpen={showMentorDetailModal}
@@ -1737,33 +1614,6 @@ years_experience: ''
           mentor={selectedMentorDetail}
         />
       )}
-
-      <style jsx>{`
-        @keyframes blob {
-          0%, 100% { transform: translate(0px, 0px) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-        }
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        @keyframes slide-in {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-        .animate-slide-in {
-          animation: slide-in 0.3s ease-out forwards;
-        }
-      `}</style>
     </div>
   );
 };
