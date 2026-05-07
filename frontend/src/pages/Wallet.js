@@ -6,23 +6,19 @@ import {
   Coins,
   TrendingUp,
   TrendingDown,
-  Filter,
-  Calendar,
   ArrowUpRight,
   ArrowDownLeft,
-  DollarSign,
   Award,
   ShoppingCart,
-  Users,
   BookOpen,
   CheckCircle,
   Clock,
   Search,
-  Download,
   RefreshCw,
   Loader2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Sparkles,
 } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -52,14 +48,12 @@ const Wallet = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      
-      // Load token balance
+
       const balanceResponse = await axios.get(`${BACKEND_URL}/api/users/token-balance`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTokenBalance(balanceResponse.data);
-      
-      // Load all transactions
+
       const transactionsResponse = await axios.get(`${BACKEND_URL}/api/users/token-transactions?limit=100`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -72,20 +66,18 @@ const Wallet = () => {
 
   const applyFilters = () => {
     let filtered = [...transactions];
-    
-    // Apply type filter
+
     if (filter !== 'all') {
       filtered = filtered.filter(tx => tx.transaction_type === filter);
     }
-    
-    // Apply search filter
+
     if (searchTerm) {
-      filtered = filtered.filter(tx => 
+      filtered = filtered.filter(tx =>
         tx.reason?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         tx.transaction_type?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    
+
     setFilteredTransactions(filtered);
     setCurrentPage(1);
   };
@@ -103,15 +95,6 @@ const Wallet = () => {
     }
   };
 
-  const getTransactionColor = (type) => {
-    return type === 'earn' ? 'text-green-600' : 'text-red-600';
-  };
-
-  const getTransactionBg = (type) => {
-    return type === 'earn' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30';
-  };
-
-  // Pagination
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
   const paginatedTransactions = filteredTransactions.slice(
     (currentPage - 1) * itemsPerPage,
@@ -123,81 +106,103 @@ const Wallet = () => {
       label: 'Current Balance',
       value: tokenBalance?.balance || 0,
       icon: Coins,
-      color: 'indigo',
+      iconBg: 'from-cyan-400 to-cyan-600',
       suffix: ' tokens'
     },
     {
       label: 'Total Earned',
       value: tokenBalance?.total_earned || 0,
       icon: TrendingUp,
-      color: 'green',
+      iconBg: 'from-emerald-400 to-cyan-500',
       suffix: ' tokens'
     },
     {
       label: 'Total Spent',
       value: tokenBalance?.total_spent || 0,
       icon: TrendingDown,
-      color: 'red',
+      iconBg: 'from-coral-400 to-coral-600',
       suffix: ' tokens'
     },
     {
       label: 'Total Transactions',
       value: transactions.length,
       icon: Award,
-      color: 'purple',
+      iconBg: 'from-indigo-400 to-indigo-600',
       suffix: ''
     }
   ];
 
   return (
-     <div className="min-h-screen relative aurora-bg grid-bg overflow-hidden text-ink-950 dark:text-white" data-testid="wallet-page">
+    <div className="min-h-screen relative aurora-bg grid-bg overflow-hidden text-ink-950 dark:text-white" data-testid="wallet-page">
       <div className="blob w-[520px] h-[520px] -left-40 -top-32 bg-cyan-400/30 pointer-events-none" />
       <div className="blob w-[440px] h-[440px] -right-32 top-40 bg-coral-400/25 pointer-events-none" style={{ animationDelay: '-6s' }} />
-      <Navbar />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
-            Wallet & Transactions
-          </h1>
-          <p className="text-gray-600">Manage your skill tokens and view transaction history</p>
+      <div className="blob w-[420px] h-[420px] left-[40%] bottom-[-10rem] bg-indigo-500/20 pointer-events-none" style={{ animationDelay: '-8s' }} />
+
+      <div className="relative z-10">
+        <Navbar />
+      </div>
+
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header — ink-navy hero */}
+        <div className="relative mb-10 animate-scale-in">
+          <div className="relative overflow-hidden rounded-[28px] bg-ink-950 text-white p-8 md:p-10 shadow-soft-lg">
+            <div
+              className="absolute inset-0 opacity-60"
+              style={{
+                background:
+                  'radial-gradient(600px 400px at 10% -10%, rgba(34,211,238,.28), transparent 60%), radial-gradient(600px 500px at 95% 110%, rgba(255,106,91,.22), transparent 60%)',
+              }}
+            />
+            <div className="relative flex items-center justify-between flex-wrap gap-6">
+              <div>
+                <span className="chip chip-cyan mb-3"><Coins className="w-3 h-3" /> wallet</span>
+                <h1 className="font-display text-5xl md:text-6xl leading-[.95] tracking-tight">
+                  Your <span className="italic text-gradient-cyan">tokens</span>,<br />
+                  <span className="italic text-gradient">your story</span>.
+                </h1>
+                <p className="mt-3 text-ink-300">Manage skill tokens and review every transaction.</p>
+              </div>
+              <button onClick={loadWalletData} className="btn btn-ghost text-white border-white/15 bg-white/5 hover:bg-white/10">
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mb-8">
           {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <div key={index} className="bg-gradient-to-br from-pink-200 via-rose-200 to-purple-200 rounded-xl shadow-lg p-6 hover:shadow-xl transition-all">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`p-3 bg-${stat.color}-100 rounded-xl`}>
-                    <Icon className={`w-6 h-6 text-${stat.color}-600`} />
-                  </div>
-                  <button onClick={loadWalletData} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                    <RefreshCw className={`w-4 h-4 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
-                  </button>
+              <div
+                key={index}
+                className="bento bento-glow p-6 animate-scale-in"
+                style={{ animationDelay: `${index * 0.08}s` }}
+              >
+                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${stat.iconBg} text-white grid place-items-center shadow-soft`}>
+                  <Icon className="w-6 h-6" />
                 </div>
-                <h3 className="text-3xl font-bold text-gray-900 mb-1">
-                  {stat.value}{stat.suffix}
-                </h3>
-                <p className="text-sm text-gray-600">{stat.label}</p>
+                <p className="mt-5 text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300">{stat.label}</p>
+                <p className="font-display text-4xl mt-1 leading-none">
+                  {stat.value}
+                  <span className="text-lg text-ink-500 dark:text-ink-300">{stat.suffix}</span>
+                </p>
               </div>
             );
           })}
         </div>
 
         {/* Filters and Search */}
-        <div className="bg-gradient-to-br from-pink-200 via-rose-200 to-purple-200 dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
+        <div className="bento p-6 mb-6">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            {/* Search */}
             <div className="flex-1 w-full md:w-auto">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-ink-400" />
                 <input
                   type="text"
                   placeholder="Search transactions..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full pl-11 pr-4 py-3 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur text-sm outline-none focus:border-cyan-400 focus:shadow-glow transition"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   data-testid="search-transactions-input"
@@ -205,26 +210,17 @@ const Wallet = () => {
               </div>
             </div>
 
-            {/* Filter Buttons */}
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <button
                 onClick={() => setFilter('all')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  filter === 'all'
-                    ? 'bg-indigo-600 text-white shadow-lg'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                className={filter === 'all' ? 'btn btn-primary' : 'btn btn-ghost'}
                 data-testid="filter-all"
               >
                 All
               </button>
               <button
                 onClick={() => setFilter('earn')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
-                  filter === 'earn'
-                    ? 'bg-green-600 text-white shadow-lg'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                className={filter === 'earn' ? 'btn btn-cyan' : 'btn btn-ghost'}
                 data-testid="filter-earn"
               >
                 <TrendingUp className="w-4 h-4" />
@@ -232,11 +228,7 @@ const Wallet = () => {
               </button>
               <button
                 onClick={() => setFilter('spend')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
-                  filter === 'spend'
-                    ? 'bg-red-600 text-white shadow-lg'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                className={filter === 'spend' ? 'btn btn-coral' : 'btn btn-ghost'}
                 data-testid="filter-spend"
               >
                 <TrendingDown className="w-4 h-4" />
@@ -247,54 +239,53 @@ const Wallet = () => {
         </div>
 
         {/* Transactions List */}
-        <div className="bg-gradient-to-br from-pink-200 via-rose-200 to-purple-200 rounded-xl shadow-lg overflow-hidden">
-          <div className="p-6 bg-gradient-to-r from-red-600 to-blue-600">
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-              <Clock className="w-6 h-6" />
-              Transaction History
+        <div className="bento p-0 overflow-hidden">
+          <div className="p-6 md:p-8 border-b border-black/5 dark:border-white/10">
+            <span className="chip chip-cyan mb-2"><Sparkles className="w-3 h-3" /> live ledger</span>
+            <h2 className="font-display text-3xl md:text-4xl leading-tight flex items-center gap-3">
+              Transaction <span className="italic text-gradient-cyan">history</span>
             </h2>
           </div>
 
           {loading ? (
             <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+              <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
             </div>
           ) : filteredTransactions.length === 0 ? (
-            <div className="p-16 text-center">
-              <Coins className="w-24 h-24 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Transactions Found</h3>
-              <p className="text-gray-600">
-                {searchTerm || filter !== 'all' 
-                  ? 'Try adjusting your filters or search terms'
-                  : 'Your transaction history will appear here'}
+            <div className="empty-state m-6">
+              <Coins className="w-10 h-10 text-ink-400" />
+              <p className="font-display text-2xl">No transactions found</p>
+              <p className="text-sm text-ink-500 max-w-sm">
+                {searchTerm || filter !== 'all'
+                  ? 'Try adjusting your filters or search terms.'
+                  : 'Your transaction history will appear here as soon as you start earning.'}
               </p>
             </div>
           ) : (
             <>
-              <div className="divide-y divide-gray-200">
+              <div className="divide-y divide-black/5 dark:divide-white/5">
                 {paginatedTransactions.map((transaction, index) => {
                   const Icon = getTransactionIcon(transaction.transaction_type, transaction.reason);
                   const isEarn = transaction.transaction_type === 'earn';
-                  
+                  const palette = isEarn ? 'from-emerald-400 to-cyan-500' : 'from-coral-400 to-coral-600';
+
                   return (
                     <div
                       key={transaction.id || index}
-                      className="p-6 hover:bg-gray-50 transition-colors"
+                      className="px-6 md:px-8 py-5 hover:bg-white/40 dark:hover:bg-white/5 transition-colors"
                       data-testid="transaction-item"
                     >
                       <div className="flex items-center gap-4">
-                        {/* Icon */}
-                        <div className={`p-3 rounded-xl ${getTransactionBg(transaction.transaction_type)}`}>
-                          <Icon className={`w-6 h-6 ${getTransactionColor(transaction.transaction_type)}`} />
+                        <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${palette} text-white grid place-items-center shadow-soft shrink-0`}>
+                          <Icon className="w-5 h-5" />
                         </div>
 
-                        {/* Details */}
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 mb-1">
-                            {transaction.reason?.replace(/_/g, ' ').replace(/bw/g, l => l.toUpperCase()) || 'Transaction'}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-ink-950 dark:text-white truncate capitalize">
+                            {transaction.reason?.replace(/_/g, ' ') || 'Transaction'}
                           </h3>
-                          <p className="text-sm text-gray-500">
-                            {transaction.created_at 
+                          <p className="text-xs text-ink-500 dark:text-ink-300 mt-0.5">
+                            {transaction.created_at
                               ? new Date(transaction.created_at).toLocaleString('en-US', {
                                   month: 'short',
                                   day: 'numeric',
@@ -306,12 +297,11 @@ const Wallet = () => {
                           </p>
                         </div>
 
-                        {/* Amount */}
                         <div className="text-right">
-                          <p className={`text-2xl font-bold ${getTransactionColor(transaction.transaction_type)}`}>
+                          <p className={`font-display text-3xl leading-none ${isEarn ? 'text-emerald-500' : 'text-coral-500'}`}>
                             {isEarn ? '+' : '-'}{transaction.amount}
                           </p>
-                          <p className="text-xs text-gray-500">tokens</p>
+                          <p className="text-[10px] uppercase tracking-widest text-ink-500 mt-1">tokens</p>
                         </div>
                       </div>
                     </div>
@@ -319,42 +309,37 @@ const Wallet = () => {
                 })}
               </div>
 
-              {/* Pagination */}
               {totalPages > 1 && (
-                <div className="p-6 border-t border-gray-200 flex items-center justify-between">
-                  <p className="text-sm text-gray-600">
-                    Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredTransactions.length)} of {filteredTransactions.length} transactions
+                <div className="px-6 md:px-8 py-5 border-t border-black/5 dark:border-white/10 flex items-center justify-between flex-wrap gap-3">
+                  <p className="text-xs uppercase tracking-widest text-ink-500">
+                    {((currentPage - 1) * itemsPerPage) + 1}–{Math.min(currentPage * itemsPerPage, filteredTransactions.length)} of {filteredTransactions.length}
                   </p>
-                  
-                  <div className="flex gap-2">
+
+                  <div className="flex gap-2 items-center">
                     <button
                       onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                       disabled={currentPage === 1}
-                      className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="btn btn-ghost p-2 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      <ChevronLeft className="w-5 h-5" />
+                      <ChevronLeft className="w-4 h-4" />
                     </button>
-                    
+
                     {[...Array(totalPages)].map((_, i) => (
                       <button
                         key={i}
                         onClick={() => setCurrentPage(i + 1)}
-                        className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                          currentPage === i + 1
-                            ? 'bg-indigo-600 text-white'
-                            : 'border border-gray-200 hover:bg-gray-50'
-                        }`}
+                        className={currentPage === i + 1 ? 'btn btn-primary px-4 py-2' : 'btn btn-ghost px-4 py-2'}
                       >
                         {i + 1}
                       </button>
                     ))}
-                    
+
                     <button
                       onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                       disabled={currentPage === totalPages}
-                      className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="btn btn-ghost p-2 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      <ChevronRight className="w-5 h-5" />
+                      <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
                 </div>

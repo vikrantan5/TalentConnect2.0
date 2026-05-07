@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Navbar from '../components/Navbar';
 import { roadmapService, skillService } from '../services/apiService';
-import { Brain, Loader2, Map, CheckCircle2, Rocket, Download } from 'lucide-react';
+import { Brain, Loader2, Map, CheckCircle2, Rocket, Download, Sparkles, Target, Clock as ClockIcon } from 'lucide-react';
 import jsPDF from 'jspdf';
 
 const RoadmapPlanner = () => {
@@ -70,7 +70,6 @@ const RoadmapPlanner = () => {
     setLoading(false);
   };
 
-
   const markCompleted = async () => {
     if (!selectedRoadmap?.id) return;
     setUpdatingProgress(true);
@@ -84,8 +83,7 @@ const RoadmapPlanner = () => {
     setUpdatingProgress(false);
   };
 
-
-   const downloadPDF = () => {
+  const downloadPDF = () => {
     if (!selectedRoadmap) return;
     const goal = selectedRoadmap.career_goal || selectedRoadmap?.roadmap_data?.career_goal || 'Roadmap';
     const estTime = selectedRoadmap?.roadmap_data?.estimated_total_time || selectedRoadmap?.estimated_total_time || 'N/A';
@@ -109,8 +107,7 @@ const RoadmapPlanner = () => {
       });
     };
 
-    // Header
-    doc.setFillColor(79, 70, 229);
+    doc.setFillColor(7, 11, 28);
     doc.rect(0, 0, pageWidth, 70, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
@@ -118,7 +115,7 @@ const RoadmapPlanner = () => {
     doc.text('Learning Roadmap', margin, 44);
     y = 100;
 
-    addText(`Career Goal: ${goal}`, { size: 16, bold: true, color: [67, 56, 202] });
+    addText(`Career Goal: ${goal}`, { size: 16, bold: true, color: [6, 182, 212] });
     addText(`Estimated Total Time: ${estTime}`, { size: 11, color: [80, 80, 80] });
     y += 8;
 
@@ -139,87 +136,120 @@ const RoadmapPlanner = () => {
       y += 6;
     });
 
-    doc.save(`${goal.replace(/\s+/g, '_')}_roadmap.pdf`);
+    doc.save(`${goal.replace(/s+/g, '_')}_roadmap.pdf`);
   };
 
   return (
-       <div className="min-h-screen relative aurora-bg grid-bg overflow-hidden text-ink-950 dark:text-white" data-testid="roadmap-page">
+    <div className="min-h-screen relative aurora-bg grid-bg overflow-hidden text-ink-950 dark:text-white" data-testid="roadmap-page">
       <div className="blob w-[520px] h-[520px] -left-40 -top-32 bg-cyan-400/30 pointer-events-none" />
       <div className="blob w-[440px] h-[440px] -right-32 top-40 bg-coral-400/25 pointer-events-none" style={{ animationDelay: '-6s' }} />
-      <Navbar />
+      <div className="blob w-[420px] h-[420px] left-[40%] bottom-[-10rem] bg-indigo-500/20 pointer-events-none" style={{ animationDelay: '-8s' }} />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white" data-testid="roadmap-page-title">AI Study Roadmap Planner</h1>
-            <p className="text-gray-600 dark:text-gray-300 mt-1">Generate personalized learning paths and track completion progress.</p>
-          </div>
-          <div className="px-4 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700" data-testid="known-skills-count">
-            Skills detected: <strong>{knownSkills.length}</strong>
+      <div className="relative z-10">
+        <Navbar />
+      </div>
+
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {/* Header — ink-navy hero */}
+        <div className="relative animate-scale-in">
+          <div className="relative overflow-hidden rounded-[28px] bg-ink-950 text-white p-8 md:p-10 shadow-soft-lg">
+            <div
+              className="absolute inset-0 opacity-60"
+              style={{
+                background:
+                  'radial-gradient(600px 400px at 10% -10%, rgba(34,211,238,.28), transparent 60%), radial-gradient(600px 500px at 95% 110%, rgba(255,106,91,.22), transparent 60%)',
+              }}
+            />
+            <div className="relative flex flex-wrap items-center justify-between gap-6">
+              <div>
+                <span className="chip chip-cyan mb-3"><Brain className="w-3 h-3" /> AI copilot</span>
+                <h1 className="font-display text-5xl md:text-6xl leading-[.95] tracking-tight" data-testid="roadmap-page-title">
+                  Your AI <span className="italic text-gradient-cyan">study</span><br />
+                  <span className="italic text-gradient">roadmap</span>.
+                </h1>
+                <p className="mt-3 text-ink-300">Generate personalized learning paths and track completion progress.</p>
+              </div>
+              <div className="glass rounded-2xl px-5 py-4 bg-white/5 border-white/10" data-testid="known-skills-count">
+                <p className="text-[10px] uppercase tracking-widest text-cyan-300">Skills detected</p>
+                <p className="font-display text-4xl text-white">{knownSkills.length}</p>
+              </div>
+            </div>
           </div>
         </div>
 
         {message && (
-          <div className="px-4 py-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700" data-testid="roadmap-status-message">
-            {message}
+          <div className="bento p-4 flex items-center gap-3" data-testid="roadmap-status-message">
+            <Sparkles className="w-4 h-4 text-cyan-500" />
+            <span className="text-sm">{message}</span>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <form onSubmit={handleGenerateRoadmap} className="bg-gradient-to-br from-pink-200 via-rose-200 to-purple-200 dark:bg-gray-800 rounded-2xl p-6 shadow-lg space-y-4" data-testid="roadmap-generate-form">
-            <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
-              <Brain className="w-5 h-5 text-indigo-600" />
-              Generate New Roadmap
-            </h2>
-
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          {/* Generator form */}
+          <form onSubmit={handleGenerateRoadmap} className="bento p-7 space-y-4" data-testid="roadmap-generate-form">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Career Goal</label>
-              <input
-                value={careerGoal}
-                onChange={(e) => setCareerGoal(e.target.value)}
-                placeholder="e.g. Backend Developer"
-                className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
-                required
-                data-testid="roadmap-career-goal-input"
-              />
+              <span className="chip chip-coral mb-2"><Rocket className="w-3 h-3" /> generate</span>
+              <h2 className="font-display text-3xl mt-2 leading-tight">
+                New <span className="italic text-gradient">roadmap</span>
+              </h2>
             </div>
 
-            <div className="text-sm text-gray-600 dark:text-gray-400" data-testid="roadmap-known-skills-list">
-              <p className="font-medium mb-1">Current Skills (auto-detected)</p>
-              <p>{knownSkills.length ? knownSkills.join(', ') : 'No skills found yet in profile.'}</p>
+            <label className="block">
+              <span className="text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300">Career Goal</span>
+              <div className="mt-1.5 flex items-center gap-2 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur px-4 py-3 focus-within:border-cyan-400 focus-within:shadow-glow transition">
+                <Target className="w-4 h-4 text-ink-400" />
+                <input
+                  value={careerGoal}
+                  onChange={(e) => setCareerGoal(e.target.value)}
+                  placeholder="e.g. Backend Developer"
+                  className="flex-1 bg-transparent outline-none text-sm"
+                  required
+                  data-testid="roadmap-career-goal-input"
+                />
+              </div>
+            </label>
+
+            <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/40 dark:bg-white/5 p-4" data-testid="roadmap-known-skills-list">
+              <p className="text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300 mb-2">Current skills</p>
+              <p className="text-sm text-ink-700 dark:text-ink-200">
+                {knownSkills.length ? knownSkills.join(', ') : 'No skills found yet in profile.'}
+              </p>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 text-white disabled:opacity-50"
+              className="w-full btn btn-coral py-3 disabled:opacity-60"
               data-testid="roadmap-generate-button"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
-              Generate Roadmap
+              {loading ? 'Generating…' : 'Generate roadmap'}
             </button>
 
-            <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-              <p className="text-xs text-gray-500" data-testid="roadmap-token-note">Complete a roadmap to earn SkillTokens.</p>
-            </div>
+            <p className="text-xs text-ink-500 dark:text-ink-300 pt-2 border-t border-black/5 dark:border-white/10" data-testid="roadmap-token-note">
+              Complete a roadmap to earn SkillTokens.
+            </p>
           </form>
 
-          <div className="lg:col-span-2 bg-gradient-to-br from-pink-200 via-rose-200 to-purple-200 dark:bg-gray-800 rounded-2xl p-6 shadow-lg" data-testid="roadmap-results-panel">
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <Map className="w-5 h-5 text-indigo-600" />
-                My Roadmaps
-              </h2>
-              {loadingRoadmaps && <Loader2 className="w-4 h-4 animate-spin text-indigo-600" data-testid="roadmap-list-loading" />}
+          {/* Results panel */}
+          <div className="lg:col-span-2 bento p-7" data-testid="roadmap-results-panel">
+            <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
+              <div>
+                <span className="chip chip-cyan mb-2"><Map className="w-3 h-3" /> my roadmaps</span>
+                <h2 className="font-display text-3xl mt-2 leading-tight">
+                  Tracks <span className="italic text-gradient-cyan">in flight</span>
+                </h2>
+              </div>
+              {loadingRoadmaps && <Loader2 className="w-4 h-4 animate-spin text-cyan-500" data-testid="roadmap-list-loading" />}
             </div>
 
             {roadmaps.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-4" data-testid="roadmap-selector-list">
+              <div className="flex flex-wrap gap-2 mb-5" data-testid="roadmap-selector-list">
                 {roadmaps.map((item) => (
                   <button
                     key={item.id}
                     onClick={() => setSelectedRoadmap(item)}
-                    className={`px-3 py-2 rounded-lg text-sm border ${selectedRoadmap?.id === item.id ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700'}`}
+                    className={selectedRoadmap?.id === item.id ? 'btn btn-primary' : 'btn btn-ghost'}
                     data-testid="roadmap-selector-button"
                   >
                     {item.career_goal}
@@ -229,28 +259,63 @@ const RoadmapPlanner = () => {
             )}
 
             {!selectedRoadmap ? (
-              <div className="p-10 text-center text-gray-500" data-testid="roadmap-empty-state">
-                Generate your first roadmap to see structured step-by-step guidance.
+              <div className="empty-state" data-testid="roadmap-empty-state">
+                <Map className="w-8 h-8 text-ink-400" />
+                <p className="font-display text-2xl">No roadmap yet</p>
+                <p className="text-sm text-ink-500 max-w-sm">
+                  Generate your first roadmap to see structured step-by-step guidance.
+                </p>
               </div>
             ) : (
-              <div className="space-y-4" data-testid="roadmap-details">
-                <div className="p-4 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800">
-                  <h3 className="font-semibold text-gray-900 dark:text-white" data-testid="roadmap-selected-goal">{selectedRoadmap.career_goal || selectedRoadmap?.roadmap_data?.career_goal}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1" data-testid="roadmap-estimated-time">
-                    Estimated Time: {selectedRoadmap?.roadmap_data?.estimated_total_time || selectedRoadmap?.estimated_total_time || 'N/A'}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-300" data-testid="roadmap-completion-percentage">
-                    Completion: {Math.round(Number(selectedRoadmap.completion_percentage || 0))}%
-                  </p>
+              <div className="space-y-5" data-testid="roadmap-details">
+                <div className="relative overflow-hidden rounded-[24px] bg-ink-950 text-white p-6">
+                  <div
+                    className="absolute inset-0 opacity-60"
+                    style={{
+                      background:
+                        'radial-gradient(500px 300px at 10% -10%, rgba(34,211,238,.3), transparent 60%), radial-gradient(500px 300px at 100% 110%, rgba(255,106,91,.22), transparent 60%)',
+                    }}
+                  />
+                  <div className="relative">
+                    <span className="chip chip-cyan mb-3">selected</span>
+                    <h3 className="font-display text-3xl leading-tight" data-testid="roadmap-selected-goal">
+                      {selectedRoadmap.career_goal || selectedRoadmap?.roadmap_data?.career_goal}
+                    </h3>
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                      <span className="chip chip-ink ring-1 ring-white/10 bg-white/5 text-white" data-testid="roadmap-estimated-time">
+                        <ClockIcon className="w-3.5 h-3.5" />
+                        {selectedRoadmap?.roadmap_data?.estimated_total_time || selectedRoadmap?.estimated_total_time || 'N/A'}
+                      </span>
+                      <span className="chip chip-coral" data-testid="roadmap-completion-percentage">
+                        {Math.round(Number(selectedRoadmap.completion_percentage || 0))}% done
+                      </span>
+                    </div>
+                    <div className="mt-4 h-2 rounded-full bg-white/10 overflow-hidden">
+                      <div
+                        className="h-full rounded-full animate-progress"
+                        style={{
+                          width: `${Math.round(Number(selectedRoadmap.completion_percentage || 0))}%`,
+                          background: 'linear-gradient(90deg,#22d3ee,#ff6a5b)'
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-3 max-h-[420px] overflow-y-auto" data-testid="roadmap-steps-list">
+                <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1" data-testid="roadmap-steps-list">
                   {steps.map((step, index) => (
-                    <div key={`${step.step_number}-${index}`} className="p-4 rounded-xl border border-gray-200 dark:border-gray-700">
-                      <p className="text-xs text-indigo-600 font-semibold" data-testid="roadmap-step-number">Step {step.step_number || index + 1}</p>
-                      <h4 className="font-semibold text-gray-900 dark:text-white" data-testid="roadmap-step-title">{step.title}</h4>
-                      <p className="text-sm text-gray-600 dark:text-gray-300 mt-1" data-testid="roadmap-step-description">{step.description}</p>
-                      <p className="text-xs text-gray-500 mt-2" data-testid="roadmap-step-time">Estimated: {step.estimated_time || 'N/A'}</p>
+                    <div key={`${step.step_number}-${index}`} className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/40 dark:bg-white/5 p-5 hover:shadow-soft transition">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-400 to-indigo-500 text-white text-xs font-bold grid place-items-center" data-testid="roadmap-step-number">
+                          {step.step_number || index + 1}
+                        </span>
+                        <span className="text-[10px] uppercase tracking-widest text-cyan-600 dark:text-cyan-300 font-semibold">step</span>
+                      </div>
+                      <h4 className="font-display text-xl leading-tight" data-testid="roadmap-step-title">{step.title}</h4>
+                      <p className="text-sm text-ink-500 dark:text-ink-300 mt-1.5" data-testid="roadmap-step-description">{step.description}</p>
+                      <p className="text-xs text-ink-400 mt-3 inline-flex items-center gap-1" data-testid="roadmap-step-time">
+                        <ClockIcon className="w-3.5 h-3.5" /> {step.estimated_time || 'N/A'}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -259,7 +324,7 @@ const RoadmapPlanner = () => {
                   <div className="flex flex-wrap gap-3 pt-2" data-testid="roadmap-actions-row">
                     <button
                       onClick={downloadPDF}
-                      className="px-4 py-2 rounded-xl bg-indigo-600 text-white inline-flex items-center gap-2 hover:bg-indigo-700"
+                      className="btn btn-cyan"
                       data-testid="roadmap-download-pdf-button"
                     >
                       <Download className="w-4 h-4" />
@@ -270,11 +335,11 @@ const RoadmapPlanner = () => {
                       <button
                         onClick={markCompleted}
                         disabled={updatingProgress}
-                        className="px-4 py-2 rounded-xl bg-green-600 text-white disabled:opacity-50 inline-flex items-center gap-2"
+                        className="btn btn-coral disabled:opacity-60"
                         data-testid="roadmap-complete-button"
                       >
                         <CheckCircle2 className="w-4 h-4" />
-                        Complete Roadmap
+                        Complete roadmap
                       </button>
                     )}
                   </div>

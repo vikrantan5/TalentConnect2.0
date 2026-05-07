@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import RealtimeChat from '../components/RealtimeChat';
 import UserProfileModal from '../components/UserProfileModal';
 import { taskService, sessionService } from '../services/apiService';
-import { ArrowLeftRight, Plus, RefreshCw, CheckCircle, AlertCircle, MessageSquare, Calendar, X, User } from 'lucide-react';
+import { ArrowLeftRight, Plus, RefreshCw, CheckCircle, AlertCircle, MessageSquare, Calendar, X, User, Sparkles, Loader2 } from 'lucide-react';
 
 const initialForm = {
   skill_offered: '',
@@ -13,8 +13,8 @@ const initialForm = {
 };
 
 const SkillExchangeMarketplace = () => {
-    const { user } = useAuth();
-    const getErrorMessage = (error, fallbackMessage) => {
+  const { user } = useAuth();
+  const getErrorMessage = (error, fallbackMessage) => {
     const detail = error?.response?.data?.detail;
 
     if (Array.isArray(detail)) {
@@ -48,8 +48,6 @@ const SkillExchangeMarketplace = () => {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
-
-   // Chat and Meeting states
   const [showChat, setShowChat] = useState(false);
   const [chatTask, setChatTask] = useState(null);
   const [showMeetingModal, setShowMeetingModal] = useState(false);
@@ -57,17 +55,16 @@ const SkillExchangeMarketplace = () => {
   const [meetingForm, setMeetingForm] = useState({
     meeting_date: '',
     meeting_topic: '',
-   meeting_duration_minutes: 60,
-    meeting_link: ''  // Add Google Meet link field
+    meeting_duration_minutes: 60,
+    meeting_link: ''
   });
 
-
-    const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
 
   const showToast = (message, type = 'success') => {
     const safeMessage = typeof message === 'string' ? message : String(message ?? 'Unexpected error');
-     setToast({ show: true, message: safeMessage, type });
+    setToast({ show: true, message: safeMessage, type });
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
   };
 
@@ -81,7 +78,7 @@ const SkillExchangeMarketplace = () => {
       setMarketplaceTasks(Array.isArray(marketData) ? marketData : []);
       setMyTasks(Array.isArray(mineData) ? mineData : []);
     } catch (error) {
-     showToast(getErrorMessage(error, 'Failed to load exchange tasks'), 'error');
+      showToast(getErrorMessage(error, 'Failed to load exchange tasks'), 'error');
     }
     setLoading(false);
   };
@@ -112,11 +109,10 @@ const SkillExchangeMarketplace = () => {
       showToast('Exchange matched successfully');
       await loadData();
     } catch (error) {
-     showToast(getErrorMessage(error, 'Unable to accept exchange task'), 'error');
+      showToast(getErrorMessage(error, 'Unable to accept exchange task'), 'error');
     }
     setLoading(false);
   };
-
 
   const handleOpenChat = (task) => {
     setChatTask(task);
@@ -129,7 +125,7 @@ const SkillExchangeMarketplace = () => {
       meeting_date: '',
       meeting_topic: `${task.skill_offered} ↔ ${task.skill_requested} Session`,
       meeting_duration_minutes: 60,
-      meeting_link: ''  // Reset Google Meet link
+      meeting_link: ''
     });
     setShowMeetingModal(true);
   };
@@ -143,7 +139,7 @@ const SkillExchangeMarketplace = () => {
         meetingForm.meeting_date,
         meetingForm.meeting_topic,
         meetingForm.meeting_duration_minutes,
-        meetingForm.meeting_link  // Pass Google Meet link
+        meetingForm.meeting_link
       );
       showToast('Meeting scheduled successfully!');
       setShowMeetingModal(false);
@@ -153,167 +149,202 @@ const SkillExchangeMarketplace = () => {
     }
     setLoading(false);
   };
+
   return (
-        <div className="min-h-screen relative aurora-bg grid-bg overflow-hidden text-ink-950 dark:text-white" data-testid="skill-exchange-page">
+    <div className="min-h-screen relative aurora-bg grid-bg overflow-hidden text-ink-950 dark:text-white" data-testid="skill-exchange-page">
       <div className="blob w-[520px] h-[520px] -left-40 -top-32 bg-cyan-400/30 pointer-events-none" />
       <div className="blob w-[440px] h-[440px] -right-32 top-40 bg-coral-400/25 pointer-events-none" style={{ animationDelay: '-6s' }} />
-      <Navbar />
+      <div className="blob w-[420px] h-[420px] left-[40%] bottom-[-10rem] bg-indigo-500/20 pointer-events-none" style={{ animationDelay: '-8s' }} />
+
+      <div className="relative z-10">
+        <Navbar />
+      </div>
 
       {toast.show && (
-        <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-lg text-white flex items-center gap-2 ${toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'}`} data-testid="skill-exchange-toast">
-          {toast.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+        <div className={`fixed top-6 right-6 z-50 chip ${toast.type === 'success' ? 'chip-cyan' : 'chip-coral'} px-5 py-3 shadow-soft-lg backdrop-blur`} data-testid="skill-exchange-toast">
+          {toast.type === 'success' ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
           <span>{toast.message}</span>
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white" data-testid="exchange-page-title">Skill Exchange Marketplace</h1>
-            <p className="text-gray-600 dark:text-gray-300 mt-2">Create exact swap listings: I teach X, I want Y.</p>
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {/* Header — ink-navy hero */}
+        <div className="relative animate-scale-in">
+          <div className="relative overflow-hidden rounded-[28px] bg-ink-950 text-white p-8 md:p-10 shadow-soft-lg">
+            <div
+              className="absolute inset-0 opacity-60"
+              style={{
+                background:
+                  'radial-gradient(600px 400px at 10% -10%, rgba(34,211,238,.28), transparent 60%), radial-gradient(600px 500px at 95% 110%, rgba(255,106,91,.22), transparent 60%)',
+              }}
+            />
+            <div className="relative flex items-center justify-between flex-wrap gap-6">
+              <div>
+                <span className="chip chip-cyan mb-3"><ArrowLeftRight className="w-3 h-3" /> 1:1 trades</span>
+                <h1 className="font-display text-5xl md:text-6xl leading-[.95] tracking-tight" data-testid="exchange-page-title">
+                  Skill <span className="italic text-gradient">exchange</span><br />
+                  <span className="italic text-gradient-cyan">marketplace</span>.
+                </h1>
+                <p className="mt-3 text-ink-300">Create exact swap listings: I teach X, I want Y.</p>
+              </div>
+              <button
+                onClick={loadData}
+                className="btn btn-ghost text-white border-white/15 bg-white/5 hover:bg-white/10"
+                data-testid="exchange-refresh-button"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Refresh
+              </button>
+            </div>
           </div>
-          <button
-            onClick={loadData}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
-            data-testid="exchange-refresh-button"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Refresh
-          </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <form onSubmit={handleCreate} className="lg:col-span-1 bg-gradient-to-br from-pink-200 via-rose-200 to-purple-200 dark:bg-gray-800 rounded-2xl p-6 shadow-lg space-y-4" data-testid="exchange-create-form">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <Plus className="w-5 h-5" />
-              Create Exchange Task
-            </h2>
-
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          {/* Create form */}
+          <form onSubmit={handleCreate} className="lg:col-span-1 bento p-7 space-y-4" data-testid="exchange-create-form">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Skill You Offer</label>
-              <input
-                value={form.skill_offered}
-                onChange={(e) => setForm({ ...form, skill_offered: e.target.value })}
-                className="w-full px-4 py-2 border rounded-xl bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
-                placeholder="Python"
-                required
-                data-testid="exchange-offered-skill-input"
-              />
+              <span className="chip chip-coral mb-2"><Plus className="w-3 h-3" /> create</span>
+              <h2 className="font-display text-3xl mt-2 leading-tight">
+                New <span className="italic text-gradient">exchange</span>
+              </h2>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Skill You Want</label>
-              <input
-                value={form.skill_requested}
-                onChange={(e) => setForm({ ...form, skill_requested: e.target.value })}
-                className="w-full px-4 py-2 border rounded-xl bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
-                placeholder="Flutter"
-                required
-                data-testid="exchange-requested-skill-input"
-              />
-            </div>
+            <label className="block">
+              <span className="text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300">Skill you offer</span>
+              <div className="mt-1.5 flex items-center gap-2 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur px-4 py-3 focus-within:border-cyan-400 focus-within:shadow-glow transition">
+                <input
+                  value={form.skill_offered}
+                  onChange={(e) => setForm({ ...form, skill_offered: e.target.value })}
+                  className="flex-1 bg-transparent outline-none text-sm"
+                  placeholder="Python"
+                  required
+                  data-testid="exchange-offered-skill-input"
+                />
+              </div>
+            </label>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-              <textarea
-                rows={4}
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className="w-full px-4 py-2 border rounded-xl bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
-                placeholder="I can teach loops, APIs, and projects. Need Flutter basics in return."
-                data-testid="exchange-description-input"
-              />
-            </div>
+            <label className="block">
+              <span className="text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300">Skill you want</span>
+              <div className="mt-1.5 flex items-center gap-2 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur px-4 py-3 focus-within:border-cyan-400 focus-within:shadow-glow transition">
+                <input
+                  value={form.skill_requested}
+                  onChange={(e) => setForm({ ...form, skill_requested: e.target.value })}
+                  className="flex-1 bg-transparent outline-none text-sm"
+                  placeholder="Flutter"
+                  required
+                  data-testid="exchange-requested-skill-input"
+                />
+              </div>
+            </label>
+
+            <label className="block">
+              <span className="text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300">Description</span>
+              <div className="mt-1.5 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur px-4 py-3 focus-within:border-cyan-400 focus-within:shadow-glow transition">
+                <textarea
+                  rows={4}
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  className="w-full bg-transparent outline-none text-sm resize-none"
+                  placeholder="I can teach loops, APIs, and projects. Need Flutter basics in return."
+                  data-testid="exchange-description-input"
+                />
+              </div>
+            </label>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-sky-600 to-emerald-600 text-white font-medium disabled:opacity-50"
+              className="w-full btn btn-coral py-3 disabled:opacity-50"
               data-testid="exchange-create-submit-button"
             >
               <ArrowLeftRight className="w-4 h-4" />
-              Publish Exchange
+              Publish exchange
             </button>
           </form>
 
-          <div className="lg:col-span-2 bg-gradient-to-br from-pink-200 via-rose-200 to-purple-200 dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-            <div className="flex items-center gap-2 mb-6 border-b border-gray-200 dark:border-gray-700 pb-3">
+          {/* Listings panel */}
+          <div className="lg:col-span-2 bento p-7">
+            <div className="flex items-center gap-2 mb-6 border-b border-black/5 dark:border-white/10 pb-4 flex-wrap">
+              <span className="chip chip-cyan mr-2"><Sparkles className="w-3 h-3" /> listings</span>
               <button
                 onClick={() => setActiveTab('marketplace')}
-                className={`px-4 py-2 rounded-lg ${activeTab === 'marketplace' ? 'bg-sky-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200'}`}
+                className={activeTab === 'marketplace' ? 'btn btn-primary' : 'btn btn-ghost'}
                 data-testid="exchange-marketplace-tab"
               >
                 Marketplace
               </button>
               <button
                 onClick={() => setActiveTab('my')}
-                className={`px-4 py-2 rounded-lg ${activeTab === 'my' ? 'bg-sky-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200'}`}
+                className={activeTab === 'my' ? 'btn btn-primary' : 'btn btn-ghost'}
                 data-testid="exchange-my-tab"
               >
-                My Listings
+                My listings
               </button>
             </div>
 
             {loading ? (
-              <div className="text-gray-500" data-testid="exchange-loading-state">Loading...</div>
+              <div className="flex items-center justify-center py-12" data-testid="exchange-loading-state">
+                <Loader2 className="w-6 h-6 animate-spin text-cyan-500" />
+              </div>
             ) : (
-              <div className="space-y-4" data-testid="exchange-task-list">
+              <div className="space-y-3" data-testid="exchange-task-list">
                 {(activeTab === 'marketplace' ? marketplaceTasks : myTasks).length === 0 ? (
-                  <div className="p-8 text-center text-gray-500" data-testid="exchange-empty-state">
-                    No exchange tasks found.
+                  <div className="empty-state" data-testid="exchange-empty-state">
+                    <ArrowLeftRight className="w-10 h-10 text-ink-400" />
+                    <p className="font-display text-2xl">No exchange tasks</p>
+                    <p className="text-sm text-ink-500 max-w-sm">Create one above or check back later for new listings.</p>
                   </div>
                 ) : (
-                                    (activeTab === 'marketplace' ? marketplaceTasks : myTasks).map((item) => {
+                  (activeTab === 'marketplace' ? marketplaceTasks : myTasks).map((item) => {
                     const exchangeTask = item.task || item;
                     const creator = item.creator;
                     const isMatched = exchangeTask.status === 'matched';
                     const isMyTask = exchangeTask.creator_id === user?.id;
                     return (
-                      <div key={exchangeTask.id} className="border border-gray-200 dark:border-gray-700 rounded-xl p-4" data-testid="exchange-task-card">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1">
-                            <p className="text-xs uppercase text-gray-500 mb-2" data-testid="exchange-task-status">{exchangeTask.status}</p>
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white" data-testid="exchange-skill-pair">
-                              {exchangeTask.skill_offered} ↔ {exchangeTask.skill_requested}
+                      <div key={exchangeTask.id} className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/40 dark:bg-white/5 p-5 hover:shadow-soft transition" data-testid="exchange-task-card">
+                        <div className="flex items-start justify-between gap-3 flex-wrap">
+                          <div className="flex-1 min-w-[240px]">
+                            <span className={`chip ${isMatched ? 'chip-coral' : 'chip-cyan'}`} data-testid="exchange-task-status">{exchangeTask.status}</span>
+                            <h3 className="font-display text-2xl mt-2 leading-tight" data-testid="exchange-skill-pair">
+                              {exchangeTask.skill_offered} <span className="text-gradient italic">↔</span> {exchangeTask.skill_requested}
                             </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1" data-testid="exchange-description-text">{exchangeTask.description || 'No description provided.'}</p>
+                            <p className="text-sm text-ink-500 dark:text-ink-300 mt-1.5" data-testid="exchange-description-text">{exchangeTask.description || 'No description provided.'}</p>
                             {creator && (
-                              <p className="text-xs text-gray-500 mt-2" data-testid="exchange-creator-text">
+                              <p className="text-xs text-ink-400 mt-2" data-testid="exchange-creator-text">
                                 by {creator.full_name || creator.username}
                               </p>
                             )}
                           </div>
 
-                          <div className="flex gap-2">
-                              {/* View Profile Button - Always show for other users */}
-                          {creator && !isMyTask && (
-                            <button
-                              onClick={() => {
-                                setSelectedUserId(creator.id || exchangeTask.creator_id);
-                                setShowProfileModal(true);
-                              }}
-                              className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 flex items-center gap-2 whitespace-nowrap"
-                              data-testid="exchange-view-profile-button"
-                            >
-                              <User className="w-4 h-4" />
-                              View Profile
-                            </button>
-                          )}
-  {activeTab === 'marketplace' && exchangeTask.status === 'open' && !isMyTask && (
+                          <div className="flex gap-2 flex-wrap">
+                            {creator && !isMyTask && (
                               <button
-                                onClick={() => handleAccept(exchangeTask.id)}
-                                className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 whitespace-nowrap"
-                                data-testid="exchange-accept-button"
+                                onClick={() => {
+                                  setSelectedUserId(creator.id || exchangeTask.creator_id);
+                                  setShowProfileModal(true);
+                                }}
+                                className="btn btn-ghost"
+                                data-testid="exchange-view-profile-button"
                               >
-                                Accept Match
+                                <User className="w-4 h-4" />
+                                Profile
                               </button>
                             )}
-                            
-                             {isMatched && (
+                            {activeTab === 'marketplace' && exchangeTask.status === 'open' && !isMyTask && (
+                              <button
+                                onClick={() => handleAccept(exchangeTask.id)}
+                                className="btn btn-cyan"
+                                data-testid="exchange-accept-button"
+                              >
+                                Accept match
+                              </button>
+                            )}
+
+                            {isMatched && (
                               <>
                                 <button
                                   onClick={() => handleOpenChat(exchangeTask)}
-                                  className="px-4 py-2 rounded-lg bg-sky-600 text-white hover:bg-sky-700 flex items-center gap-2 whitespace-nowrap"
+                                  className="btn btn-ghost"
                                   data-testid="exchange-chat-button"
                                 >
                                   <MessageSquare className="w-4 h-4" />
@@ -321,7 +352,7 @@ const SkillExchangeMarketplace = () => {
                                 </button>
                                 <button
                                   onClick={() => handleOpenMeeting(exchangeTask)}
-                                  className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 flex items-center gap-2 whitespace-nowrap"
+                                  className="btn btn-coral"
                                   data-testid="exchange-schedule-button"
                                 >
                                   <Calendar className="w-4 h-4" />
@@ -340,18 +371,17 @@ const SkillExchangeMarketplace = () => {
           </div>
         </div>
       </div>
-         {/* Chat Modal for Skill Exchange */}
+
+      {/* Chat Modal */}
       {showChat && chatTask && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" data-testid="exchange-chat-modal">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-2xl h-[600px]">
+        <div className="tc-modal-backdrop flex items-center justify-center p-4" data-testid="exchange-chat-modal">
+          <div className="bg-white dark:bg-ink-900 rounded-[24px] shadow-soft-lg w-full max-w-2xl h-[600px] border border-black/10 dark:border-white/10 overflow-hidden">
             <RealtimeChat
-               roomType="exchange"
-               roomId={
-                // CRITICAL FIX: Use a shared room ID for matched exchanges
-                // Both users must use the SAME room ID to chat together
+              roomType="exchange"
+              roomId={
                 chatTask.reciprocal_task_id && chatTask.id > chatTask.reciprocal_task_id
-                  ? chatTask.reciprocal_task_id  // Use the earlier ID (alphabetically lower)
-                  : chatTask.id  // Use current task ID
+                  ? chatTask.reciprocal_task_id
+                  : chatTask.id
               }
               onClose={() => setShowChat(false)}
             />
@@ -361,95 +391,99 @@ const SkillExchangeMarketplace = () => {
 
       {/* Meeting Scheduling Modal */}
       {showMeetingModal && meetingTask && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowMeetingModal(false)} data-testid="exchange-meeting-modal">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full" onClick={e => e.stopPropagation()}>
-            {/* Modal Header */}
-            <div className="relative h-24 bg-gradient-to-r from-indigo-600 to-sky-600 rounded-t-2xl p-6">
-              <div className="absolute inset-0 bg-black/20 rounded-t-2xl"></div>
+        <div className="tc-modal-backdrop flex items-center justify-center p-4" onClick={() => setShowMeetingModal(false)} data-testid="exchange-meeting-modal">
+          <div className="relative bg-white dark:bg-ink-900 rounded-[24px] shadow-soft-lg w-full max-w-md border border-black/10 dark:border-white/10 overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="relative bg-ink-950 text-white p-6 overflow-hidden">
+              <div
+                className="absolute inset-0 opacity-60"
+                style={{
+                  background:
+                    'radial-gradient(400px 200px at 10% 0%, rgba(34,211,238,.3), transparent 60%), radial-gradient(400px 200px at 100% 100%, rgba(255,106,91,.25), transparent 60%)',
+                }}
+              />
               <div className="relative flex justify-between items-start">
-                <h2 className="text-2xl font-bold text-white">Schedule Meeting</h2>
+                <div>
+                  <span className="chip chip-cyan mb-2"><Calendar className="w-3 h-3" /> schedule</span>
+                  <h2 className="font-display text-3xl leading-tight">Schedule meeting</h2>
+                </div>
                 <button
                   onClick={() => setShowMeetingModal(false)}
-                  className="p-2 bg-white/20 backdrop-blur rounded-lg hover:bg-white/30 transition-colors"
+                  className="w-9 h-9 rounded-full glass grid place-items-center text-white"
                   data-testid="meeting-modal-close"
                 >
-                  <X className="w-5 h-5 text-white" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
-            {/* Modal Body */}
             <form onSubmit={handleScheduleMeeting} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Meeting Date & Time *
-                </label>
-                <input
-                  type="datetime-local"
-                  required
-                  min={new Date().toISOString().slice(0, 16)}
-                  className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  value={meetingForm.meeting_date}
-                  onChange={(e) => setMeetingForm({ ...meetingForm, meeting_date: e.target.value })}
-                  data-testid="meeting-date-input"
-                />
-              </div>
+              <label className="block">
+                <span className="text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300">Meeting date & time</span>
+                <div className="mt-1.5 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur px-4 py-3 focus-within:border-cyan-400 focus-within:shadow-glow transition">
+                  <input
+                    type="datetime-local"
+                    required
+                    min={new Date().toISOString().slice(0, 16)}
+                    className="w-full bg-transparent outline-none text-sm"
+                    value={meetingForm.meeting_date}
+                    onChange={(e) => setMeetingForm({ ...meetingForm, meeting_date: e.target.value })}
+                    data-testid="meeting-date-input"
+                  />
+                </div>
+              </label>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Meeting Topic *
-                </label>
-                <input
-                  type="text"
-                  required
-                  className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  value={meetingForm.meeting_topic}
-                  onChange={(e) => setMeetingForm({ ...meetingForm, meeting_topic: e.target.value })}
-                  data-testid="meeting-topic-input"
-                />
-              </div>
+              <label className="block">
+                <span className="text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300">Meeting topic</span>
+                <div className="mt-1.5 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur px-4 py-3 focus-within:border-cyan-400 focus-within:shadow-glow transition">
+                  <input
+                    type="text"
+                    required
+                    className="w-full bg-transparent outline-none text-sm"
+                    value={meetingForm.meeting_topic}
+                    onChange={(e) => setMeetingForm({ ...meetingForm, meeting_topic: e.target.value })}
+                    data-testid="meeting-topic-input"
+                  />
+                </div>
+              </label>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Duration (minutes)
-                </label>
-                <select
-                  className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  value={meetingForm.meeting_duration_minutes}
-                  onChange={(e) => setMeetingForm({ ...meetingForm, meeting_duration_minutes: parseInt(e.target.value) })}
-                  data-testid="meeting-duration-select"
-                >
-                  <option value={30}>30 minutes</option>
-                  <option value={60}>60 minutes</option>
-                  <option value={90}>90 minutes</option>
-                  <option value={120}>120 minutes</option>
-                </select>
-              </div>
+              <label className="block">
+                <span className="text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300">Duration (minutes)</span>
+                <div className="mt-1.5 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur px-4 py-3 focus-within:border-cyan-400 focus-within:shadow-glow transition">
+                  <select
+                    className="w-full bg-transparent outline-none text-sm"
+                    value={meetingForm.meeting_duration_minutes}
+                    onChange={(e) => setMeetingForm({ ...meetingForm, meeting_duration_minutes: parseInt(e.target.value) })}
+                    data-testid="meeting-duration-select"
+                  >
+                    <option value={30}>30 minutes</option>
+                    <option value={60}>60 minutes</option>
+                    <option value={90}>90 minutes</option>
+                    <option value={120}>120 minutes</option>
+                  </select>
+                </div>
+              </label>
 
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Google Meet Link *
-                </label>
-                <input
-                  type="url"
-                  required
-                  className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="https://meet.google.com/xxx-xxxx-xxx"
-                  value={meetingForm.meeting_link}
-                  onChange={(e) => setMeetingForm({ ...meetingForm, meeting_link: e.target.value })}
-                  data-testid="meeting-link-input"
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Create a Google Meet link and paste it here
-                </p>
-              </div>
+              <label className="block">
+                <span className="text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300">Google Meet link</span>
+                <div className="mt-1.5 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur px-4 py-3 focus-within:border-cyan-400 focus-within:shadow-glow transition">
+                  <input
+                    type="url"
+                    required
+                    className="w-full bg-transparent outline-none text-sm"
+                    placeholder="https://meet.google.com/xxx-xxxx-xxx"
+                    value={meetingForm.meeting_link}
+                    onChange={(e) => setMeetingForm({ ...meetingForm, meeting_link: e.target.value })}
+                    data-testid="meeting-link-input"
+                  />
+                </div>
+                <p className="text-xs text-ink-400 mt-1.5">Create a Google Meet link and paste it here.</p>
+              </label>
 
-              <div className="flex gap-3 pt-4">
+              <div className="flex gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowMeetingModal(false)}
-                  className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  className="flex-1 btn btn-ghost py-3"
                   data-testid="meeting-cancel-button"
                 >
                   Cancel
@@ -457,35 +491,27 @@ const SkillExchangeMarketplace = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 bg-gradient-to-r from-indigo-600 to-sky-600 text-white px-4 py-3 rounded-xl hover:from-indigo-700 hover:to-sky-700 disabled:opacity-50 transition-all shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2"
+                  className="flex-1 btn btn-coral py-3 disabled:opacity-50"
                   data-testid="meeting-schedule-button"
                 >
                   {loading ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin" />
-                      Scheduling...
+                      Scheduling…
                     </>
                   ) : (
                     <>
                       <Calendar className="w-4 h-4" />
-                      Schedule Meeting
+                      Schedule
                     </>
                   )}
                 </button>
               </div>
-
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                📅 After scheduling, you can use Google Meet or any other platform for your session.
-              </p>
             </form>
           </div>
         </div>
-              )}
+      )}
 
-
-
-      
-      {/* User Profile Modal */}
       {showProfileModal && selectedUserId && (
         <UserProfileModal
           userId={selectedUserId}

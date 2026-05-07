@@ -7,7 +7,7 @@ import LearnerMatchCard from '../components/LearnerMatchCard';
 import StartExchangeModal from '../components/StartExchangeModal';
 import MentorBookingModal from '../components/MentorBookingModal';
 import { useAuth } from '../context/AuthContext';
-import { Flame, GraduationCap, BookOpen, Sparkles, RefreshCw, Loader2, Users } from 'lucide-react';
+import { Flame, GraduationCap, BookOpen, Sparkles, RefreshCw, Users, ArrowRight } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -18,12 +18,12 @@ const Matches = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  
+
   const [perfectMatches, setPerfectMatches] = useState([]);
   const [mentors, setMentors] = useState([]);
   const [learners, setLearners] = useState([]);
   const [aiSuggestions, setAiSuggestions] = useState([]);
-  
+
   const [showExchangeModal, setShowExchangeModal] = useState(false);
   const [showMentorModal, setShowMentorModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -38,8 +38,7 @@ const Matches = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
-      // Load all match types
+
       const [perfectRes, mentorsRes, learnersRes] = await Promise.all([
         axios.get(`${BACKEND_URL}/api/match/perfect`, {
           headers: { Authorization: `Bearer ${token}` }
@@ -77,7 +76,6 @@ const Matches = () => {
         { receiver_id: match.user_id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      // Navigate to messages page with chat ID to auto-open the conversation
       const chatId = response.data.chat?.id;
       if (chatId) {
         navigate(`/messages?chat=${chatId}`);
@@ -118,9 +116,9 @@ const Matches = () => {
           <div className="blob w-[440px] h-[440px] -right-32 top-40 bg-coral-400/25 pointer-events-none" style={{ animationDelay: '-6s' }} />
           <Navbar />
           <div className="flex items-center justify-center h-[80vh]">
-            <div className="text-center">
-              <div className="tc-spinner mx-auto" />
-              <p className="mt-4 font-display text-xl text-ink-700 dark:text-ink-200">Finding your perfect matches...</p>
+            <div className="flex flex-col items-center gap-5">
+              <div className="tc-spinner" />
+              <p className="font-display text-xl text-ink-600 dark:text-ink-200">Finding your perfect matches…</p>
             </div>
           </div>
         </div>
@@ -133,84 +131,79 @@ const Matches = () => {
       <div className="min-h-screen relative aurora-bg grid-bg overflow-hidden text-ink-950 dark:text-white">
         <div className="blob w-[520px] h-[520px] -left-40 -top-32 bg-cyan-400/30 pointer-events-none" />
         <div className="blob w-[440px] h-[440px] -right-32 top-40 bg-coral-400/25 pointer-events-none" style={{ animationDelay: '-6s' }} />
-        <Navbar />
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                   <h1 className="font-display text-5xl md:text-6xl leading-[.95] tracking-tight text-ink-950 dark:text-white mb-2">
-                  Your <span className="italic text-gradient">Matches</span>
-                </h1>
-                <p className="text-gray-600 dark:text-gray-400">
-                  AI-powered skill matching to help you grow
-                </p>
-              </div>
-              <button
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-semibold shadow-lg transition-all transform hover:scale-105 disabled:opacity-50"
-              >
-                <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
-                Refresh Matches
-              </button>
-            </div>
+        <div className="blob w-[420px] h-[420px] left-[40%] bottom-[-10rem] bg-indigo-500/20 pointer-events-none" style={{ animationDelay: '-8s' }} />
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-2xl p-6 border-2 border-orange-200 dark:border-orange-800">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center">
-                    <Flame className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-3xl font-black text-gray-900 dark:text-white">{perfectMatches.length}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 font-semibold">Perfect Matches</p>
-                  </div>
-                </div>
-              </div>
+        <div className="relative z-10">
+          <Navbar />
+        </div>
 
-              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-2xl p-6 border-2 border-blue-200 dark:border-blue-800">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
-                    <GraduationCap className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-3xl font-black text-gray-900 dark:text-white">{mentors.length}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 font-semibold">Available Mentors</p>
-                  </div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header — ink-navy hero */}
+          <div className="relative mb-10 animate-scale-in">
+            <div className="relative overflow-hidden rounded-[28px] bg-ink-950 text-white p-8 md:p-10 shadow-soft-lg">
+              <div
+                className="absolute inset-0 opacity-60"
+                style={{
+                  background:
+                    'radial-gradient(600px 400px at 10% -10%, rgba(34,211,238,.28), transparent 60%), radial-gradient(600px 500px at 95% 110%, rgba(255,106,91,.22), transparent 60%)',
+                }}
+              />
+              <div className="relative flex items-center justify-between flex-wrap gap-6">
+                <div>
+                  <span className="chip chip-cyan mb-3"><Sparkles className="w-3 h-3" /> AI matching</span>
+                  <h1 className="font-display text-5xl md:text-6xl leading-[.95] tracking-tight">
+                    Your <span className="italic text-gradient">matches</span>,<br />
+                    <span className="italic text-gradient-cyan">curated</span>.
+                  </h1>
+                  <p className="mt-3 text-ink-300">AI-powered skill matching to help you grow.</p>
                 </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl p-6 border-2 border-green-200 dark:border-green-800">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
-                    <BookOpen className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-3xl font-black text-gray-900 dark:text-white">{learners.length}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 font-semibold">Eager Learners</p>
-                  </div>
-                </div>
+                <button
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                  className="btn btn-ghost text-white border-white/15 bg-white/5 hover:bg-white/10 disabled:opacity-60"
+                >
+                  <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                  Refresh
+                </button>
               </div>
             </div>
           </div>
 
+          {/* Stats grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 mb-10">
+            {[
+              { icon: Flame, label: 'Perfect Matches', value: perfectMatches.length, iconBg: 'from-coral-400 to-pink-500' },
+              { icon: GraduationCap, label: 'Available Mentors', value: mentors.length, iconBg: 'from-cyan-400 to-indigo-500' },
+              { icon: BookOpen, label: 'Eager Learners', value: learners.length, iconBg: 'from-emerald-400 to-cyan-500' },
+            ].map((stat, idx) => {
+              const Icon = stat.icon;
+              return (
+                <div key={idx} className="bento bento-glow p-6 animate-scale-in" style={{ animationDelay: `${idx * 0.08}s` }}>
+                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${stat.iconBg} text-white grid place-items-center shadow-soft`}>
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <p className="mt-5 text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300">{stat.label}</p>
+                  <p className="font-display text-5xl mt-1 leading-none">{stat.value}</p>
+                </div>
+              );
+            })}
+          </div>
+
           {perfectMatches.length > 0 && (
             <div className="mb-12" data-testid="perfect-matches-section">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center animate-pulse">
-                  <Flame className="w-6 h-6 text-white" />
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-coral-400 to-pink-500 grid place-items-center text-white shadow-soft animate-pulse">
+                  <Flame className="w-6 h-6" />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-black text-gray-900 dark:text-white">
-                    Perfect Skill Exchange Matches
+                  <span className="chip chip-coral mb-1.5">flagship</span>
+                  <h2 className="font-display text-3xl md:text-4xl leading-tight">
+                    Perfect skill <span className="italic text-gradient">exchange</span>
                   </h2>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Mutual skill exchange opportunities - best matches for you!
-                  </p>
+                  <p className="text-sm text-ink-500 dark:text-ink-300 mt-1">Mutual exchange opportunities — your best matches.</p>
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {perfectMatches.map((match) => (
                   <PerfectMatchCard
                     key={match.user_id}
@@ -226,48 +219,48 @@ const Matches = () => {
 
           {mentors.length > 0 && (
             <div className="mb-12" data-testid="mentors-section">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
-                  <GraduationCap className="w-6 h-6 text-white" />
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-500 grid place-items-center text-white shadow-soft">
+                  <GraduationCap className="w-6 h-6" />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-black text-gray-900 dark:text-white">
-                    Recommended Mentors
+                  <span className="chip chip-cyan mb-1.5">mentors</span>
+                  <h2 className="font-display text-3xl md:text-4xl leading-tight">
+                    Recommended <span className="italic text-gradient-cyan">mentors</span>
                   </h2>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Experts who can teach what you want to learn
-                  </p>
+                  <p className="text-sm text-ink-500 dark:text-ink-300 mt-1">Experts who can teach what you want to learn.</p>
                 </div>
               </div>
 
-                          {aiSuggestions.length > 0 && (
-                <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border-2 border-purple-200 dark:border-purple-800">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                    <p className="text-sm font-semibold text-purple-900 dark:text-purple-200">
-                      AI Suggestions: Also consider learning these skills
+              {aiSuggestions.length > 0 && (
+                <div className="bento p-6 mb-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Sparkles className="w-4 h-4 text-cyan-500" />
+                    <span className="chip chip-cyan">AI suggestions</span>
+                    <p className="text-sm font-semibold text-ink-700 dark:text-ink-200">
+                      Also consider learning these skills
                     </p>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {aiSuggestions.map((skill, idx) => (
-                      <div key={idx} className="p-3 bg-white dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
-                        <div className="flex items-start gap-3">
-                          <span className="px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full text-xs font-bold">
+                      <div key={idx} className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/40 dark:bg-white/5 p-4">
+                        <div className="flex items-start gap-2 flex-wrap">
+                          <span className="px-3 py-1 rounded-full bg-gradient-to-r from-cyan-400 to-indigo-500 text-white text-xs font-bold">
                             {skill.skill_name || skill}
                           </span>
                           {skill.difficulty && (
-                            <span className="px-2 py-1 bg-purple-100 dark:bg-purple-800/30 text-purple-700 dark:text-purple-300 rounded text-xs">
+                            <span className="chip chip-ink">
                               {skill.difficulty}
                             </span>
                           )}
                           {skill.learning_time_weeks && (
-                            <span className="px-2 py-1 bg-purple-100 dark:bg-purple-800/30 text-purple-700 dark:text-purple-300 rounded text-xs">
+                            <span className="chip chip-ink">
                               ~{skill.learning_time_weeks} weeks
                             </span>
                           )}
                         </div>
                         {skill.reason && (
-                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+                          <p className="text-xs text-ink-500 dark:text-ink-300 mt-2">
                             {skill.reason}
                           </p>
                         )}
@@ -277,7 +270,7 @@ const Matches = () => {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {mentors.map((mentor) => (
                   <MentorMatchCard
                     key={mentor.user_id}
@@ -293,20 +286,19 @@ const Matches = () => {
 
           {learners.length > 0 && (
             <div className="mb-12" data-testid="learners-section">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
-                  <BookOpen className="w-6 h-6 text-white" />
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-cyan-500 grid place-items-center text-white shadow-soft">
+                  <BookOpen className="w-6 h-6" />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-black text-gray-900 dark:text-white">
-                    Recommended Learners
+                  <span className="chip chip-cyan mb-1.5">learners</span>
+                  <h2 className="font-display text-3xl md:text-4xl leading-tight">
+                    Recommended <span className="italic text-gradient-cyan">learners</span>
                   </h2>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    People who want to learn what you can teach
-                  </p>
+                  <p className="text-sm text-ink-500 dark:text-ink-300 mt-1">People who want to learn what you can teach.</p>
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {learners.map((learner) => (
                   <LearnerMatchCard
                     key={learner.user_id}
@@ -321,19 +313,14 @@ const Matches = () => {
           )}
 
           {perfectMatches.length === 0 && mentors.length === 0 && learners.length === 0 && (
-            <div className="text-center py-20">
-              <Users className="w-24 h-24 text-gray-300 dark:text-gray-600 mx-auto mb-6" />
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-                No matches found yet
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <div className="empty-state">
+              <Users className="w-12 h-12 text-ink-400" />
+              <p className="font-display text-3xl">No matches yet</p>
+              <p className="text-sm text-ink-500 max-w-sm">
                 Add skills you can teach and want to learn to get matched!
               </p>
-              <button
-                onClick={() => navigate('/skills')}
-                className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-bold shadow-lg transition-all transform hover:scale-105"
-              >
-                Add Your Skills
+              <button onClick={() => navigate('/skills')} className="btn btn-coral">
+                Add your skills <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           )}
@@ -356,7 +343,7 @@ const Matches = () => {
 
       {showProfileModal && selectedUserId && (
         <UserProfileModal
-         isOpen={showProfileModal}
+          isOpen={showProfileModal}
           userId={selectedUserId}
           onClose={() => {
             setShowProfileModal(false);

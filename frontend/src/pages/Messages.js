@@ -3,17 +3,16 @@ import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { 
-  MessageCircle, 
-  Send, 
-  Search, 
-  User, 
+import {
+  MessageCircle,
+  Send,
+  Search,
+  User,
   Loader2,
   ArrowLeft,
   Circle,
-  Check,
-  XCircle,
-  Video
+  Video,
+  Sparkles,
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -23,7 +22,7 @@ const Messages = () => {
   const { user, darkMode } = useAuth();
   const { socket, isConnected, joinChat, leaveChat, sendMessage: socketSendMessage, sendTypingIndicator } = useSocket();
   const [searchParams] = useSearchParams();
-  
+
   const [chats, setChats] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -37,19 +36,17 @@ const Messages = () => {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
   const [page, setPage] = useState(1);
-  
+
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const isLoadingMoreRef = useRef(false);
   const shouldAutoScrollRef = useRef(true);
 
-  // Load chats
   useEffect(() => {
     loadChats();
   }, []);
 
-  // Handle URL chat param
   useEffect(() => {
     const chatIdFromUrl = searchParams.get('chat');
     if (chatIdFromUrl && chats.length > 0) {
@@ -58,7 +55,6 @@ const Messages = () => {
     }
   }, [searchParams, chats]);
 
-  // Socket events
   useEffect(() => {
     const handleNewMessage = (event) => {
       const data = event.detail;
@@ -69,7 +65,7 @@ const Messages = () => {
           return [...prev, {
             id: data.message.id,
             sender_id: data.message.sender_id,
-              text: data.message.text || data.message.content || '',
+            text: data.message.text || data.message.content || '',
             created_at: data.message.created_at,
             message_type: data.message.message_type
           }];
@@ -99,7 +95,6 @@ const Messages = () => {
 
   useEffect(() => {
     if (activeChat) {
-      // Load messages immediately regardless of socket connection state
       loadMessages(activeChat.chat.id, 1, true);
       if (isConnected) {
         joinChat(activeChat.chat.id);
@@ -119,8 +114,8 @@ const Messages = () => {
     const { scrollTop } = messagesContainerRef.current;
     if (scrollTop < 100) loadMoreMessages();
 
-    const isAtBottom = messagesContainerRef.current.scrollHeight - messagesContainerRef.current.scrollTop 
-                       <= messagesContainerRef.current.clientHeight + 100;
+    const isAtBottom = messagesContainerRef.current.scrollHeight - messagesContainerRef.current.scrollTop
+      <= messagesContainerRef.current.clientHeight + 100;
     shouldAutoScrollRef.current = isAtBottom;
   }, [hasMoreMessages]);
 
@@ -164,7 +159,6 @@ const Messages = () => {
         setMessages(prev => [...newMessages, ...prev]);
         setPage(pageNum);
         setHasMoreMessages(newMessages.length === 50);
-        // Preserve scroll position
         if (messagesContainerRef.current) {
           const oldHeight = messagesContainerRef.current.scrollHeight;
           setTimeout(() => {
@@ -209,6 +203,7 @@ const Messages = () => {
       if (isConnected && socket) {
         socketSendMessage(activeChat.chat.id, textToSend);
         setMessages(prev => [...prev, {
+          id: Date.now(), // Add temporary ID
           sender_id: user?.id,
           text: textToSend,
           created_at: new Date().toISOString(),
@@ -218,8 +213,8 @@ const Messages = () => {
         scrollToBottom();
       } else {
         const token = localStorage.getItem('token');
-        await axios.post(`${BACKEND_URL}/api/chat/${activeChat.chat.id}/send`, 
-          { text: textToSend }, 
+        await axios.post(`${BACKEND_URL}/api/chat/${activeChat.chat.id}/send`,
+          { text: textToSend },
           { headers: { Authorization: `Bearer ${token}` } }
         );
         loadMessages(activeChat.chat.id, 1, true);
@@ -248,18 +243,17 @@ const Messages = () => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-   const handleSessionAction = async (sessionId, action) => {
+  const handleSessionAction = async (sessionId, action) => {
     try {
       const token = localStorage.getItem('token');
       const payload = { status: action };
 
       if (action === 'accepted') {
-        // Mentor must paste a Google Meet (or Zoom/Jitsi) link before accepting
         const link = window.prompt(
-          'Paste the Google Meet link for this session(e.g. https://meet.google.com/xxx-yyyy-zzz):',
+          'Paste the Google Meet link for this session (e.g. https://meet.google.com/xxx-yyyy-zzz):',
           'https://meet.google.com/'
         );
-        if (link === null) return; // user cancelled
+        if (link === null) return;
         const trimmed = (link || '').trim();
         if (!trimmed || !/^https?:\/\//i.test(trimmed)) {
           alert('A valid meeting link is required to accept this session.');
@@ -284,8 +278,8 @@ const Messages = () => {
     if (!meetingLink.trim()) return alert('Please enter meeting link');
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`${BACKEND_URL}/api/free-sessions/${sessionId}/meeting-link`, 
-        { meeting_link: meetingLink }, 
+      await axios.patch(`${BACKEND_URL}/api/free-sessions/${sessionId}/meeting-link`,
+        { meeting_link: meetingLink },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setMeetingLink('');
@@ -296,12 +290,14 @@ const Messages = () => {
     }
   };
 
-  const extractSessionId = (text) => text.match(/\[Session ID: ([^\]]+)\]/)?.[1] || null;
+  const extractSessionId = (text) => {
+    const match = text.match(/\[Session ID: ([^\]]+)\]/); // Fixed regex
+    return match ? match[1] : null;
+  };
+  
+  const getMessageText = (msg) => msg.text || msg.content || '';
 
-   const getMessageText = (msg) => msg.text || msg.content || '';
-
-
-  const isSessionMessage = (msg) => 
+  const isSessionMessage = (msg) =>
     ['session_request', 'session_update', 'meeting_link'].includes(msg.message_type);
 
   const filteredChats = chats.filter(chat => {
@@ -312,10 +308,15 @@ const Messages = () => {
   if (loading) {
     return (
       <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        <div className="min-h-screen relative aurora-bg grid-bg overflow-hidden text-ink-950 dark:text-white">
+          <div className="blob w-[520px] h-[520px] -left-40 -top-32 bg-cyan-400/30 pointer-events-none" />
+          <div className="blob w-[440px] h-[440px] -right-32 top-40 bg-coral-400/25 pointer-events-none" style={{ animationDelay: '-6s' }} />
           <Navbar />
           <div className="flex items-center justify-center h-[80vh]">
-            <Loader2 className="w-16 h-16 text-indigo-600 animate-spin" />
+            <div className="flex flex-col items-center gap-5">
+              <div className="tc-spinner" />
+              <p className="font-display text-xl text-ink-600 dark:text-ink-200">Loading conversations…</p>
+            </div>
           </div>
         </div>
       </div>
@@ -324,44 +325,55 @@ const Messages = () => {
 
   return (
     <div className={`${darkMode ? 'dark' : ''}`}>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-        <Navbar />
+      <div className="min-h-screen relative aurora-bg grid-bg overflow-hidden text-ink-950 dark:text-white">
+        <div className="blob w-[520px] h-[520px] -left-40 -top-32 bg-cyan-400/30 pointer-events-none" />
+        <div className="blob w-[440px] h-[440px] -right-32 top-40 bg-coral-400/25 pointer-events-none" style={{ animationDelay: '-6s' }} />
+        <div className="blob w-[420px] h-[420px] left-[40%] bottom-[-10rem] bg-indigo-500/20 pointer-events-none" style={{ animationDelay: '-8s' }} />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden h-[calc(100vh-12rem)] flex flex-col">
+        <div className="relative z-10">
+          <Navbar />
+        </div>
 
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bento p-0 overflow-hidden h-[calc(100vh-9rem)] flex flex-col">
             <div className="flex h-full overflow-hidden">
 
-              {/* ==================== LEFT: CONVERSATIONS LIST ==================== */}
-              <div className={`w-full lg:w-5/12 xl:w-4/12 border-r border-gray-200 dark:border-gray-700 
+              {/* LEFT: Conversations */}
+              <div className={`w-full lg:w-5/12 xl:w-4/12 border-r border-black/5 dark:border-white/10
                               flex flex-col overflow-hidden ${activeChat ? 'hidden lg:flex' : 'flex'}`}>
 
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+                <div className="p-5 border-b border-black/5 dark:border-white/10 flex-shrink-0">
                   <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-2xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                      Messages
-                    </h2>
-                    {isConnected && <span className="text-xs text-green-600 flex items-center gap-1"><Circle className="w-2 h-2 fill-current" /> Live</span>}
+                    <div>
+                      <span className="chip chip-cyan mb-2"><Sparkles className="w-3 h-3" /> inbox</span>
+                      <h2 className="font-display text-3xl leading-tight">
+                        Your <span className="italic text-gradient-cyan">messages</span>
+                      </h2>
+                    </div>
+                    {isConnected && (
+                      <span className="chip chip-cyan">
+                        <Circle className="w-2 h-2 fill-current" /> live
+                      </span>
+                    )}
                   </div>
 
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <div className="relative flex items-center rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur px-4 focus-within:border-cyan-400 focus-within:shadow-glow transition">
+                    <Search className="w-4 h-4 text-ink-400" />
                     <input
                       type="text"
-                      placeholder="Search conversations..."
+                      placeholder="Search conversations…"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500"
+                      className="flex-1 bg-transparent outline-none text-sm py-3 px-3"
                     />
                   </div>
                 </div>
 
-                {/* Scrollable Chat List */}
-                <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-800">
+                <div className="flex-1 overflow-y-auto">
                   {filteredChats.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center p-8">
-                      <MessageCircle className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
-                      <p className="text-gray-500 dark:text-gray-400">No conversations found</p>
+                      <MessageCircle className="w-12 h-12 text-ink-300 mb-3" />
+                      <p className="text-ink-500 font-display text-xl">No conversations found</p>
                     </div>
                   ) : (
                     filteredChats.map((chatItem) => {
@@ -373,26 +385,26 @@ const Messages = () => {
                         <div
                           key={chatItem.chat.id}
                           onClick={() => setActiveChat(chatItem)}
-                          className={`p-4 border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all ${isActive ? 'bg-indigo-50 dark:bg-indigo-900/20 border-l-4 border-indigo-600' : ''}`}
+                          className={`px-5 py-4 border-b border-black/5 dark:border-white/5 cursor-pointer hover:bg-white/40 dark:hover:bg-white/5 transition-all ${isActive ? 'bg-cyan-50/60 dark:bg-cyan-500/10 border-l-4 border-l-cyan-500' : ''}`}
                         >
                           <div className="flex items-start gap-3">
                             <div className="relative flex-shrink-0">
                               {other?.profile_photo ? (
-                                <img src={other.profile_photo} alt="" className="w-12 h-12 rounded-full object-cover" />
+                                <img src={other.profile_photo} alt="" className="w-12 h-12 rounded-2xl object-cover ring-1 ring-white/40" />
                               ) : (
-                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-500 grid place-items-center shadow-soft">
                                   <User className="w-6 h-6 text-white" />
                                 </div>
                               )}
-                              <Circle className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full" />
+                              <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 ring-2 ring-white dark:ring-ink-900 rounded-full" />
                             </div>
 
                             <div className="flex-1 min-w-0">
-                              <div className="flex justify-between">
-                                <h3 className="font-semibold text-gray-900 dark:text-white truncate">{other?.full_name || other?.username}</h3>
-                                {lastMsg && <span className="text-xs text-gray-500">{formatChatDate(lastMsg.created_at)}</span>}
+                              <div className="flex justify-between items-baseline">
+                                <h3 className="font-semibold text-ink-950 dark:text-white truncate">{other?.full_name || other?.username}</h3>
+                                {lastMsg && <span className="text-[10px] uppercase tracking-widest text-ink-400">{formatChatDate(lastMsg.created_at)}</span>}
                               </div>
-                              {lastMsg && <p className="text-sm text-gray-600 dark:text-gray-400 truncate mt-0.5">{lastMsg.text}</p>}
+                              {lastMsg && <p className="text-sm text-ink-500 dark:text-ink-300 truncate mt-0.5">{lastMsg.text}</p>}
                             </div>
                           </div>
                         </div>
@@ -402,69 +414,67 @@ const Messages = () => {
                 </div>
               </div>
 
-              {/* ==================== RIGHT: CHAT WINDOW ==================== */}
+              {/* RIGHT: Chat */}
               <div className={`flex-1 flex flex-col overflow-hidden ${!activeChat && 'hidden lg:flex'}`}>
-
                 {activeChat ? (
                   <>
-                    {/* Header */}
-                    <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center gap-3 flex-shrink-0">
-                      <button onClick={() => setActiveChat(null)} className="lg:hidden p-2 -ml-2">
-                        <ArrowLeft className="w-6 h-6" />
+                    <div className="px-5 py-4 border-b border-black/5 dark:border-white/10 flex items-center gap-3 flex-shrink-0 glass-strong">
+                      <button onClick={() => setActiveChat(null)} className="lg:hidden p-2 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10">
+                        <ArrowLeft className="w-5 h-5" />
                       </button>
                       <div className="flex items-center gap-3">
                         {activeChat.other_user?.profile_photo ? (
-                          <img src={activeChat.other_user.profile_photo} alt="" className="w-10 h-10 rounded-full" />
+                          <img src={activeChat.other_user.profile_photo} alt="" className="w-10 h-10 rounded-2xl object-cover" />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-500 grid place-items-center shadow-soft">
                             <User className="w-5 h-5 text-white" />
                           </div>
                         )}
                         <div>
                           <h3 className="font-semibold">{activeChat.other_user?.full_name || activeChat.other_user?.username}</h3>
-                          <p className="text-xs text-green-600 flex items-center gap-1">
-                            <Circle className="w-2 h-2 fill-current" /> {typingUser ? 'Typing...' : 'Online'}
+                          <p className="text-[11px] text-emerald-500 flex items-center gap-1 font-semibold uppercase tracking-widest">
+                            <Circle className="w-1.5 h-1.5 fill-current" /> {typingUser ? 'Typing…' : 'Online'}
                           </p>
                         </div>
                       </div>
                     </div>
 
-                    {/* Messages - Scrollable Area */}
-                    <div 
+                    <div
                       ref={messagesContainerRef}
                       onScroll={handleScroll}
-                      className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900"
+                      className="flex-1 overflow-y-auto p-5 space-y-3"
                     >
                       {messages.map((msg, idx) => {
                         const isMe = msg.sender_id === user?.id;
                         const isSessionMsg = isSessionMessage(msg);
-                      
-                             const msgText = getMessageText(msg);
+                        const msgText = getMessageText(msg);
                         const sessionId = extractSessionId(msgText);
 
                         return (
                           <div key={msg.id || idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[75%] rounded-2xl px-4 py-3 ${isSessionMsg 
-                              ? 'bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800' 
-                              : isMe 
-                                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white' 
-                                : 'bg-white dark:bg-gray-800 shadow'}`}>
-                               <p className="text-sm whitespace-pre-line break-words">{msg.text || msg.content || ''}</p>
-                              <p className="text-xs mt-1 opacity-70">{formatTime(msg.created_at)}</p>
+                            <div className={`max-w-[75%] rounded-2xl px-4 py-3 shadow-soft ${
+                              isSessionMsg
+                                ? 'bg-cyan-50 dark:bg-cyan-500/10 border border-cyan-200/60 dark:border-cyan-400/20'
+                                : isMe
+                                  ? 'bg-gradient-to-br from-cyan-400 to-indigo-500 text-white'
+                                  : 'glass border border-black/5 dark:border-white/10'
+                            }`}>
+                              <p className="text-sm whitespace-pre-line break-words">{msgText}</p>
+                              <p className={`text-[10px] uppercase tracking-widest mt-1.5 ${isMe ? 'text-white/70' : 'text-ink-400'}`}>
+                                {formatTime(msg.created_at)}
+                              </p>
 
-                              {/* Accept/Reject Buttons */}
                               {msg.message_type === 'session_request' && !isMe && sessionId && (
                                 <div className="flex gap-2 mt-3">
-                                  <button onClick={() => handleSessionAction(sessionId, 'accepted')} className="flex-1 bg-green-600 text-white py-2 rounded-lg font-medium">Accept</button>
-                                  <button onClick={() => handleSessionAction(sessionId, 'rejected')} className="flex-1 bg-red-600 text-white py-2 rounded-lg font-medium">Reject</button>
+                                  <button onClick={() => handleSessionAction(sessionId, 'accepted')} className="flex-1 btn btn-cyan py-2 text-xs">Accept</button>
+                                  <button onClick={() => handleSessionAction(sessionId, 'rejected')} className="flex-1 btn btn-coral py-2 text-xs">Reject</button>
                                 </div>
                               )}
 
-                              {/* Join Meeting Button */}
                               {msg.message_type === 'meeting_link' && (
-                                 <a href={msgText.match(/https?:\/\/[^\s]+/)?.[0]} target="_blank" rel="noopener noreferrer" className="block mt-3">
-                                  <button className="w-full bg-green-600 text-white py-2.5 rounded-lg font-medium flex items-center justify-center gap-2">
-                                    <Video className="w-4 h-4" /> Join Meeting
+                                <a href={msgText.match(/https?:\/\/[^\s]+/)?.[0]} target="_blank" rel="noopener noreferrer" className="block mt-3">
+                                  <button className="w-full btn btn-coral py-2 text-xs">
+                                    <Video className="w-3.5 h-3.5" /> Join meeting
                                   </button>
                                 </a>
                               )}
@@ -475,11 +485,11 @@ const Messages = () => {
 
                       {typingUser && (
                         <div className="flex justify-start">
-                          <div className="bg-white dark:bg-gray-800 px-4 py-3 rounded-2xl rounded-bl-none">
-                            <div className="flex gap-1">
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-150"></div>
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-300"></div>
+                          <div className="glass border border-black/5 dark:border-white/10 px-4 py-3 rounded-2xl rounded-bl-none">
+                            <div className="flex gap-1.5">
+                              <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce"></div>
+                              <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '.15s' }}></div>
+                              <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '.3s' }}></div>
                             </div>
                           </div>
                         </div>
@@ -487,32 +497,33 @@ const Messages = () => {
                       <div ref={messagesEndRef} />
                     </div>
 
-                    {/* Input Area */}
-                    <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
+                    <div className="p-4 border-t border-black/5 dark:border-white/10 flex-shrink-0 glass-strong">
                       <form onSubmit={handleSendMessage} className="flex gap-2">
-                        <input
-                          type="text"
-                          value={messageText}
-                          onChange={handleMessageChange}
-                          placeholder="Type a message..."
-                          className="flex-1 px-5 py-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        />
+                        <div className="flex-1 flex items-center rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-white/5 backdrop-blur px-4 focus-within:border-cyan-400 focus-within:shadow-glow transition">
+                          <input
+                            type="text"
+                            value={messageText}
+                            onChange={handleMessageChange}
+                            placeholder="Type a message…"
+                            className="flex-1 bg-transparent outline-none text-sm py-3"
+                          />
+                        </div>
                         <button
                           type="submit"
                           disabled={!messageText.trim() || sending}
-                          className="px-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl disabled:opacity-50"
+                          className="btn btn-coral px-6 disabled:opacity-50"
                         >
-                          {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                          {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                         </button>
                       </form>
                     </div>
                   </>
                 ) : (
                   <div className="flex-1 flex items-center justify-center text-center p-8">
-                    <div>
-                      <MessageCircle className="w-20 h-20 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                      <h3 className="text-2xl font-bold text-gray-800 dark:text-white">Select a conversation</h3>
-                      <p className="text-gray-500 mt-2">Choose a chat from the list to start messaging</p>
+                    <div className="empty-state max-w-md">
+                      <MessageCircle className="w-12 h-12 text-ink-400" />
+                      <p className="font-display text-3xl">Select a conversation</p>
+                      <p className="text-sm text-ink-500">Choose a chat from the list to start messaging.</p>
                     </div>
                   </div>
                 )}

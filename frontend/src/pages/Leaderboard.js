@@ -7,20 +7,14 @@ import {
   Medal,
   Crown,
   Star,
-  TrendingUp,
   Users,
   Award,
   Target,
-  Flame,
-  Zap,
-  BookOpen,
-  CheckCircle,
-  Shield,
   Sparkles,
-  ChevronRight,
+  CheckCircle,
   RefreshCw,
-  Filter,
-  User
+  User,
+  ArrowRight,
 } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -32,6 +26,7 @@ const Leaderboard = () => {
   const [error, setError] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
+
   useEffect(() => {
     loadLeaderboard();
   }, [activeCategory]);
@@ -43,7 +38,6 @@ const Leaderboard = () => {
       const response = await axios.get(`${BACKEND_URL}/api/leaderboard/`, {
         params: { category: activeCategory, limit: 20 }
       });
-      // Transform data to match frontend expectations
       const transformedData = response.data.leaderboard?.map(item => ({
         rank: item.rank,
         user_id: item.user_id || item.user?.id,
@@ -57,7 +51,7 @@ const Leaderboard = () => {
           average_rating: item.user?.average_rating || 0
         }
       })) || [];
-      
+
       setLeaderboard(transformedData);
     } catch (err) {
       console.error('Error loading leaderboard:', err);
@@ -68,56 +62,65 @@ const Leaderboard = () => {
   };
 
   const categories = [
-    { id: 'top_mentor', label: 'Top Mentors', icon: Crown, color: 'from-yellow-500 to-orange-500', description: 'Most active and highest-rated mentors' },
-    { id: 'top_learner', label: 'Top Learners', icon: Target, color: 'from-blue-500 to-cyan-500', description: 'Most dedicated learners' },
-    { id: 'top_contributor', label: 'Top Contributors', icon: Sparkles, color: 'from-purple-500 to-pink-500', description: 'Overall platform engagement leaders' },
+    { id: 'top_mentor', label: 'Top Mentors', icon: Crown, iconBg: 'from-amber-400 to-coral-400', description: 'Most active and highest-rated mentors' },
+    { id: 'top_learner', label: 'Top Learners', icon: Target, iconBg: 'from-cyan-400 to-indigo-500', description: 'Most dedicated learners' },
+    { id: 'top_contributor', label: 'Top Contributors', icon: Sparkles, iconBg: 'from-coral-400 to-pink-500', description: 'Overall platform engagement leaders' },
   ];
 
   const getRankBadge = (rank) => {
-    if (rank === 1) return { icon: Crown, color: 'text-yellow-500', bg: 'bg-yellow-100 dark:bg-yellow-900/30' };
-    if (rank === 2) return { icon: Medal, color: 'text-gray-400', bg: 'bg-gray-100 dark:bg-gray-700' };
-    if (rank === 3) return { icon: Medal, color: 'text-orange-600', bg: 'bg-orange-100 dark:bg-orange-900/30' };
-    return { icon: Award, color: 'text-indigo-600', bg: 'bg-indigo-100 dark:bg-indigo-900/30' };
+    if (rank === 1) return { icon: Crown, color: 'text-amber-300', accent: 'from-amber-300 to-coral-400' };
+    if (rank === 2) return { icon: Medal, color: 'text-ink-300', accent: 'from-ink-200 to-ink-400' };
+    if (rank === 3) return { icon: Medal, color: 'text-coral-300', accent: 'from-coral-300 to-coral-500' };
+    return { icon: Award, color: 'text-cyan-300', accent: 'from-cyan-400 to-indigo-500' };
   };
 
   const getTrustBadge = (score) => {
-    if (score >= 90) return { label: 'Gold Mentor', color: 'text-yellow-600', bg: 'bg-yellow-100 dark:bg-yellow-900/30', icon: '🏆' };
-    if (score >= 75) return { label: 'Silver Mentor', color: 'text-gray-500', bg: 'bg-gray-100 dark:bg-gray-700', icon: '🥈' };
-    if (score >= 60) return { label: 'Bronze Mentor', color: 'text-orange-600', bg: 'bg-orange-100 dark:bg-orange-900/30', icon: '🥉' };
-    return { label: 'Aspiring Mentor', color: 'text-indigo-600', bg: 'bg-indigo-100 dark:bg-indigo-900/30', icon: '⭐' };
+    if (score >= 90) return { label: 'Gold Mentor', icon: '🏆', tone: 'coral' };
+    if (score >= 75) return { label: 'Silver Mentor', icon: '🥈', tone: 'ink' };
+    if (score >= 60) return { label: 'Bronze Mentor', icon: '🥉', tone: 'coral' };
+    return { label: 'Aspiring Mentor', icon: '⭐', tone: 'cyan' };
   };
 
-  const currentCategory = categories.find(c => c.id === activeCategory);
-
   return (
-       <div className="min-h-screen relative aurora-bg grid-bg overflow-hidden text-ink-950 dark:text-white" data-testid="leaderboard-page">
+    <div className="min-h-screen relative aurora-bg grid-bg overflow-hidden text-ink-950 dark:text-white" data-testid="leaderboard-page">
       <div className="blob w-[520px] h-[520px] -left-40 -top-32 bg-cyan-400/30 pointer-events-none" />
       <div className="blob w-[440px] h-[440px] -right-32 top-40 bg-coral-400/25 pointer-events-none" style={{ animationDelay: '-6s' }} />
-      <Navbar />
+      <div className="blob w-[420px] h-[420px] left-[40%] bottom-[-10rem] bg-indigo-500/20 pointer-events-none" style={{ animationDelay: '-8s' }} />
 
-      {/* Animated Background */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-indigo-200 dark:bg-indigo-500/20 rounded-full blur-3xl opacity-20 animate-blob"></div>
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-200 dark:bg-purple-500/20 rounded-full blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+      <div className="relative z-10">
+        <Navbar />
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-3 mb-4">
-            <Trophy className="w-12 h-12 text-yellow-500 animate-bounce" />
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Leaderboard
-            </h1>
-            <Trophy className="w-12 h-12 text-yellow-500 animate-bounce animation-delay-1000" />
+        {/* Header — ink-navy hero */}
+        <div className="relative mb-10 animate-scale-in">
+          <div className="relative overflow-hidden rounded-[28px] bg-ink-950 text-white p-8 md:p-12 shadow-soft-lg text-center">
+            <div
+              className="absolute inset-0 opacity-60"
+              style={{
+                background:
+                  'radial-gradient(600px 400px at 10% -10%, rgba(34,211,238,.28), transparent 60%), radial-gradient(600px 500px at 95% 110%, rgba(255,106,91,.22), transparent 60%)',
+              }}
+            />
+            <div className="relative">
+              <div className="inline-flex items-center justify-center mb-5">
+                <div className="w-16 h-16 rounded-3xl bg-white/10 ring-1 ring-white/15 grid place-items-center text-amber-300 backdrop-blur-md">
+                  <Trophy className="w-8 h-8" />
+                </div>
+              </div>
+              <span className="chip chip-cyan mb-4"><Sparkles className="w-3 h-3" /> top performers</span>
+              <h1 className="font-display text-5xl md:text-7xl leading-[.95] tracking-tight">
+                The <span className="italic text-gradient-cyan">leaderboard</span>.
+              </h1>
+              <p className="mt-4 text-ink-300 max-w-xl mx-auto text-lg">
+                Celebrating the people who ship, teach and lift the community every day.
+              </p>
+            </div>
           </div>
-          <p className="text-gray-600 dark:text-gray-400 text-lg">
-            Celebrating our top performers and contributors
-          </p>
         </div>
 
         {/* Category Selector */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 mb-8">
           {categories.map((category) => {
             const Icon = category.icon;
             const isActive = activeCategory === category.id;
@@ -125,168 +128,143 @@ const Leaderboard = () => {
               <button
                 key={category.id}
                 onClick={() => setActiveCategory(category.id)}
-                className={`relative overflow-hidden rounded-2xl p-6 transition-all duration-300 ${
-                  isActive
-                    ? 'bg-white dark:bg-gray-800 shadow-xl scale-105 ring-2 ring-indigo-500'
-                    : 'bg-white/80 dark:bg-gray-800/80 hover:shadow-lg hover:scale-102'
-                }`}
+                className={`bento bento-glow p-6 text-left transition-all ${isActive ? 'ring-2 ring-cyan-400/50' : ''}`}
                 data-testid={`category-${category.id}`}
               >
-                <div className={`absolute inset-0 bg-gradient-to-r ${category.color} opacity-${isActive ? '10' : '0'} transition-opacity`}></div>
-                <div className="relative">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className={`p-3 rounded-xl bg-gradient-to-r ${category.color}`}>
-                      <Icon className="w-6 h-6 text-white" />
-                    </div>
-                    {isActive && (
-                      <CheckCircle className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                    )}
+                <div className="flex items-center justify-between mb-3">
+                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${category.iconBg} grid place-items-center text-white shadow-soft`}>
+                    <Icon className="w-6 h-6" />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
-                    {category.label}
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {category.description}
-                  </p>
+                  {isActive && <CheckCircle className="w-5 h-5 text-cyan-500" />}
                 </div>
+                <h3 className="font-display text-2xl mt-1 leading-tight">{category.label}</h3>
+                <p className="text-sm text-ink-500 dark:text-ink-300 mt-1">{category.description}</p>
               </button>
             );
           })}
         </div>
 
-        {/* Refresh Button */}
+        {/* Refresh */}
         <div className="flex justify-end mb-6">
-          <button
-            onClick={loadLeaderboard}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50"
-          >
+          <button onClick={loadLeaderboard} disabled={loading} className="btn btn-ghost disabled:opacity-50">
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </button>
         </div>
 
-        {/* Leaderboard Content */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600 dark:text-gray-400">Loading leaderboard...</p>
+            <div className="flex flex-col items-center gap-5">
+              <div className="tc-spinner" />
+              <p className="font-display text-xl text-ink-600 dark:text-ink-200">Loading rankings…</p>
             </div>
           </div>
         ) : error ? (
-          <div className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-8 text-center">
-            <p className="text-red-600 dark:text-red-400">{error}</p>
-            <button
-              onClick={loadLeaderboard}
-              className="mt-4 px-6 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors"
-            >
-              Try Again
-            </button>
+          <div className="bento p-10 text-center">
+            <p className="text-coral-500 mb-4">{error}</p>
+            <button onClick={loadLeaderboard} className="btn btn-coral">Try again</button>
           </div>
         ) : leaderboard.length === 0 ? (
-          <div className="bg-gradient-to-br from-pink-200 via-rose-200 to-purple-200 dark:bg-gray-800 rounded-2xl p-16 text-center">
-            <Trophy className="w-24 h-24 text-gray-300 dark:text-gray-700 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              No Data Available
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              Leaderboard data will appear as users engage with the platform
+          <div className="empty-state">
+            <Trophy className="w-12 h-12 text-ink-400" />
+            <p className="font-display text-2xl">No data available</p>
+            <p className="text-sm text-ink-500 max-w-sm">
+              Leaderboard data will appear as users engage with the platform.
             </p>
           </div>
         ) : (
           <>
             {/* Top 3 Podium */}
-            <div className="grid grid-cols-3 gap-4 mb-8 max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10 max-w-5xl mx-auto">
               {[1, 0, 2].map((index) => {
                 const entry = leaderboard[index];
                 if (!entry) return null;
-                
                 const rankBadge = getRankBadge(entry.rank);
                 const RankIcon = rankBadge.icon;
                 const trustBadge = entry.trust_score ? getTrustBadge(entry.trust_score) : null;
+                const isWinner = index === 0;
 
                 return (
                   <div
                     key={entry.rank}
-                    className={`${index === 0 ? 'order-2' : index === 1 ? 'order-1' : 'order-3'} ${
-                      index === 0 ? 'scale-110' : ''
-                    }`}
+                    className={`${index === 0 ? 'md:order-2' : index === 1 ? 'md:order-1' : 'md:order-3'} ${isWinner ? 'md:scale-105' : ''}`}
                   >
-                    <div className="bg-gradient-to-br from-pink-200 via-rose-200 to-purple-200 dark:bg-gray-800 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all">
-                      {/* Rank Badge */}
-                      <div className="flex justify-center mb-4">
-                        <div className={`${rankBadge.bg} rounded-full p-4`}>
-                          <RankIcon className={`w-8 h-8 ${rankBadge.color}`} />
-                        </div>
-                      </div>
-
-                      {/* Avatar */}
-                      <div className="flex justify-center mb-4">
-                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 p-1">
-                          <div className="w-full h-full rounded-full bg-gradient-to-br from-red-200 via-rose-200 to-purple-200 dark:bg-gray-700 flex items-center justify-center">
-                            <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-                              {entry.username?.charAt(0).toUpperCase()}
-                            </span>
+                    <div className={`bento bento-glow p-7 ${isWinner ? 'bg-ink-950 text-white' : ''} relative overflow-hidden`}>
+                      {isWinner && (
+                        <div
+                          className="absolute inset-0 opacity-60"
+                          style={{
+                            background:
+                              'radial-gradient(500px 300px at 100% -10%, rgba(255,193,7,.3), transparent 60%), radial-gradient(400px 300px at -10% 110%, rgba(255,106,91,.22), transparent 60%)',
+                          }}
+                        />
+                      )}
+                      <div className="relative">
+                        <div className="flex justify-center mb-5">
+                          <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${rankBadge.accent} grid place-items-center shadow-soft`}>
+                            <RankIcon className="w-7 h-7 text-white" />
                           </div>
                         </div>
-                      </div>
 
-                      {/* User Info */}
-                      <h3 className="text-center font-bold text-gray-900 dark:text-white mb-1">
-                        {entry.full_name || entry.username}
-                      </h3>
-                      <p className="text-center text-sm text-gray-500 dark:text-gray-400 mb-3">
-                        @{entry.username}
-                      </p>
-
-                      {/* Trust Badge */}
-                      {trustBadge && (
-                        <div className={`${trustBadge.bg} rounded-full px-3 py-1 text-center mb-3`}>
-                          <span className={`text-xs font-medium ${trustBadge.color}`}>
-                            {trustBadge.icon} {trustBadge.label}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Stats */}
-                     <div className="space-y-2 mb-4">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600 dark:text-gray-400">Score</span>
-                          <span className="font-bold text-indigo-600 dark:text-indigo-400">
-                            {entry.score || 0}
-                          </span>
-                        </div>
-                        {entry.stats && (
-                          <>
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-gray-600 dark:text-gray-400">Sessions</span>
-                              <span className="font-semibold text-gray-900 dark:text-white">
-                                {entry.stats.total_sessions || 0}
+                        <div className="flex justify-center mb-4">
+                          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-cyan-400 to-indigo-500 p-1 shadow-soft">
+                            <div className={`w-full h-full rounded-3xl ${isWinner ? 'bg-white/10' : 'bg-white dark:bg-ink-900'} grid place-items-center backdrop-blur`}>
+                              <span className="font-display text-3xl text-cyan-500 dark:text-cyan-300">
+                                {entry.username?.charAt(0).toUpperCase()}
                               </span>
                             </div>
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-gray-600 dark:text-gray-400">Rating</span>
-                              <span className="font-semibold text-gray-900 dark:text-white flex items-center gap-1">
-                                <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                                {entry.stats.average_rating?.toFixed(1) || '0.0'}
-                              </span>
-                            </div>
-                          </>
+                          </div>
+                        </div>
+
+                        <h3 className={`text-center font-display text-2xl ${isWinner ? 'text-white' : ''}`}>
+                          {entry.full_name || entry.username}
+                        </h3>
+                        <p className={`text-center text-xs uppercase tracking-widest mt-1 ${isWinner ? 'text-ink-300' : 'text-ink-500'}`}>
+                          @{entry.username}
+                        </p>
+
+                        {trustBadge && (
+                          <div className="flex justify-center mt-4">
+                            <span className={`chip ${trustBadge.tone === 'coral' ? 'chip-coral' : trustBadge.tone === 'ink' ? 'chip-ink' : 'chip-cyan'} ${isWinner ? 'ring-1 ring-white/15 bg-white/5 text-white' : ''}`}>
+                              <span>{trustBadge.icon}</span> {trustBadge.label}
+                            </span>
+                          </div>
                         )}
+
+                        <div className="mt-5 space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className={isWinner ? 'text-ink-300' : 'text-ink-500'}>Score</span>
+                            <span className="font-display text-2xl text-gradient">{entry.score || 0}</span>
+                          </div>
+                          {entry.stats && (
+                            <>
+                              <div className="flex items-center justify-between text-sm">
+                                <span className={isWinner ? 'text-ink-300' : 'text-ink-500'}>Sessions</span>
+                                <span className="font-semibold">{entry.stats.total_sessions || 0}</span>
+                              </div>
+                              <div className="flex items-center justify-between text-sm">
+                                <span className={isWinner ? 'text-ink-300' : 'text-ink-500'}>Rating</span>
+                                <span className="font-semibold flex items-center gap-1">
+                                  <Star className="w-3.5 h-3.5 text-amber-400 fill-current" />
+                                  {entry.stats.average_rating?.toFixed(1) || '0.0'}
+                                </span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+
+                        <button
+                          onClick={() => {
+                            setSelectedUserId(entry.user_id || entry.id);
+                            setShowProfileModal(true);
+                          }}
+                          className={`mt-5 w-full ${isWinner ? 'btn btn-cyan' : 'btn btn-ghost'}`}
+                          data-testid="leaderboard-view-profile-button"
+                        >
+                          <User className="w-4 h-4" />
+                          View profile
+                        </button>
                       </div>
-                          {/* View Profile Button */}
-                      <button
-                        onClick={() => {
-                          setSelectedUserId(entry.user_id || entry.id);
-                          setShowProfileModal(true);
-                        }}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                        data-testid="leaderboard-view-profile-button"
-                      >
-                        <User className="w-4 h-4" />
-                        View Profile
-                      </button>
                     </div>
                   </div>
                 );
@@ -294,80 +272,63 @@ const Leaderboard = () => {
             </div>
 
             {/* Rest of Leaderboard */}
-            <div className="bg-gradient-to-br from-pink-200 via-rose-200 to-purple-200 dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
-              <div className="p-6 bg-gradient-to-r from-red-600 to-yellow-600">
-                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                  <Users className="w-6 h-6" />
-                  Full Rankings
+            <div className="bento p-0 overflow-hidden">
+              <div className="px-6 md:px-8 py-6 border-b border-black/5 dark:border-white/10">
+                <span className="chip chip-cyan mb-2"><Users className="w-3 h-3" /> rankings</span>
+                <h2 className="font-display text-3xl md:text-4xl leading-tight">
+                  Full <span className="italic text-gradient-cyan">rankings</span>
                 </h2>
               </div>
 
-              <div className="divide-y divide-gray-200 dark:divide-gray-700">
+              <div className="divide-y divide-black/5 dark:divide-white/5">
                 {leaderboard.slice(3).map((entry) => {
                   const trustBadge = entry.trust_score ? getTrustBadge(entry.trust_score) : null;
 
                   return (
                     <div
                       key={entry.rank}
-                      className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      className="px-6 md:px-8 py-5 hover:bg-white/40 dark:hover:bg-white/5 transition-colors"
                       data-testid="leaderboard-entry"
                     >
-                      <div className="flex items-center gap-4">
-                        {/* Rank */}
+                      <div className="flex items-center gap-4 flex-wrap">
                         <div className="w-12 text-center">
-                          <span className="text-2xl font-bold text-gray-400">
-                            #{entry.rank}
-                          </span>
+                          <span className="font-display text-3xl text-ink-400">#{entry.rank}</span>
                         </div>
 
-                        {/* Avatar */}
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 p-0.5">
-                          <div className="w-full h-full rounded-full bg-white dark:bg-gray-700 flex items-center justify-center">
-                            <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-500 p-0.5 shadow-soft">
+                          <div className="w-full h-full rounded-2xl bg-white dark:bg-ink-900 grid place-items-center">
+                            <span className="font-display text-xl text-cyan-500 dark:text-cyan-300">
                               {entry.username?.charAt(0).toUpperCase()}
                             </span>
                           </div>
                         </div>
 
-                        {/* User Info */}
-                        <div className="flex-1">
-                          <h3 className="font-bold text-gray-900 dark:text-white">
-                            {entry.full_name || entry.username}
-                          </h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            @{entry.username}
-                          </p>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-ink-950 dark:text-white truncate">{entry.full_name || entry.username}</h3>
+                          <p className="text-xs text-ink-500 dark:text-ink-300">@{entry.username}</p>
                         </div>
 
-                        {/* Trust Badge */}
                         {trustBadge && (
-                          <div className={`${trustBadge.bg} rounded-full px-3 py-1`}>
-                            <span className={`text-xs font-medium ${trustBadge.color}`}>
-                              {trustBadge.icon} {trustBadge.label}
-                            </span>
-                          </div>
+                          <span className={`chip ${trustBadge.tone === 'coral' ? 'chip-coral' : trustBadge.tone === 'ink' ? 'chip-ink' : 'chip-cyan'} hidden md:inline-flex`}>
+                            <span>{trustBadge.icon}</span> {trustBadge.label}
+                          </span>
                         )}
 
-                        {/* Stats */}
                         <div className="hidden md:flex items-center gap-6">
                           <div className="text-center">
-                            <p className="text-xs text-gray-500 dark:text-gray-400">Score</p>
-                            <p className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
-                              {entry.score || 0}
-                            </p>
+                            <p className="text-[10px] uppercase tracking-widest text-ink-500">Score</p>
+                            <p className="font-display text-2xl text-gradient">{entry.score || 0}</p>
                           </div>
                           {entry.stats && (
                             <>
                               <div className="text-center">
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Sessions</p>
-                                <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                                  {entry.stats.total_sessions || 0}
-                                </p>
+                                <p className="text-[10px] uppercase tracking-widest text-ink-500">Sessions</p>
+                                <p className="font-semibold">{entry.stats.total_sessions || 0}</p>
                               </div>
                               <div className="text-center">
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Rating</p>
-                                <p className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-1">
-                                  <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                                <p className="text-[10px] uppercase tracking-widest text-ink-500">Rating</p>
+                                <p className="font-semibold flex items-center gap-1 justify-center">
+                                  <Star className="w-3.5 h-3.5 text-amber-400 fill-current" />
                                   {entry.stats.average_rating?.toFixed(1) || '0.0'}
                                 </p>
                               </div>
@@ -375,17 +336,16 @@ const Leaderboard = () => {
                           )}
                         </div>
 
-                        {/* View Profile Button */}
                         <button
                           onClick={() => {
                             setSelectedUserId(entry.user_id || entry.id);
                             setShowProfileModal(true);
                           }}
-                          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                          className="btn btn-ghost"
                           data-testid="leaderboard-list-view-profile-button"
                         >
                           <User className="w-4 h-4" />
-                          Profile
+                          Profile <ArrowRight className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
@@ -397,27 +357,10 @@ const Leaderboard = () => {
         )}
       </div>
 
-      <style jsx>{`
-        @keyframes blob {
-          0%, 100% { transform: translate(0px, 0px) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-        }
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        .animation-delay-1000 {
-          animation-delay: 1s;
-        }
-      `}</style>
-          {/* User Profile Modal */}
       {showProfileModal && selectedUserId && (
         <UserProfileModal
           userId={selectedUserId}
-            isOpen={showProfileModal}
+          isOpen={showProfileModal}
           onClose={() => {
             setShowProfileModal(false);
             setSelectedUserId(null);
