@@ -317,9 +317,9 @@ const Dashboard = () => {
           </div>
 
           {/* Activity + Sidebar */}
-          <div className="grid lg:grid-cols-3 gap-5 mb-10">
+          {/* <div className="grid lg:grid-cols-3 gap-5 mb-10"> */}
             {/* Recent Activity — left 2/3 */}
-            <div className="lg:col-span-2 bento p-8" data-testid="recent-activity">
+            {/* <div className="lg:col-span-2 bento p-8" data-testid="recent-activity">
               <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
                 <div>
                   <span className="chip chip-cyan mb-3"><Activity className="w-3 h-3" /> live feed</span>
@@ -331,9 +331,9 @@ const Dashboard = () => {
                 <button className="btn btn-ghost text-xs">
                   View all <ArrowRight className="w-3.5 h-3.5" />
                 </button>
-              </div>
+              </div> */}
 
-              {recentActivities.length === 0 ? (
+              {/* {recentActivities.length === 0 ? (
                 <div className="empty-state">
                   <Activity className="w-8 h-8 text-ink-400" />
                   <p className="font-display text-2xl">No activity yet</p>
@@ -373,12 +373,12 @@ const Dashboard = () => {
                   })}
                 </div>
               )}
-            </div>
+            </div> */}
 
             {/* Right sidebar */}
-            <div className="space-y-5">
+            {/* <div className="space-y-5"> */}
               {/* Achievement card */}
-              <div className="bento bento-glow p-7 bg-ink-950 text-white relative overflow-hidden" data-testid="achievement-card">
+              {/* <div className="bento bento-glow p-7 bg-ink-950 text-white relative overflow-hidden" data-testid="achievement-card">
                 <div className="absolute inset-0 opacity-60" style={{ background: 'radial-gradient(500px 300px at 100% -10%, rgba(34,211,238,.3), transparent 60%), radial-gradient(400px 300px at -10% 110%, rgba(255,106,91,.22), transparent 60%)' }} />
                 <div className="relative">
                   <div className="flex items-center justify-between mb-5">
@@ -403,10 +403,10 @@ const Dashboard = () => {
                     <span className="text-xs text-ink-200">3 achievements this month</span>
                   </div>
                 </div>
-              </div>
+              </div> */}
 
               {/* Recommended Skills */}
-              {recommendedSkills.length > 0 && (
+              {/* {recommendedSkills.length > 0 && (
                 <div className="bento p-7" data-testid="recommended-skills">
                   <div className="flex items-center gap-2 mb-1">
                     <Sparkles className="w-4 h-4 text-cyan-500" />
@@ -442,16 +442,16 @@ const Dashboard = () => {
                     View all <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
-              )}
+              )} */}
 
               {/* Calendar Widget */}
-              {user?.id && (
+              {/* {user?.id && (
                 <div className="bento p-0 overflow-hidden">
                   <CalendarWidget userId={user.id} />
                 </div>
               )}
             </div>
-          </div>
+          </div> */}
 
           {/* Bottom Promo Banner */}
           <div className="relative overflow-hidden rounded-[28px] bg-ink-950 text-white p-8 md:p-10 shadow-soft-lg" data-testid="promo-banner">
