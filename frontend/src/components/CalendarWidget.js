@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Calendar as CalendarIcon, Clock, Video, MapPin, User, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Video, User, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -10,24 +10,19 @@ const CalendarWidget = ({ userId }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
 
-  useEffect(() => {
-    loadSessions();
-  }, []);
+  useEffect(() => { loadSessions(); }, []);
 
   const loadSessions = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(`${BACKEND_URL}/api/sessions/my-sessions`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      
-      // Filter for upcoming sessions
       const upcoming = response.data.filter(session => {
         const sessionDate = new Date(session.scheduled_time);
         return sessionDate >= new Date() && session.status !== 'cancelled';
       });
-      
       setSessions(upcoming);
     } catch (error) {
       console.error('Error loading sessions:', error);
@@ -40,197 +35,131 @@ const CalendarWidget = ({ userId }) => {
     const month = date.getMonth();
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
-
-    return { daysInMonth, startingDayOfWeek, year, month };
+    return { daysInMonth: lastDay.getDate(), startingDayOfWeek: firstDay.getDay(), year, month };
   };
 
-  const getSessionsForDate = (date) => {
-    return sessions.filter(session => {
-      const sessionDate = new Date(session.scheduled_time);
-      return (
-        sessionDate.getDate() === date.getDate() &&
-        sessionDate.getMonth() === date.getMonth() &&
-        sessionDate.getFullYear() === date.getFullYear()
-      );
-    });
-  };
+  const getSessionsForDate = (date) => sessions.filter(session => {
+    const d = new Date(session.scheduled_time);
+    return d.getDate() === date.getDate() && d.getMonth() === date.getMonth() && d.getFullYear() === date.getFullYear();
+  });
 
-  const previousMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
-  };
-
-  const nextMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
-  };
+  const previousMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
+  const nextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
 
   const { daysInMonth, startingDayOfWeek, year, month } = getDaysInMonth(currentMonth);
-  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
   const days = [];
-  for (let i = 0; i < startingDayOfWeek; i++) {
-    days.push(null);
-  }
-  for (let day = 1; day <= daysInMonth; day++) {
-    days.push(day);
-  }
+  for (let i = 0; i < startingDayOfWeek; i++) days.push(null);
+  for (let day = 1; day <= daysInMonth; day++) days.push(day);
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+      <div className="bento p-7" data-testid="calendar-widget">
+        <div className="flex items-center justify-center py-10">
+          <div className="tc-spinner" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg" data-testid="calendar-widget">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <CalendarIcon className="w-6 h-6 text-indigo-600" />
-          My Calendar
-        </h3>
+    <div className="bento p-7" data-testid="calendar-widget">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
+        <div>
+          <span className="chip chip-cyan mb-2"><Sparkles className="w-3 h-3" /> calendar</span>
+          <h3 className="font-display text-2xl flex items-center gap-2">
+            My <span className="italic text-gradient-cyan">calendar</span>
+          </h3>
+        </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={previousMonth}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+          <button onClick={previousMonth} className="w-8 h-8 rounded-full glass grid place-items-center hover:shadow-glow transition">
+            <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[120px] text-center">
+          <span className="text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300 min-w-[120px] text-center">
             {monthNames[month]} {year}
           </span>
-          <button
-            onClick={nextMonth}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          >
-            <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+          <button onClick={nextMonth} className="w-8 h-8 rounded-full glass grid place-items-center hover:shadow-glow transition">
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="mb-4">
-        <div className="grid grid-cols-7 gap-2 mb-2">
-          {dayNames.map(day => (
-            <div key={day} className="text-center text-xs font-semibold text-gray-500 dark:text-gray-400 py-2">
-              {day}
-            </div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-7 gap-2">
-          {days.map((day, index) => {
-            if (!day) {
-              return <div key={`empty-${index}`} className="aspect-square" />;
-            }
-
-            const date = new Date(year, month, day);
-            const sessionsForDay = getSessionsForDate(date);
-            const isToday = 
-              date.getDate() === new Date().getDate() &&
-              date.getMonth() === new Date().getMonth() &&
-              date.getFullYear() === new Date().getFullYear();
-            const isSelected = selectedDate && 
-              date.getDate() === selectedDate.getDate() &&
-              date.getMonth() === selectedDate.getMonth() &&
-              date.getFullYear() === selectedDate.getFullYear();
-
-            return (
-              <button
-                key={day}
-                onClick={() => setSelectedDate(date)}
-                className={`aspect-square p-2 rounded-lg text-sm font-medium transition-all relative ${
-                  isToday
-                    ? 'bg-indigo-600 text-white'
-                    : isSelected
-                    ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
-                    : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
-                }`}
-              >
-                {day}
-                {sessionsForDay.length > 0 && (
-                  <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex gap-0.5">
-                    {sessionsForDay.slice(0, 3).map((_, i) => (
-                      <div
-                        key={i}
-                        className={`w-1 h-1 rounded-full ${
-                          isToday ? 'bg-white' : 'bg-indigo-600 dark:bg-indigo-400'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
+      {/* Grid */}
+      <div className="grid grid-cols-7 gap-1.5 mb-2">
+        {dayNames.map(day => (
+          <div key={day} className="text-center text-[10px] uppercase tracking-widest font-semibold text-ink-500 dark:text-ink-300 py-2">
+            {day}
+          </div>
+        ))}
       </div>
 
-      {/* Sessions for Selected Date */}
+      <div className="grid grid-cols-7 gap-1.5">
+        {days.map((day, index) => {
+          if (!day) return <div key={`empty-${index}`} className="aspect-square" />;
+          const date = new Date(year, month, day);
+          const sessionsForDay = getSessionsForDate(date);
+          const today = new Date();
+          const isToday = date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
+          const isSelected = selectedDate && date.getDate() === selectedDate.getDate() && date.getMonth() === selectedDate.getMonth() && date.getFullYear() === selectedDate.getFullYear();
+
+          return (
+            <button
+              key={day}
+              onClick={() => setSelectedDate(date)}
+              className={`aspect-square rounded-xl text-sm font-semibold transition-all relative grid place-items-center ${
+                isToday
+                  ? 'bg-ink-950 text-cyan-300 ring-1 ring-white/10 shadow-soft'
+                  : isSelected
+                    ? 'bg-cyan-500/10 ring-1 ring-cyan-500/30 text-cyan-700 dark:text-cyan-300'
+                    : 'hover:bg-white/60 dark:hover:bg-white/5 text-ink-700 dark:text-ink-200'
+              }`}
+            >
+              {day}
+              {sessionsForDay.length > 0 && (
+                <div className="absolute bottom-1.5 flex gap-0.5">
+                  {sessionsForDay.slice(0, 3).map((_, i) => (
+                    <span key={i} className={`w-1 h-1 rounded-full ${isToday ? 'bg-cyan-300' : 'bg-coral-500'}`} />
+                  ))}
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Selected date sessions */}
       {selectedDate && (
-        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-            Sessions on {selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
-          </h4>
-          
+        <div className="mt-5 pt-5 border-t border-black/5 dark:border-white/10">
+          <p className="text-[10px] uppercase tracking-widest text-ink-500 dark:text-ink-300 mb-3">
+            {selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+          </p>
           {getSessionsForDate(selectedDate).length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">No sessions scheduled</p>
+            <p className="text-sm text-ink-500 dark:text-ink-300">No sessions scheduled</p>
           ) : (
             <div className="space-y-2">
               {getSessionsForDate(selectedDate).map((session, index) => (
-                <div
-                  key={index}
-                  className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:shadow-md transition-all"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <h5 className="font-medium text-gray-900 dark:text-white text-sm">
-                      {session.skill_name || 'Session'}
-                    </h5>
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      session.status === 'confirmed'
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
-                        : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400'
-                    }`}>
-                      {session.status}
+                <div key={index} className="rounded-2xl glass p-3.5">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <p className="font-semibold text-sm">{session.skill_name || 'Session'}</p>
+                    <span className={`chip ${session.status === 'confirmed' ? 'chip-cyan' : 'chip-coral'}`}>{session.status}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-ink-500 dark:text-ink-300 flex-wrap">
+                    <span className="flex items-center gap-1.5"><Clock className="w-3 h-3" />
+                      {new Date(session.scheduled_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                      {session.duration && ` · ${session.duration} min`}
                     </span>
-                  </div>
-
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-                      <Clock className="w-3 h-3" />
-                      {new Date(session.scheduled_time).toLocaleTimeString('en-US', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                      {session.duration && ` (${session.duration} min)`}
-                    </div>
-
-                    {session.meeting_link && (
-                      <div className="flex items-center gap-2 text-xs text-indigo-600 dark:text-indigo-400">
-                        <Video className="w-3 h-3" />
-                        <a
-                          href={session.meeting_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:underline"
-                        >
-                          Join Meeting
-                        </a>
-                      </div>
-                    )}
-
                     {(session.mentor_username || session.mentee_username) && (
-                      <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-                        <User className="w-3 h-3" />
-                        with @{session.mentor_username || session.mentee_username}
-                      </div>
+                      <span className="flex items-center gap-1.5"><User className="w-3 h-3" />@{session.mentor_username || session.mentee_username}</span>
                     )}
                   </div>
+                  {session.meeting_link && (
+                    <a href={session.meeting_link} target="_blank" rel="noopener noreferrer"
+                       className="mt-2 inline-flex items-center gap-1.5 text-xs text-cyan-600 dark:text-cyan-300 font-semibold hover:underline">
+                      <Video className="w-3 h-3" /> Join meeting
+                    </a>
+                  )}
                 </div>
               ))}
             </div>
@@ -238,28 +167,18 @@ const CalendarWidget = ({ userId }) => {
         </div>
       )}
 
-      {/* Upcoming Sessions Summary */}
+      {/* Upcoming */}
       {sessions.length > 0 && !selectedDate && (
-        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-            Upcoming Sessions ({sessions.length})
-          </h4>
+        <div className="mt-5 pt-5 border-t border-black/5 dark:border-white/10">
+          <p className="text-[10px] uppercase tracking-widest text-ink-500 dark:text-ink-300 mb-3 flex items-center gap-2">
+            <CalendarIcon className="w-3 h-3" /> Upcoming · {sessions.length}
+          </p>
           <div className="space-y-2">
             {sessions.slice(0, 3).map((session, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm"
-              >
-                <span className="text-gray-900 dark:text-white font-medium">
-                  {session.skill_name || 'Session'}
-                </span>
-                <span className="text-gray-600 dark:text-gray-400 text-xs">
-                  {new Date(session.scheduled_time).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
+              <div key={index} className="flex items-center justify-between rounded-2xl glass p-3 text-sm">
+                <span className="font-semibold truncate">{session.skill_name || 'Session'}</span>
+                <span className="text-xs text-ink-500 dark:text-ink-300 flex-shrink-0 ml-3">
+                  {new Date(session.scheduled_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
             ))}

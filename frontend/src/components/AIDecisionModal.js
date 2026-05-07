@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Sparkles, TrendingUp, Star, CheckCircle, AlertCircle, Loader2, Brain, Award, Clock, Target } from 'lucide-react';
+import { X, Sparkles, TrendingUp, Star, CheckCircle, AlertCircle, Loader2, Brain, Target } from 'lucide-react';
 import api from '../services/api';
 
 const AIDecisionModal = ({ taskId, userId, userName, isOpen, onClose, onDecisionComplete }) => {
@@ -11,345 +11,197 @@ const AIDecisionModal = ({ taskId, userId, userName, isOpen, onClose, onDecision
     setLoading(true);
     setError(null);
     setDecision(null);
-
     try {
-      const response = await api.post('/api/ai/assignment-decision', {
-        task_id: taskId,
-        user_id: userId
-      });
+      const response = await api.post('/api/ai/assignment-decision', { task_id: taskId, user_id: userId });
       setDecision(response.data);
     } catch (err) {
       console.error('Error getting AI decision:', err);
-       
-      // Handle different error formats
       let errorMessage = 'Failed to get AI recommendation';
-      
       if (err.response?.data) {
         const errorData = err.response.data;
-        
-        // Handle Pydantic validation errors (array of error objects)
         if (Array.isArray(errorData.detail)) {
-          errorMessage = errorData.detail.map(e => 
-            typeof e === 'object' ? e.msg || JSON.stringify(e) : e
-          ).join(', ');
-        } 
-        // Handle string error message
-        else if (typeof errorData.detail === 'string') {
-          errorMessage = errorData.detail;
-        }
-        // Handle object error
-        else if (typeof errorData.detail === 'object') {
-          errorMessage = JSON.stringify(errorData.detail);
-        }
+          errorMessage = errorData.detail.map(e => (typeof e === 'object' ? e.msg || JSON.stringify(e) : e)).join(', ');
+        } else if (typeof errorData.detail === 'string') errorMessage = errorData.detail;
+        else if (typeof errorData.detail === 'object') errorMessage = JSON.stringify(errorData.detail);
       }
-      
       setError(errorMessage);
     }
     setLoading(false);
   };
 
   React.useEffect(() => {
-    if (isOpen && taskId && userId && !decision && !loading) {
-      getAIDecision();
-    }
+    if (isOpen && taskId && userId && !decision && !loading) getAIDecision();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, taskId, userId]);
 
-  const handleClose = () => {
-    setDecision(null);
-    setError(null);
-    onClose();
-  };
-
-  const handleProceed = () => {
-    if (onDecisionComplete) {
-      onDecisionComplete(decision);
-    }
-    handleClose();
-  };
+  const handleClose = () => { setDecision(null); setError(null); onClose(); };
+  const handleProceed = () => { onDecisionComplete && onDecisionComplete(decision); handleClose(); };
 
   if (!isOpen) return null;
 
-  const getDecisionColor = (decisionType) => {
-    switch (decisionType) {
-      case 'recommended':
-        return {
-          bg: 'from-green-500 to-emerald-500',
-          text: 'text-green-700 dark:text-green-400',
-          bgLight: 'bg-green-50 dark:bg-green-900/20',
-          border: 'border-green-200 dark:border-green-800',
-          icon: CheckCircle
-        };
-      case 'not_recommended':
-        return {
-          bg: 'from-red-500 to-rose-500',
-          text: 'text-red-700 dark:text-red-400',
-          bgLight: 'bg-red-50 dark:bg-red-900/20',
-          border: 'border-red-200 dark:border-red-800',
-          icon: AlertCircle
-        };
-      default:
-        return {
-          bg: 'from-yellow-500 to-orange-500',
-          text: 'text-yellow-700 dark:text-yellow-400',
-          bgLight: 'bg-yellow-50 dark:bg-yellow-900/20',
-          border: 'border-yellow-200 dark:border-yellow-800',
-          icon: AlertCircle
-        };
+  const palette = (() => {
+    switch (decision?.decision) {
+      case 'recommended':     return { chip: 'chip-cyan', accent: 'text-emerald-500', bg: 'bg-emerald-500/10 ring-emerald-500/20' };
+      case 'not_recommended': return { chip: 'chip-coral', accent: 'text-coral-500', bg: 'bg-coral-500/10 ring-coral-500/20' };
+      default:                return { chip: 'chip-coral', accent: 'text-amber-500', bg: 'bg-amber-500/10 ring-amber-500/20' };
     }
-  };
+  })();
 
-  const decisionColors = decision ? getDecisionColor(decision.decision) : null;
-  const DecisionIcon = decisionColors?.icon;
+  const DecisionIcon = decision?.decision === 'recommended' ? CheckCircle : AlertCircle;
 
   return (
-    <div 
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-      onClick={handleClose}
-      data-testid="ai-decision-modal"
-    >
-      <div 
-        className="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className={`relative h-24 bg-gradient-to-r ${decisionColors?.bg || 'from-indigo-600 to-purple-600'} p-6`}>
-          <div className="absolute inset-0 bg-black/20"></div>
-          <div className="relative flex justify-between items-start">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white/20 backdrop-blur rounded-lg">
-                <Brain className="w-6 h-6 text-white" />
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-ink-950/60 backdrop-blur-sm" data-testid="ai-decision-modal" onClick={handleClose}>
+      <div className="relative w-full max-w-2xl max-h-[92vh] overflow-hidden rounded-[28px] bento shadow-soft-lg flex flex-col animate-scale-in" onClick={(e) => e.stopPropagation()}>
+        {/* Header — ink-navy */}
+        <div className="relative overflow-hidden bg-ink-950 text-white p-6 flex-shrink-0">
+          <div
+            className="absolute inset-0 opacity-60"
+            style={{
+              background:
+                'radial-gradient(500px 300px at 10% -10%, rgba(34,211,238,.32), transparent 60%), radial-gradient(500px 400px at 95% 110%, rgba(99,102,241,.22), transparent 60%)',
+            }}
+          />
+          <div className="relative flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-white/10 ring-1 ring-white/15 grid place-items-center text-cyan-300 backdrop-blur-md">
+                <Brain className="w-6 h-6" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">AI Assignment Recommendation</h2>
-                <p className="text-white/90 text-sm mt-1">for {userName}</p>
+                <span className="chip chip-cyan mb-1.5"><Sparkles className="w-3 h-3" /> AI co-pilot</span>
+                <h3 className="font-display text-3xl leading-tight">Assignment <span className="italic text-gradient-cyan">recommendation</span></h3>
+                <p className="text-xs text-ink-300 mt-1">Analyzing <b>{userName}</b></p>
               </div>
             </div>
-            <button
-              onClick={handleClose}
-              className="p-2 bg-white/20 backdrop-blur rounded-lg hover:bg-white/30 transition-colors"
-              data-testid="close-ai-decision-modal"
-            >
-              <X className="w-5 h-5 text-white" />
+            <button onClick={handleClose} className="w-9 h-9 rounded-full glass grid place-items-center hover:shadow-glow transition" data-testid="close-ai-decision-modal">
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Body */}
         <div className="flex-1 overflow-y-auto p-6">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <Loader2 className="w-16 h-16 text-indigo-600 animate-spin mb-4" />
-              <p className="text-gray-600 dark:text-gray-400 font-medium">Analyzing candidate...</p>
-              <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-                Evaluating skills, history, and reliability
-              </p>
+            <div className="flex flex-col items-center justify-center py-12 gap-4">
+              <div className="tc-spinner" />
+              <p className="font-display text-2xl text-ink-700 dark:text-ink-200">Analyzing candidate…</p>
+              <p className="text-sm text-ink-500">Evaluating skills, history & reliability</p>
             </div>
           ) : error ? (
-            <div className="text-center py-12">
-              <div className="w-20 h-20 mx-auto bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-4">
-                <AlertCircle className="w-10 h-10 text-red-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Error Getting Recommendation
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
-              <button
-                onClick={getAIDecision}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-              >
-                Try Again
-              </button>
+            <div className="empty-state">
+              <AlertCircle className="w-10 h-10 text-coral-500" />
+              <p className="font-display text-2xl">Couldn’t fetch recommendation</p>
+              <p className="text-sm text-ink-500">{error}</p>
+              <button onClick={getAIDecision} className="btn btn-cyan mt-2">Try again</button>
             </div>
           ) : decision ? (
-            <div>
-              {/* Decision Badge */}
-              <div className={`${decisionColors.bgLight} ${decisionColors.border} border-2 rounded-xl p-6 mb-6`}>
-                <div className="flex items-center gap-3 mb-3">
-                  <DecisionIcon className={`w-8 h-8 ${decisionColors.text}`} />
+            <div className="space-y-6">
+              {/* Decision badge */}
+              <div className={`rounded-2xl ring-1 ${palette.bg} p-5`}>
+                <div className="flex items-center gap-3">
+                  <DecisionIcon className={`w-8 h-8 ${palette.accent}`} />
                   <div>
-                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white capitalize">
+                    <p className={`chip ${palette.chip} mb-2`}>{decision.confidence}% confidence</p>
+                    <h4 className="font-display text-3xl capitalize leading-tight">
                       {decision.decision.replace('_', ' ')}
-                    </h3>
-                    <p className={`text-sm ${decisionColors.text} font-medium`}>
-                      Confidence Score: {decision.confidence}%
-                    </p>
+                    </h4>
                   </div>
                 </div>
               </div>
 
-              {/* Score Breakdown */}
-              <div className="mb-6">
-                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Score Breakdown</h4>
+              {/* Score breakdown */}
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-ink-500 dark:text-ink-300 mb-3">Score breakdown</p>
                 <div className="space-y-3">
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                        <Target className="w-4 h-4" />
-                        Skill Match
-                      </span>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">
-                        {decision.breakdown.skill_match_score}%
-                      </span>
+                  {[
+                    { k: 'skill_match_score', label: 'Skill match', icon: Target, gradient: 'from-cyan-400 to-indigo-500' },
+                    { k: 'reliability_score', label: 'Reliability', icon: TrendingUp, gradient: 'from-emerald-400 to-cyan-500' },
+                    { k: 'rating_score', label: 'Rating', icon: Star, gradient: 'from-amber-400 to-coral-400' },
+                  ].map(({ k, label, icon: I, gradient }) => (
+                    <div key={k}>
+                      <div className="flex justify-between items-center text-xs mb-1.5">
+                        <span className="flex items-center gap-2 font-semibold"><I className="w-3.5 h-3.5" /> {label}</span>
+                        <span className="font-mono font-semibold">{decision.breakdown[k]}%</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-black/5 dark:bg-white/10 overflow-hidden">
+                        <div className={`h-full rounded-full bg-gradient-to-r ${gradient} animate-progress`} style={{ width: `${decision.breakdown[k]}%` }} />
+                      </div>
                     </div>
-                    <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all"
-                        style={{ width: `${decision.breakdown.skill_match_score}%` }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4" />
-                        Reliability
-                      </span>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">
-                        {decision.breakdown.reliability_score}%
-                      </span>
-                    </div>
-                    <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all"
-                        style={{ width: `${decision.breakdown.reliability_score}%` }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                        <Star className="w-4 h-4" />
-                        Rating
-                      </span>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">
-                        {decision.breakdown.rating_score}%
-                      </span>
-                    </div>
-                    <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full transition-all"
-                        style={{ width: `${decision.breakdown.rating_score}%` }}
-                      ></div>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
 
-              {/* User Stats Summary */}
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Tasks Completed</p>
-                  <p className="text-lg font-bold text-gray-900 dark:text-white">
-                    {decision.user_stats_summary.tasks_completed}
-                  </p>
-                </div>
-                <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Success Rate</p>
-                  <p className="text-lg font-bold text-gray-900 dark:text-white">
-                    {decision.user_stats_summary.success_rate}%
-                  </p>
-                </div>
-                <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Avg Rating</p>
-                  <p className="text-lg font-bold text-gray-900 dark:text-white">
-                    {decision.user_stats_summary.avg_rating.toFixed(1)}/5
-                  </p>
-                </div>
-                <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">On-Time</p>
-                  <p className="text-lg font-bold text-gray-900 dark:text-white">
-                    {decision.user_stats_summary.on_time_percentage}%
-                  </p>
-                </div>
+              {/* Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { label: 'Tasks done', v: decision.user_stats_summary.tasks_completed },
+                  { label: 'Success', v: `${decision.user_stats_summary.success_rate}%` },
+                  { label: 'Rating', v: `${decision.user_stats_summary.avg_rating?.toFixed(1)}/5` },
+                  { label: 'On-time', v: `${decision.user_stats_summary.on_time_percentage}%` },
+                ].map((s, i) => (
+                  <div key={i} className="rounded-2xl glass p-4">
+                    <p className="text-[10px] uppercase tracking-widest text-ink-500 dark:text-ink-300 mb-1">{s.label}</p>
+                    <p className="font-display text-2xl">{s.v}</p>
+                  </div>
+                ))}
               </div>
 
               {/* Strengths */}
-              {decision.strengths && decision.strengths.length > 0 && (
-                <div className="mb-6">
-                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    Strengths
-                  </h4>
-                  <ul className="space-y-2">
-                    {decision.strengths.map((strength, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
-                        <span className="text-green-600 mt-0.5">✓</span>
-                        <span>{strength}</span>
+              {decision.strengths?.length > 0 && (
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-ink-500 dark:text-ink-300 mb-2 flex items-center gap-2">
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-500" /> Strengths
+                  </p>
+                  <ul className="space-y-1.5">
+                    {decision.strengths.map((s, i) => (
+                      <li key={i} className="text-sm flex items-start gap-2">
+                        <span className="text-emerald-500 mt-0.5">✓</span>{s}
                       </li>
                     ))}
                   </ul>
                 </div>
               )}
 
-              {/* Flags/Concerns */}
-              {decision.flags && decision.flags.length > 0 && (
-                <div className="mb-6">
-                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-orange-600" />
-                    Concerns
-                  </h4>
-                  <ul className="space-y-2">
-                    {decision.flags.map((flag, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
-                        <span className="text-orange-600 mt-0.5">⚠</span>
-                        <span>{flag}</span>
+              {/* Concerns */}
+              {decision.flags?.length > 0 && (
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-ink-500 dark:text-ink-300 mb-2 flex items-center gap-2">
+                    <AlertCircle className="w-3.5 h-3.5 text-coral-500" /> Concerns
+                  </p>
+                  <ul className="space-y-1.5">
+                    {decision.flags.map((f, i) => (
+                      <li key={i} className="text-sm flex items-start gap-2">
+                        <span className="text-coral-500 mt-0.5">⚠</span>{f}
                       </li>
                     ))}
                   </ul>
                 </div>
               )}
 
-              {/* AI Analysis */}
               {decision.reason && (
-                <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4 mb-6">
-                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-indigo-600" />
-                    AI Analysis
-                  </h4>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
-                    {decision.reason}
+                <div className="rounded-2xl bg-cyan-500/10 ring-1 ring-cyan-500/20 p-4">
+                  <p className="text-[10px] uppercase tracking-widest text-cyan-600 dark:text-cyan-300 mb-2 flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5" /> AI analysis
                   </p>
+                  <p className="text-sm whitespace-pre-line">{decision.reason}</p>
                 </div>
               )}
 
-              {/* Additional AI Analysis from Groq */}
               {decision.ai_analysis && (
-                <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
-                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-                    <Brain className="w-4 h-4 text-purple-600" />
-                    Expert AI Insight
-                  </h4>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    {decision.ai_analysis}
+                <div className="rounded-2xl bg-indigo-500/10 ring-1 ring-indigo-500/20 p-4">
+                  <p className="text-[10px] uppercase tracking-widest text-indigo-500 dark:text-indigo-300 mb-2 flex items-center gap-2">
+                    <Brain className="w-3.5 h-3.5" /> Expert insight
                   </p>
+                  <p className="text-sm">{decision.ai_analysis}</p>
                 </div>
               )}
             </div>
           ) : null}
         </div>
 
-        {/* Footer */}
         {decision && (
-          <div className="border-t border-gray-200 dark:border-gray-700 p-4 flex gap-3">
-            <button
-              onClick={handleClose}
-              className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleProceed}
-              className={`flex-1 px-4 py-3 rounded-xl text-white transition-all ${
-                decision.decision === 'recommended'
-                  ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700'
-                  : decision.decision === 'not_recommended'
-                  ? 'bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800'
-                  : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700'
-              }`}
-            >
-              {decision.decision === 'recommended' ? 'Proceed with Assignment' : 'Assign Anyway'}
+          <div className="border-t border-black/5 dark:border-white/10 p-4 flex gap-3 flex-shrink-0">
+            <button onClick={handleClose} className="btn btn-ghost flex-1 py-3">Cancel</button>
+            <button onClick={handleProceed} className={`btn flex-1 py-3 ${decision.decision === 'recommended' ? 'btn-cyan' : 'btn-coral'}`}>
+              {decision.decision === 'recommended' ? 'Proceed with assignment' : 'Assign anyway'}
             </button>
           </div>
         )}

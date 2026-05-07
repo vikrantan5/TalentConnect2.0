@@ -128,7 +128,7 @@ const Chatbot = () => {
   ];
 
   return (
-    <div className="min-h-screen relative aurora-bg grid-bg overflow-hidden text-ink-950 dark:text-white" data-testid="chatbot-page">
+        <div className="min-h-screen relative aurora-bg grid-bg overflow-x-hidden text-ink-950 dark:text-white" data-testid="chatbot-page">
       <div className="blob w-[520px] h-[520px] -left-40 -top-32 bg-cyan-400/30 pointer-events-none" />
       <div className="blob w-[440px] h-[440px] -right-32 top-40 bg-coral-400/25 pointer-events-none" style={{ animationDelay: '-6s' }} />
       <div className="blob w-[420px] h-[420px] left-[40%] bottom-[-10rem] bg-indigo-500/20 pointer-events-none" style={{ animationDelay: '-8s' }} />
