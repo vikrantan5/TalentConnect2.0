@@ -18,13 +18,13 @@ const RatingDisplay = ({ rating, totalReviews, size = 'md', showCount = true, cl
   const textSize = textSizeClasses[size] || textSizeClasses.md;
 
   return (
-    <div className={`flex items-center gap-1 ${className}`}>
-      <Star className={`${iconSize} text-yellow-500 fill-yellow-500`} />
-      <span className={`${textSize} font-medium text-gray-900 dark:text-white`}>
+    <div className={`inline-flex items-center gap-1 ${className}`}>
+      <Star className={`${iconSize} text-amber-400 fill-amber-400`} />
+      <span className={`${textSize} font-semibold text-ink-950 dark:text-white`}>
         {rating?.toFixed(1) || '0.0'}
       </span>
       {showCount && totalReviews !== undefined && (
-        <span className={`${textSize} text-gray-500 dark:text-gray-400`}>
+        <span className={`${textSize} text-ink-500 dark:text-ink-300`}>
           ({totalReviews})
         </span>
       )}

@@ -50,87 +50,87 @@ const StartExchangeModal = ({ isOpen, onClose, match, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div 
-        className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+    <div className="tc-modal-backdrop flex items-center justify-center p-4" onClick={onClose}>
+      <div
+        className="bento rounded-[28px] max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 p-6 rounded-t-3xl">
-          <div className="flex items-center justify-between">
+        <div className="sticky top-0 z-10 bg-ink-950 text-white p-7 overflow-hidden">
+          <div className="absolute inset-0 opacity-70" style={{ background: 'radial-gradient(500px 300px at 0% 0%, rgba(255,106,91,.4), transparent 60%), radial-gradient(500px 300px at 100% 100%, rgba(34,211,238,.32), transparent 60%)' }} />
+          <div className="relative flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center">
-                <Sparkles className="w-7 h-7 text-white" />
+              <div className="w-12 h-12 rounded-2xl bg-white/10 ring-1 ring-white/15 grid place-items-center backdrop-blur">
+                <Sparkles className="w-5 h-5 text-coral-300" />
               </div>
               <div>
-                <h2 className="text-2xl font-black text-white">Start Skill Exchange</h2>
-                <p className="text-white/90 text-sm">Book a free exchange session</p>
+                <span className="chip chip-coral mb-1">free session</span>
+                <h2 className="font-display text-3xl leading-tight">
+                  Start <span className="italic text-gradient">exchange</span>
+                </h2>
+                <p className="text-xs text-ink-300 mt-1">Book a 1-on-1 skill swap</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-xl flex items-center justify-center transition-colors"
+              className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 grid place-items-center transition"
             >
-              <X className="w-6 h-6 text-white" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-7">
           {/* Exchange Preview */}
-          <div className="bg-gradient-to-br from-orange-50 to-pink-50 dark:from-gray-700 dark:to-gray-600 rounded-2xl p-6 mb-6 border-2 border-orange-200 dark:border-orange-800">
-            <div className="flex items-center justify-between mb-4">
+          <div className="rounded-[24px] glass p-5 mb-6">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl overflow-hidden bg-gradient-to-br from-orange-400 to-pink-500">
+                <div className="w-12 h-12 rounded-xl overflow-hidden bg-gradient-to-br from-coral-400 to-coral-600">
                   {match.profile_photo || match.avatar_url ? (
                     <img src={match.profile_photo || match.avatar_url} alt={match.full_name} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-white font-bold text-lg">
+                    <div className="w-full h-full flex items-center justify-center text-white font-display text-xl">
                       {(match.full_name || match.username || 'U').charAt(0).toUpperCase()}
                     </div>
                   )}
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">{match.full_name || match.username}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Perfect Match Partner</p>
+                  <h3 className="font-display text-xl leading-tight text-ink-950 dark:text-white">{match.full_name || match.username}</h3>
+                  <p className="text-xs text-ink-500 dark:text-ink-300">Perfect match partner</p>
                 </div>
               </div>
-              <div className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 rounded-full">
-                <span className="text-white font-bold text-sm">🔥 {match.match_score} Match</span>
-              </div>
+              <span className="chip chip-coral">
+                <Sparkles className="w-3 h-3" /> {match.match_score} match
+              </span>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <p className="text-xs text-gray-600 dark:text-gray-300 font-semibold mb-2">You'll teach:</p>
-                <div className="flex flex-wrap gap-2">
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex-1 min-w-[120px]">
+                <p className="text-[10px] uppercase tracking-widest text-ink-500 dark:text-ink-300 mb-2">you'll teach</p>
+                <div className="flex flex-wrap gap-1.5">
                   {match.you_teach?.map((skill, idx) => (
-                    <span key={idx} className="px-3 py-1 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-full text-xs font-bold">
-                      {skill}
-                    </span>
+                    <span key={idx} className="chip chip-coral">{skill}</span>
                   ))}
                 </div>
               </div>
-              <ArrowRightLeft className="w-6 h-6 text-orange-500 flex-shrink-0" />
-              <div className="flex-1">
-                <p className="text-xs text-gray-600 dark:text-gray-300 font-semibold mb-2">You'll learn:</p>
-                <div className="flex flex-wrap gap-2">
+              <ArrowRightLeft className="w-5 h-5 text-cyan-500 flex-shrink-0" />
+              <div className="flex-1 min-w-[120px]">
+                <p className="text-[10px] uppercase tracking-widest text-ink-500 dark:text-ink-300 mb-2">you'll learn</p>
+                <div className="flex flex-wrap gap-1.5">
                   {match.they_teach?.map((skill, idx) => (
-                    <span key={idx} className="px-3 py-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-full text-xs font-bold">
-                      {skill}
-                    </span>
+                    <span key={idx} className="chip chip-cyan">{skill}</span>
                   ))}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Booking Form */}
+          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  <Calendar className="w-4 h-4 inline mr-2" />
+                <label className="block text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300 mb-2">
+                  <Calendar className="w-3 h-3 inline mr-1.5" />
                   Date
                 </label>
                 <input
@@ -139,13 +139,13 @@ const StartExchangeModal = ({ isOpen, onClose, match, onSuccess }) => {
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                   min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                  className="modern-input"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  <Clock className="w-4 h-4 inline mr-2" />
+                <label className="block text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300 mb-2">
+                  <Clock className="w-3 h-3 inline mr-1.5" />
                   Time
                 </label>
                 <input
@@ -153,19 +153,19 @@ const StartExchangeModal = ({ isOpen, onClose, match, onSuccess }) => {
                   required
                   value={formData.time}
                   onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                  className="modern-input"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300 mb-2">
                 Duration
               </label>
               <select
                 value={formData.duration}
                 onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) })}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                className="modern-input"
               >
                 <option value={30}>30 minutes</option>
                 <option value={60}>1 hour</option>
@@ -175,49 +175,48 @@ const StartExchangeModal = ({ isOpen, onClose, match, onSuccess }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                <MessageSquare className="w-4 h-4 inline mr-2" />
-                Message (Optional)
+              <label className="block text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300 mb-2">
+                <MessageSquare className="w-3 h-3 inline mr-1.5" />
+                Message (optional)
               </label>
               <textarea
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                 rows={4}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all resize-none"
-                placeholder="Add a personal message..."
+                className="modern-input resize-none"
+                placeholder="Add a personal message…"
               />
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 p-4 bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl">
-                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
-                <p className="text-sm text-red-600 dark:text-red-400 font-semibold">{error}</p>
+              <div className="flex items-center gap-2 p-4 rounded-2xl bg-coral-500/10 border border-coral-500/30">
+                <AlertCircle className="w-5 h-5 text-coral-500" />
+                <p className="text-sm text-coral-600 dark:text-coral-300 font-medium">{error}</p>
               </div>
             )}
 
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-3 pt-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-6 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-xl font-semibold transition-all"
+                className="flex-1 btn btn-ghost py-3"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-xl font-semibold shadow-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 btn btn-coral py-3 disabled:opacity-50"
               >
                 {loading ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Booking...
+                    <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
+                    Booking…
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-5 h-5" />
-                    Send Exchange Request
+                    <Sparkles className="w-4 h-4" />
+                    Send request
                   </>
                 )}
               </button>

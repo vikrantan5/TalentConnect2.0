@@ -49,63 +49,63 @@ const MentorBookingModal = ({ isOpen, onClose, mentor, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div 
-        className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+    <div className="tc-modal-backdrop flex items-center justify-center p-4" onClick={onClose}>
+      <div
+        className="bento rounded-[28px] max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-blue-500 via-cyan-500 to-teal-500 p-6 rounded-t-3xl">
-          <div className="flex items-center justify-between">
+        <div className="sticky top-0 z-10 bg-ink-950 text-white p-7 overflow-hidden">
+          <div className="absolute inset-0 opacity-70" style={{ background: 'radial-gradient(500px 300px at 0% 0%, rgba(34,211,238,.4), transparent 60%), radial-gradient(500px 300px at 100% 100%, rgba(99,102,241,.32), transparent 60%)' }} />
+          <div className="relative flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center">
-                <GraduationCap className="w-7 h-7 text-white" />
+              <div className="w-12 h-12 rounded-2xl bg-white/10 ring-1 ring-white/15 grid place-items-center backdrop-blur">
+                <GraduationCap className="w-5 h-5 text-cyan-300" />
               </div>
               <div>
-                <h2 className="text-2xl font-black text-white">Book Mentoring Session</h2>
-                <p className="text-white/90 text-sm">Free 1-on-1 session</p>
+                <span className="chip chip-cyan mb-1">free 1-on-1</span>
+                <h2 className="font-display text-3xl leading-tight">
+                  Book <span className="italic text-gradient-cyan">mentoring</span>
+                </h2>
+                <p className="text-xs text-ink-300 mt-1">No tokens required</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-xl flex items-center justify-center transition-colors"
+              className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 grid place-items-center transition"
             >
-              <X className="w-6 h-6 text-white" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-7">
           {/* Mentor Info */}
-          <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-gray-700 dark:to-gray-600 rounded-2xl p-6 mb-6 border-2 border-blue-200 dark:border-blue-800">
+          <div className="rounded-[24px] glass p-5 mb-6">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-blue-400 to-cyan-500">
+              <div className="w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-cyan-400 to-indigo-500">
                 {mentor.profile_photo || mentor.avatar_url ? (
                   <img src={mentor.profile_photo || mentor.avatar_url} alt={mentor.full_name} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-white font-bold text-2xl">
+                  <div className="w-full h-full flex items-center justify-center text-white font-display text-2xl">
                     {(mentor.full_name || mentor.username || 'U').charAt(0).toUpperCase()}
                   </div>
                 )}
               </div>
               <div className="flex-1">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">{mentor.full_name || mentor.username}</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300">@{mentor.username}</p>
+                <h3 className="font-display text-xl leading-tight text-ink-950 dark:text-white">{mentor.full_name || mentor.username}</h3>
+                <p className="text-xs text-ink-500 dark:text-ink-300">@{mentor.username}</p>
                 {mentor.skill_level && (
-                  <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold capitalize mt-1">
-                    {mentor.skill_level} Level
-                  </p>
+                  <span className="chip chip-cyan mt-1.5 capitalize">{mentor.skill_level} level</span>
                 )}
               </div>
             </div>
 
             <div>
-              <p className="text-xs text-gray-600 dark:text-gray-300 font-semibold mb-2">Will teach you:</p>
-              <div className="flex flex-wrap gap-2">
+              <p className="text-[10px] uppercase tracking-widest text-ink-500 dark:text-ink-300 mb-2">will teach you</p>
+              <div className="flex flex-wrap gap-1.5">
                 {mentor.matching_skills?.map((skill, idx) => (
-                  <span key={idx} className="px-3 py-1 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-full text-sm font-bold">
-                    {skill}
-                  </span>
+                  <span key={idx} className="chip chip-cyan">{skill}</span>
                 ))}
               </div>
             </div>
@@ -115,8 +115,8 @@ const MentorBookingModal = ({ isOpen, onClose, mentor, onSuccess }) => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  <Calendar className="w-4 h-4 inline mr-2" />
+                <label className="block text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300 mb-2">
+                  <Calendar className="w-3 h-3 inline mr-1.5" />
                   Date
                 </label>
                 <input
@@ -125,13 +125,13 @@ const MentorBookingModal = ({ isOpen, onClose, mentor, onSuccess }) => {
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                   min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="modern-input"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  <Clock className="w-4 h-4 inline mr-2" />
+                <label className="block text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300 mb-2">
+                  <Clock className="w-3 h-3 inline mr-1.5" />
                   Time
                 </label>
                 <input
@@ -139,19 +139,19 @@ const MentorBookingModal = ({ isOpen, onClose, mentor, onSuccess }) => {
                   required
                   value={formData.time}
                   onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="modern-input"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300 mb-2">
                 Duration
               </label>
               <select
                 value={formData.duration}
                 onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) })}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="modern-input"
               >
                 <option value={30}>30 minutes</option>
                 <option value={60}>1 hour</option>
@@ -161,49 +161,48 @@ const MentorBookingModal = ({ isOpen, onClose, mentor, onSuccess }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                <MessageSquare className="w-4 h-4 inline mr-2" />
-                Message (Optional)
+              <label className="block text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300 mb-2">
+                <MessageSquare className="w-3 h-3 inline mr-1.5" />
+                Message (optional)
               </label>
               <textarea
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                 rows={4}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
-                placeholder="Tell them what you'd like to learn..."
+                className="modern-input resize-none"
+                placeholder="Tell them what you'd like to learn…"
               />
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 p-4 bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl">
-                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
-                <p className="text-sm text-red-600 dark:text-red-400 font-semibold">{error}</p>
+              <div className="flex items-center gap-2 p-4 rounded-2xl bg-coral-500/10 border border-coral-500/30">
+                <AlertCircle className="w-5 h-5 text-coral-500" />
+                <p className="text-sm text-coral-600 dark:text-coral-300 font-medium">{error}</p>
               </div>
             )}
 
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-3 pt-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-6 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-xl font-semibold transition-all"
+                className="flex-1 btn btn-ghost py-3"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-xl font-semibold shadow-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 btn btn-cyan py-3 disabled:opacity-50"
               >
                 {loading ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Booking...
+                    <div className="w-4 h-4 border-2 border-ink-950/30 border-t-ink-950 rounded-full animate-spin"></div>
+                    Booking…
                   </>
                 ) : (
                   <>
-                    <GraduationCap className="w-5 h-5" />
-                    Send Session Request
+                    <GraduationCap className="w-4 h-4" />
+                    Send request
                   </>
                 )}
               </button>

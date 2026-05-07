@@ -18,7 +18,6 @@ const FindMentorModal = ({ isOpen, onClose, skillName }) => {
     try {
       const token = localStorage.getItem('token');
 
-      // Step 1: call reward-aware skill exchange endpoint
       const exchRes = await axios.post(
         `${BACKEND_URL}/api/match/skill-exchange`,
         { skill_requested: skillName },
@@ -26,11 +25,10 @@ const FindMentorModal = ({ isOpen, onClose, skillName }) => {
       );
       const exch = exchRes.data || {};
       if (exch.rewardPoints) {
-        toast.success(`+${exch.rewardPoints} points awarded 🎉`);
+        toast.success(`+${exch.rewardPoints} points awarded`);
       }
       setRewardInfo(exch);
 
-      // Step 2: if mentors exist, fetch AI-ranked list
       if (exch.mentorFound) {
         const response = await axios.post(
           `${BACKEND_URL}/api/ai/match-mentors`,
@@ -49,114 +47,120 @@ const FindMentorModal = ({ isOpen, onClose, skillName }) => {
   };
 
   const getTrustBadge = (score) => {
-    if (!score || score < 60) return { label: 'Aspiring', color: 'indigo', icon: '⭐' };
-    if (score >= 90) return { label: 'Gold', color: 'yellow', icon: '🏆' };
-    if (score >= 75) return { label: 'Silver', color: 'gray', icon: '🥈' };
-    return { label: 'Bronze', color: 'orange', icon: '🥉' };
+    if (!score || score < 60) return { label: 'Aspiring', tone: 'cyan' };
+    if (score >= 90) return { label: 'Gold', tone: 'coral' };
+    if (score >= 75) return { label: 'Silver', tone: 'ink' };
+    return { label: 'Bronze', tone: 'coral' };
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Search className="w-6 h-6 text-indigo-600" />
-            Find Mentor for {skillName}
-          </h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-            <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-          </button>
+    <div className="tc-modal-backdrop flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bento rounded-[28px] max-w-3xl w-full max-h-[90vh] overflow-hidden animate-scale-in" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="relative bg-ink-950 text-white p-7 overflow-hidden">
+          <div className="absolute inset-0 opacity-70" style={{ background: 'radial-gradient(500px 300px at 0% 0%, rgba(34,211,238,.4), transparent 60%), radial-gradient(500px 300px at 100% 100%, rgba(99,102,241,.32), transparent 60%)' }} />
+          <div className="relative flex items-center justify-between">
+            <div>
+              <span className="chip chip-cyan mb-2"><Search className="w-3 h-3" /> AI matching</span>
+              <h2 className="font-display text-3xl leading-tight">
+                Find mentor for <span className="italic text-gradient-cyan">{skillName}</span>
+              </h2>
+            </div>
+            <button onClick={onClose} className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 grid place-items-center transition">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+        <div className="p-7 overflow-y-auto max-h-[calc(90vh-140px)]">
           {!searched ? (
-            <div className="text-center py-12">
-              <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl mx-auto mb-6 flex items-center justify-center">
-                <Search className="w-10 h-10 text-white" />
+            <div className="text-center py-10">
+              <div className="w-20 h-20 rounded-3xl mx-auto mb-6 bg-gradient-to-br from-cyan-400 to-indigo-500 grid place-items-center shadow-soft-lg">
+                <Search className="w-9 h-9 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">AI-Powered Mentor Matching</h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">We'll find the best mentors for {skillName} based on ratings, experience, and compatibility</p>
+              <h3 className="font-display text-3xl mb-2">AI-powered matching</h3>
+              <p className="text-ink-500 dark:text-ink-300 mb-6 max-w-md mx-auto">
+                We'll find the best mentors for {skillName} based on ratings, experience and compatibility.
+              </p>
               <button
                 onClick={searchMentors}
                 disabled={loading}
-                className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all disabled:opacity-50"
+                className="btn btn-cyan px-6 py-3 disabled:opacity-50"
               >
-                {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Find Mentors'}
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Find mentors'}
               </button>
             </div>
           ) : loading ? (
             <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-12 h-12 text-indigo-600 animate-spin" />
+              <div className="tc-spinner" />
             </div>
           ) : matches.length === 0 ? (
-            <div className="text-center py-12">
+            <div className="text-center py-10">
               {rewardInfo?.rewardPoints > 0 && (
-                <div className="mb-4 mx-auto max-w-md p-4 rounded-xl bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 flex items-center gap-3">
-                  <Gift className="w-6 h-6 text-orange-500" />
-                  <p className="text-sm font-semibold text-orange-700">{rewardInfo.message}</p>
+                <div className="mb-4 mx-auto max-w-md p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-3">
+                  <Gift className="w-5 h-5 text-amber-500" />
+                  <p className="text-sm font-semibold text-amber-700 dark:text-amber-300">{rewardInfo.message}</p>
                 </div>
               )}
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-ink-500 dark:text-ink-300">
                 {rewardInfo?.message || 'No mentors found for this skill'}
               </p>
             </div>
           ) : (
             <div className="space-y-4">
               {rewardInfo?.rewardPoints > 0 && (
-                <div className="p-4 rounded-xl bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 flex items-center gap-3">
-                  <Gift className="w-6 h-6 text-orange-500" />
-                  <p className="text-sm font-semibold text-orange-700">{rewardInfo.message}</p>
+                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-3">
+                  <Gift className="w-5 h-5 text-amber-500" />
+                  <p className="text-sm font-semibold text-amber-700 dark:text-amber-300">{rewardInfo.message}</p>
                 </div>
               )}
               {matches.map((match, index) => {
                 const mentor = match.mentor || match;
                 const trustBadge = getTrustBadge(mentor.trust_score);
-                
+
                 return (
-                  <div key={index} className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 hover:shadow-lg transition-all">
+                  <div key={index} className="bento p-4">
                     <div className="flex items-start gap-4">
-                      <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-500 grid place-items-center text-white font-display text-2xl flex-shrink-0">
                         {mentor.username?.[0]?.toUpperCase()}
                       </div>
-                      
+
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-lg font-bold text-gray-900 dark:text-white">{mentor.full_name || mentor.username}</h3>
-                          <span className={`px-2 py-1 bg-${trustBadge.color}-100 dark:bg-${trustBadge.color}-900/30 text-${trustBadge.color}-600 dark:text-${trustBadge.color}-400 text-xs rounded-full`}>
-                            {trustBadge.icon} {trustBadge.label}
-                          </span>
+                        <div className="flex items-center gap-2 flex-wrap mb-2">
+                          <h3 className="font-display text-xl leading-tight text-ink-950 dark:text-white">{mentor.full_name || mentor.username}</h3>
+                          <span className={`chip chip-${trustBadge.tone}`}>{trustBadge.label}</span>
                         </div>
-                        
-                        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-3">
-                          <span className="flex items-center gap-1">
-                            <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                            {mentor.average_rating?.toFixed(1) || '0.0'} ({mentor.total_ratings || 0} reviews)
+
+                        <div className="flex flex-wrap items-center gap-4 text-xs text-ink-500 dark:text-ink-300 mb-3">
+                          <span className="inline-flex items-center gap-1">
+                            <Star className="w-3.5 h-3.5 text-amber-500 fill-current" />
+                            {mentor.average_rating?.toFixed(1) || '0.0'} ({mentor.total_ratings || 0})
                           </span>
-                          <span className="flex items-center gap-1">
-                            <Trophy className="w-4 h-4 text-indigo-600" />
+                          <span className="inline-flex items-center gap-1">
+                            <Trophy className="w-3.5 h-3.5 text-cyan-500" />
                             {mentor.total_sessions || 0} sessions
                           </span>
                           {mentor.trust_score && (
-                            <span className="flex items-center gap-1">
-                              <Shield className="w-4 h-4 text-green-600" />
-                              Trust Score: {mentor.trust_score}
+                            <span className="inline-flex items-center gap-1">
+                              <Shield className="w-3.5 h-3.5 text-emerald-500" />
+                              Trust {mentor.trust_score}
                             </span>
                           )}
                         </div>
-                        
+
                         {mentor.bio && (
-                          <p className="text-sm text-gray-700 dark:text-gray-300 mb-3 line-clamp-2">{mentor.bio}</p>
+                          <p className="text-sm text-ink-600 dark:text-ink-200 mb-3 line-clamp-2">{mentor.bio}</p>
                         )}
-                        
-                        <div className="flex gap-2">
-                          <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
-                            Book Session
+
+                        <div className="flex gap-2 flex-wrap">
+                          <button className="btn btn-cyan py-2 text-xs">
+                            <Calendar className="w-3.5 h-3.5" />
+                            Book session
                           </button>
-                          <button className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors text-sm font-medium flex items-center gap-2">
-                            <MessageSquare className="w-4 h-4" />
+                          <button className="btn btn-ghost py-2 text-xs">
+                            <MessageSquare className="w-3.5 h-3.5" />
                             Message
                           </button>
                         </div>

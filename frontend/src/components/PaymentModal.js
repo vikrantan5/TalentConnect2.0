@@ -48,7 +48,6 @@ const PaymentModal = ({ task, isOpen, onClose, onSuccess }) => {
     setError(null);
 
     try {
-      // Create order
       const orderResponse = await api.post('/api/payments/create-order', {
         task_id: task.id,
         amount: task.price,
@@ -57,7 +56,6 @@ const PaymentModal = ({ task, isOpen, onClose, onSuccess }) => {
 
       const { order_id, amount, currency } = orderResponse.data;
 
-      // Initialize Razorpay
       const options = {
         key: razorpayKey,
         amount: amount,
@@ -68,7 +66,6 @@ const PaymentModal = ({ task, isOpen, onClose, onSuccess }) => {
         handler: async function (response) {
           setProcessingPayment(true);
           try {
-            // Verify payment
             await api.post('/api/payments/verify', {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
@@ -88,7 +85,7 @@ const PaymentModal = ({ task, isOpen, onClose, onSuccess }) => {
           email: JSON.parse(localStorage.getItem('user') || '{}').email || ''
         },
         theme: {
-          color: '#4F46E5'
+          color: '#22d3ee'
         },
         modal: {
           ondismiss: function() {
@@ -110,90 +107,103 @@ const PaymentModal = ({ task, isOpen, onClose, onSuccess }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" data-testid="payment-modal">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full mx-4">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
-              <CreditCard className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+    <div className="tc-modal-backdrop flex items-center justify-center p-4" data-testid="payment-modal" onClick={onClose}>
+      <div
+        className="bento rounded-[28px] max-w-md w-full overflow-hidden animate-scale-in"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Hero header */}
+        <div className="relative bg-ink-950 text-white p-6 overflow-hidden">
+          <div
+            className="absolute inset-0 opacity-60"
+            style={{
+              background:
+                'radial-gradient(500px 300px at 0% 0%, rgba(34,211,238,.32), transparent 60%), radial-gradient(400px 250px at 100% 100%, rgba(255,106,91,.25), transparent 60%)',
+            }}
+          />
+          <div className="relative flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-white/10 ring-1 ring-white/15 grid place-items-center backdrop-blur">
+                <CreditCard className="w-5 h-5 text-cyan-300" />
+              </div>
+              <div>
+                <span className="chip chip-cyan mb-1">secure</span>
+                <h3 className="font-display text-2xl leading-none">Payment</h3>
+                <p className="text-xs text-ink-300 mt-1">via Razorpay escrow</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Payment</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Secure payment via Razorpay</p>
-            </div>
+            <button
+              onClick={onClose}
+              className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 grid place-items-center transition"
+              disabled={loading || processingPayment}
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            disabled={loading || processingPayment}
-          >
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
         </div>
 
-        {/* Content */}
+        {/* Body */}
         <div className="p-6 space-y-4">
           {/* Task Details */}
-          <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-            <h4 className="font-medium text-gray-900 dark:text-white mb-2">{task?.title}</h4>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Amount</span>
-              <span className="text-2xl font-bold text-gray-900 dark:text-white">
+          <div className="glass rounded-2xl p-4">
+            <h4 className="font-semibold text-ink-950 dark:text-white mb-3">{task?.title}</h4>
+            <div className="flex items-end justify-between">
+              <span className="text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300">Amount</span>
+              <span className="font-display text-4xl leading-none">
                 ₹{task?.price?.toFixed(2)}
               </span>
             </div>
           </div>
 
           {/* Security Notice */}
-          <div className="flex items-start gap-3 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
-            <Lock className="w-5 h-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5" />
+          <div className="flex items-start gap-3 p-4 rounded-2xl bg-cyan-500/5 border border-cyan-500/20">
+            <Lock className="w-5 h-5 text-cyan-500 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm text-indigo-900 dark:text-indigo-200 font-medium">Secure Escrow Payment</p>
-              <p className="text-xs text-indigo-700 dark:text-indigo-300 mt-1">
-                Your payment is held securely and will only be released when you approve the submitted work.
+              <p className="text-sm font-semibold text-ink-950 dark:text-white">Secure escrow payment</p>
+              <p className="text-xs text-ink-500 dark:text-ink-300 mt-1">
+                Funds are held safely and only released when you approve the submitted work.
               </p>
             </div>
           </div>
 
           {/* Error Message */}
           {error && (
-            <div className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
-              <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+            <div className="flex items-start gap-3 p-4 rounded-2xl bg-coral-500/10 border border-coral-500/30">
+              <AlertCircle className="w-5 h-5 text-coral-500 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-coral-600 dark:text-coral-300">{error}</p>
             </div>
           )}
 
           {/* Processing Message */}
           {processingPayment && (
-            <div className="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <Loader2 className="w-5 h-5 text-blue-600 dark:text-blue-400 animate-spin" />
-              <p className="text-sm text-blue-800 dark:text-blue-200">Verifying payment...</p>
+            <div className="flex items-center gap-3 p-4 rounded-2xl glass">
+              <Loader2 className="w-5 h-5 text-cyan-500 animate-spin" />
+              <p className="text-sm text-ink-700 dark:text-ink-200">Verifying payment…</p>
             </div>
           )}
 
-          {/* Payment Button */}
+          {/* Pay Button */}
           <button
             onClick={handlePayment}
             disabled={loading || processingPayment || !razorpayKey}
-            className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+            className="w-full btn btn-coral py-3 disabled:opacity-50"
             data-testid="pay-now-btn"
           >
             {loading || processingPayment ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                Processing...
+                Processing…
               </>
             ) : (
               <>
-                <Lock className="w-5 h-5" />
+                <Lock className="w-4 h-4" />
                 Pay ₹{task?.price?.toFixed(2)}
               </>
             )}
           </button>
 
-          <p className="text-xs text-center text-gray-500 dark:text-gray-400">
-            By proceeding, you agree to our terms and conditions
+          <p className="text-xs text-center text-ink-500 dark:text-ink-300">
+            By proceeding, you agree to our terms & conditions
           </p>
         </div>
       </div>

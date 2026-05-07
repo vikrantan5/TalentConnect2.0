@@ -32,14 +32,12 @@ const FileUploadZone = ({ onFilesSelected, maxFiles = 5, existingFiles = [] }) =
   const handleFiles = (newFiles) => {
     setError('');
     const fileArray = Array.from(newFiles);
-    
-    // Check max files limit
+
     if (files.length + fileArray.length > maxFiles) {
       setError(`Maximum ${maxFiles} files allowed`);
       return;
     }
 
-    // Validate all files
     const validationErrors = [];
     const validFiles = [];
 
@@ -76,7 +74,7 @@ const FileUploadZone = ({ onFilesSelected, maxFiles = 5, existingFiles = [] }) =
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleFiles(e.dataTransfer.files);
     }
@@ -116,10 +114,10 @@ const FileUploadZone = ({ onFilesSelected, maxFiles = 5, existingFiles = [] }) =
 
       {/* Drop Zone */}
       <div
-        className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
+        className={`relative rounded-[24px] border-2 border-dashed p-8 text-center transition-all cursor-pointer ${
           dragActive
-            ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
-            : 'border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600'
+            ? 'border-cyan-400 bg-cyan-500/10 shadow-glow'
+            : 'border-black/15 dark:border-white/15 bg-white/40 dark:bg-white/5 hover:border-cyan-400/60 hover:bg-cyan-500/5'
         }`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -127,36 +125,26 @@ const FileUploadZone = ({ onFilesSelected, maxFiles = 5, existingFiles = [] }) =
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
       >
-        <Upload className={`w-8 h-8 mx-auto mb-2 ${dragActive ? 'text-indigo-600' : 'text-gray-400'}`} />
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          {dragActive ? (
-            <span className="text-indigo-600 font-medium">Drop files here...</span>
-          ) : (
-            <>
-              Drag and drop files here, or{' '}
-              <button
-                type="button"
-                className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  fileInputRef.current?.click();
-                }}
-              >
-                browse
-              </button>
-            </>
-          )}
+        <div className={`w-14 h-14 rounded-2xl mx-auto grid place-items-center mb-3 transition ${
+          dragActive
+            ? 'bg-gradient-to-br from-cyan-400 to-cyan-600 text-white shadow-soft'
+            : 'bg-cyan-500/10 text-cyan-500'
+        }`}>
+          <Upload className="w-6 h-6" />
+        </div>
+        <p className="font-display text-2xl text-ink-950 dark:text-white">
+          {dragActive ? 'Drop files to upload' : 'Drop files or click to browse'}
         </p>
-        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-          PDF, DOC, DOCX, ZIP (Max 10MB each, up to {maxFiles} files)
+        <p className="text-xs text-ink-500 dark:text-ink-300 mt-2">
+          PDF · DOC · DOCX · ZIP — up to 10MB each ({maxFiles} max)
         </p>
       </div>
 
       {/* Error Message */}
       {error && (
-        <div className="mt-3 flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-          <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        <div className="mt-3 flex items-start gap-2 p-3 rounded-2xl bg-coral-500/10 border border-coral-500/30">
+          <AlertCircle className="w-5 h-5 text-coral-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-coral-600 dark:text-coral-300">{error}</p>
         </div>
       )}
 
@@ -166,27 +154,29 @@ const FileUploadZone = ({ onFilesSelected, maxFiles = 5, existingFiles = [] }) =
           {files.map((file, index) => (
             <div
               key={index}
-              className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"
+              className="flex items-center justify-between p-3 rounded-2xl glass border border-black/5 dark:border-white/10"
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <File className="w-5 h-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-cyan-600 grid place-items-center text-white shadow-soft">
+                  <File className="w-4 h-4" />
+                </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                  <p className="text-sm font-semibold text-ink-950 dark:text-white truncate">
                     {file.name}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-[11px] text-ink-500 dark:text-ink-300">
                     {formatFileSize(file.size)}
                   </p>
                 </div>
-                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
               </div>
               <button
                 type="button"
                 onClick={() => removeFile(index)}
-                className="ml-2 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
+                className="ml-2 w-8 h-8 rounded-full grid place-items-center hover:bg-black/5 dark:hover:bg-white/10 transition"
                 title="Remove file"
               >
-                <X className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                <X className="w-4 h-4 text-ink-500" />
               </button>
             </div>
           ))}
@@ -194,9 +184,9 @@ const FileUploadZone = ({ onFilesSelected, maxFiles = 5, existingFiles = [] }) =
       )}
 
       {uploading && (
-        <div className="mt-3 flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <Loader2 className="w-5 h-5 text-blue-600 dark:text-blue-400 animate-spin" />
-          <p className="text-sm text-blue-600 dark:text-blue-400">Uploading files...</p>
+        <div className="mt-3 flex items-center gap-2 p-3 rounded-2xl glass">
+          <Loader2 className="w-5 h-5 text-cyan-500 animate-spin" />
+          <p className="text-sm text-ink-700 dark:text-ink-200">Uploading files…</p>
         </div>
       )}
     </div>

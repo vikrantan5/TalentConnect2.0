@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { X, Search, User, Star, Send, Check, Clock, Users as UsersIcon } from 'lucide-react';
+import { X, Search, Star, Send, Check, Clock, Users as UsersIcon } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -37,12 +37,11 @@ const BrowseUsersModal = ({ isOpen, onClose }) => {
       await axios.post(`${BACKEND_URL}/api/users/connections/send-request/${userId}`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
-      // Update local state to show pending
-      setUsers(users.map(u => 
+
+      setUsers(users.map(u =>
         u.id === userId ? { ...u, connection_status: 'pending' } : u
       ));
-      
+
       alert('Connection request sent!');
     } catch (error) {
       console.error('Error sending connection request:', error);
@@ -54,27 +53,30 @@ const BrowseUsersModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+    <div className="tc-modal-backdrop flex items-center justify-center p-4 z-[999]" onClick={onClose}>
+      <div className="bento rounded-[28px] max-w-4xl w-full max-h-[85vh] overflow-hidden animate-scale-in" onClick={e => e.stopPropagation()}>
         {/* Header */}
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <UsersIcon className="w-6 h-6 text-indigo-600" />
-              Browse Users
-            </h2>
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
-              <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+        <div className="relative bg-ink-950 text-white p-7 overflow-hidden">
+          <div className="absolute inset-0 opacity-70" style={{ background: 'radial-gradient(500px 300px at 0% 0%, rgba(34,211,238,.4), transparent 60%), radial-gradient(500px 300px at 100% 100%, rgba(99,102,241,.32), transparent 60%)' }} />
+          <div className="relative flex items-center justify-between mb-5">
+            <div>
+              <span className="chip chip-cyan mb-2"><UsersIcon className="w-3 h-3" /> people</span>
+              <h2 className="font-display text-3xl leading-tight">
+                Browse <span className="italic text-gradient-cyan">members</span>
+              </h2>
+            </div>
+            <button onClick={onClose} className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 grid place-items-center transition">
+              <X className="w-4 h-4" />
             </button>
           </div>
-          
-          {/* Search Bar */}
+
+          {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-300" />
             <input
               type="text"
-              placeholder="Search by name or username..."
-              className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              placeholder="Search by name or username…"
+              className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white/10 border border-white/15 text-white placeholder:text-ink-300 backdrop-blur outline-none focus:border-cyan-400 focus:shadow-glow transition"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -82,74 +84,64 @@ const BrowseUsersModal = ({ isOpen, onClose }) => {
         </div>
 
         {/* Users List */}
-        <div className="p-6 overflow-y-auto max-h-[calc(80vh-200px)]">
+        <div className="p-7 overflow-y-auto max-h-[calc(85vh-200px)]">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full"></div>
+              <div className="tc-spinner" />
             </div>
           ) : users.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-gray-400">No users found</p>
+            <div className="empty-state">
+              <UsersIcon className="w-8 h-8 text-ink-400" />
+              <p className="font-display text-xl">No members found</p>
+              <p className="text-sm text-ink-500">Try a different search</p>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 gap-4">
               {users.map((user) => (
-                <div key={user.id} className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 hover:shadow-lg transition-all">
+                <div key={user.id} className="bento p-4">
                   <div className="flex items-start gap-4">
-                    {/* Avatar */}
-                    <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
+                    <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gradient-to-br from-cyan-400 to-indigo-500 flex-shrink-0 grid place-items-center text-white font-display text-2xl">
                       {user.profile_photo ? (
-                        <img src={user.profile_photo} alt={user.username} className="w-full h-full rounded-xl object-cover" />
+                        <img src={user.profile_photo} alt={user.username} className="w-full h-full object-cover" />
                       ) : (
                         user.username?.charAt(0).toUpperCase()
                       )}
                     </div>
-                    
-                    {/* User Info */}
+
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-gray-900 dark:text-white truncate">
+                        <h3 className="font-display text-lg leading-tight text-ink-950 dark:text-white truncate">
                           {user.full_name || user.username}
                         </h3>
                         {user.average_rating > 0 && (
-                          <span className="flex items-center gap-1 text-xs text-yellow-600">
+                          <span className="inline-flex items-center gap-0.5 text-xs text-amber-500">
                             <Star className="w-3 h-3 fill-current" />
                             {user.average_rating.toFixed(1)}
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">@{user.username}</p>
-                      
+                      <p className="text-xs text-ink-500 dark:text-ink-300 mb-2">@{user.username}</p>
+
                       {user.bio && (
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">{user.bio}</p>
+                        <p className="text-xs text-ink-600 dark:text-ink-200 mb-2 line-clamp-2">{user.bio}</p>
                       )}
-                      
-                      {/* Skills */}
+
                       {user.top_skills && user.top_skills.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-3">
                           {user.top_skills.map((skill, idx) => (
-                            <span key={idx} className="px-2 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs rounded-lg">
-                              {skill}
-                            </span>
+                            <span key={idx} className="chip chip-cyan">{skill}</span>
                           ))}
                         </div>
                       )}
-                      
-                      {/* Connection Button */}
+
                       <div>
                         {user.connection_status === 'accepted' ? (
-                          <button
-                            disabled
-                            className="w-full px-3 py-2 bg-green-100 text-green-600 rounded-lg text-sm font-medium flex items-center justify-center gap-2"
-                          >
+                          <button disabled className="w-full btn btn-ghost py-2 text-emerald-600 dark:text-emerald-300">
                             <Check className="w-4 h-4" />
                             Connected
                           </button>
                         ) : user.connection_status === 'pending' ? (
-                          <button
-                            disabled
-                            className="w-full px-3 py-2 bg-yellow-100 text-yellow-600 rounded-lg text-sm font-medium flex items-center justify-center gap-2"
-                          >
+                          <button disabled className="w-full btn btn-ghost py-2 text-amber-600 dark:text-amber-300">
                             <Clock className="w-4 h-4" />
                             Pending
                           </button>
@@ -157,10 +149,10 @@ const BrowseUsersModal = ({ isOpen, onClose }) => {
                           <button
                             onClick={() => sendConnectionRequest(user.id)}
                             disabled={sendingRequest[user.id]}
-                            className="w-full px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                            className="w-full btn btn-cyan py-2 disabled:opacity-50"
                           >
                             <Send className="w-4 h-4" />
-                            {sendingRequest[user.id] ? 'Sending...' : 'Connect'}
+                            {sendingRequest[user.id] ? 'Sending…' : 'Connect'}
                           </button>
                         )}
                       </div>

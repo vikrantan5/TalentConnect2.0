@@ -4,138 +4,117 @@ import { Flame, MessageCircle, ArrowRightLeft, User, MapPin, Sparkles } from 'lu
 const PerfectMatchCard = ({ match, onChat, onStartExchange, onViewProfile }) => {
   return (
     <div className="group relative animate-scale-in" data-testid="perfect-match-card">
-      {/* Glow Effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity duration-500"></div>
-      
-      <div className="relative glass-card rounded-2xl overflow-hidden border-2 border-orange-200/50 dark:border-orange-800/50 hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2">
-        {/* Cover Image */}
-        <div className="relative h-32 bg-gradient-to-br from-orange-400 via-red-500 to-pink-500 overflow-hidden">
-          {match.background_photo ? (
-            <img 
-              src={match.background_photo} 
-              alt="Cover" 
-              className="w-full h-full object-cover"
-            />
-          ) : null}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-          
-          {/* Perfect Match Badge */}
-          <div className="absolute top-4 right-4 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 rounded-full shadow-lg flex items-center gap-2 animate-pulse">
-            <Flame className="w-5 h-5 text-white" />
-            <span className="text-white font-bold text-sm">PERFECT MATCH</span>
+      <div className="bento bento-glow rounded-[28px] overflow-hidden">
+        {/* Cover */}
+        <div className="relative h-32 bg-ink-950 overflow-hidden">
+          <div className="absolute inset-0 opacity-90" style={{ background: 'radial-gradient(500px 220px at 0% 0%, rgba(34,211,238,.45), transparent 60%), radial-gradient(500px 220px at 100% 100%, rgba(255,106,91,.55), transparent 60%)' }} />
+          {match.background_photo && (
+            <img src={match.background_photo} alt="Cover" className="w-full h-full object-cover opacity-50" />
+          )}
+          <div className="absolute top-4 right-4">
+            <span className="chip chip-coral backdrop-blur-md bg-coral-500/30 text-white">
+              <Flame className="w-3 h-3" /> perfect match
+            </span>
           </div>
         </div>
 
         <div className="p-6">
-          {/* Profile Image */}
+          {/* Header */}
           <div className="flex items-start gap-4 mb-4">
-            <div className="relative -mt-16">
-              <div className="w-24 h-24 rounded-2xl border-4 border-white dark:border-gray-800 overflow-hidden shadow-xl bg-gradient-to-br from-orange-400 to-pink-500">
+            <div className="relative -mt-14">
+              <div className="w-24 h-24 rounded-2xl border-4 border-white dark:border-ink-900 overflow-hidden shadow-soft-lg bg-gradient-to-br from-coral-400 to-coral-600">
                 {match.profile_photo || match.avatar_url ? (
-                  <img 
-                    src={match.profile_photo || match.avatar_url} 
+                  <img
+                    src={match.profile_photo || match.avatar_url}
                     alt={match.full_name || match.username}
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-white text-2xl font-bold">
+                  <div className="w-full h-full flex items-center justify-center text-white font-display text-3xl">
                     {(match.full_name || match.username || 'U').charAt(0).toUpperCase()}
                   </div>
                 )}
               </div>
               {match.is_available && (
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-4 border-white dark:border-gray-800"></div>
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-400 rounded-full ring-4 ring-white dark:ring-ink-900" />
               )}
             </div>
 
-            <div className="flex-1 mt-2">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+            <div className="flex-1 mt-1">
+              <h3 className="font-display text-2xl leading-tight text-ink-950 dark:text-white">
                 {match.full_name || match.username}
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">@{match.username}</p>
+              <p className="text-sm text-ink-500 dark:text-ink-300">@{match.username}</p>
               {match.location && (
-                <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-sm">
-                  <MapPin className="w-4 h-4" />
+                <div className="inline-flex items-center gap-1 text-xs text-ink-500 dark:text-ink-300 mt-1">
+                  <MapPin className="w-3 h-3" />
                   <span>{match.location}</span>
                 </div>
               )}
             </div>
 
-            {/* Match Score */}
-            <div className="px-4 py-2 bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-xl border border-orange-200 dark:border-orange-800">
-              <div className="text-center">
-                <p className="text-2xl font-black text-orange-600 dark:text-orange-400">{match.match_score}</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold">Match</p>
-              </div>
+            <div className="text-right">
+              <p className="text-[10px] uppercase tracking-widest text-ink-500 dark:text-ink-300">match</p>
+              <p className="font-display text-4xl leading-none text-gradient">{match.match_score}</p>
             </div>
           </div>
 
           {/* Bio */}
           {match.bio && (
-            <p className="text-gray-700 dark:text-gray-300 text-sm mb-4 line-clamp-2">
+            <p className="text-sm text-ink-600 dark:text-ink-200 mb-4 line-clamp-2">
               {match.bio}
             </p>
           )}
 
-          {/* Skill Exchange Display */}
-          <div className="bg-gradient-to-br from-orange-50 to-pink-50 dark:from-gray-800 dark:to-gray-700 rounded-xl p-4 mb-4 border border-orange-100 dark:border-gray-600">
+          {/* Skill Exchange */}
+          <div className="rounded-2xl glass p-4 mb-5">
             <div className="flex items-center gap-3">
               <div className="flex-1">
-                <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold mb-1">You teach</p>
-                <div className="flex flex-wrap gap-2">
+                <p className="text-[10px] uppercase tracking-widest text-ink-500 dark:text-ink-300 mb-2">you teach</p>
+                <div className="flex flex-wrap gap-1.5">
                   {match.you_teach && match.you_teach.map((skill, idx) => (
-                    <span 
-                      key={idx}
-                      className="px-3 py-1 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-full text-xs font-bold shadow-md"
-                    >
-                      {skill}
-                    </span>
+                    <span key={idx} className="chip chip-coral">{skill}</span>
                   ))}
                 </div>
               </div>
 
-              <ArrowRightLeft className="w-6 h-6 text-orange-500 dark:text-orange-400 flex-shrink-0" />
+              <ArrowRightLeft className="w-5 h-5 text-cyan-500 flex-shrink-0" />
 
               <div className="flex-1">
-                <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold mb-1">They teach</p>
-                <div className="flex flex-wrap gap-2">
+                <p className="text-[10px] uppercase tracking-widest text-ink-500 dark:text-ink-300 mb-2">they teach</p>
+                <div className="flex flex-wrap gap-1.5">
                   {match.they_teach && match.they_teach.map((skill, idx) => (
-                    <span 
-                      key={idx}
-                      className="px-3 py-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-full text-xs font-bold shadow-md"
-                    >
-                      {skill}
-                    </span>
+                    <span key={idx} className="chip chip-cyan">{skill}</span>
                   ))}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Action Buttons */}
+          {/* Actions */}
           <div className="flex gap-2">
             <button
               onClick={() => onChat(match)}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-xl font-semibold shadow-lg transition-all duration-300 transform hover:scale-105"
+              className="flex-1 btn btn-ghost py-2.5"
               data-testid="perfect-match-chat-btn"
             >
-              <MessageCircle className="w-5 h-5" />
+              <MessageCircle className="w-4 h-4" />
               Chat
             </button>
             <button
               onClick={() => onStartExchange(match)}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-xl font-semibold shadow-lg transition-all duration-300 transform hover:scale-105"
+              className="flex-1 btn btn-coral py-2.5"
               data-testid="perfect-match-exchange-btn"
             >
-              <Sparkles className="w-5 h-5" />
-              Start Exchange
+              <Sparkles className="w-4 h-4" />
+              Exchange
             </button>
             <button
               onClick={() => onViewProfile(match)}
-              className="px-4 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
+              className="btn btn-ghost px-3 py-2.5"
               data-testid="perfect-match-profile-btn"
             >
-              <User className="w-5 h-5" />
+              <User className="w-4 h-4" />
             </button>
           </div>
         </div>

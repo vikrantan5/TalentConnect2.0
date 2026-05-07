@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Check, X, Loader2, Trash2 } from 'lucide-react';
+import { Bell, X, Loader2, Trash2 } from 'lucide-react';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
@@ -29,7 +29,7 @@ const NotificationsPanel = ({ isOpen, onClose }) => {
   const markAsRead = async (notificationId) => {
     try {
       await api.post(`/api/notifications/${notificationId}/read`);
-      setNotifications(notifications.map(n => 
+      setNotifications(notifications.map(n =>
         n.id === notificationId ? { ...n, is_read: true } : n
       ));
     } catch (error) {
@@ -57,8 +57,7 @@ const NotificationsPanel = ({ isOpen, onClose }) => {
 
   const handleNotificationClick = (notification) => {
     markAsRead(notification.id);
-    
-    // Navigate based on notification type
+
     if (notification.reference_type === 'connection' && notification.notification_type === 'connection_request') {
       navigate('/profile');
     } else if (notification.reference_type === 'learning_session' || notification.notification_type === 'session_request') {
@@ -66,85 +65,90 @@ const NotificationsPanel = ({ isOpen, onClose }) => {
     } else if (notification.reference_type === 'task') {
       navigate('/tasks');
     }
-    
+
     onClose();
   };
 
   if (!isOpen) return null;
 
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
   return (
-    <div 
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-end p-4"
+    <div
+      className="tc-modal-backdrop flex items-start justify-end p-4"
       onClick={onClose}
     >
-      <div 
-        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col mt-16"
+      <div
+        className="bento rounded-[24px] w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col mt-16 animate-scale-in"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Bell className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Notifications</h2>
-            {notifications.filter(n => !n.is_read).length > 0 && (
-              <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
-                {notifications.filter(n => !n.is_read).length}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            {notifications.filter(n => !n.is_read).length > 0 && (
-              <button
-                onClick={markAllAsRead}
-                className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
-              >
-                Mark all read
+        <div className="relative bg-ink-950 text-white p-5 overflow-hidden">
+          <div className="absolute inset-0 opacity-60" style={{ background: 'radial-gradient(400px 250px at 0% 0%, rgba(34,211,238,.32), transparent 60%), radial-gradient(400px 250px at 100% 100%, rgba(255,106,91,.25), transparent 60%)' }} />
+          <div className="relative flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-white/10 ring-1 ring-white/15 grid place-items-center backdrop-blur">
+                <Bell className="w-4 h-4 text-cyan-300" />
+              </div>
+              <div>
+                <h2 className="font-display text-2xl leading-none">Notifications</h2>
+                {unreadCount > 0 && (
+                  <span className="chip chip-coral mt-1">{unreadCount} new</span>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {unreadCount > 0 && (
+                <button
+                  onClick={markAllAsRead}
+                  className="text-xs text-cyan-300 hover:text-cyan-200 underline underline-offset-2"
+                >
+                  Mark all read
+                </button>
+              )}
+              <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 grid place-items-center transition">
+                <X className="w-4 h-4" />
               </button>
-            )}
-            <button
-              onClick={onClose}
-              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-            >
-              <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            </button>
+            </div>
           </div>
         </div>
 
-        {/* Notifications List */}
+        {/* List */}
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="flex justify-center items-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+              <div className="tc-spinner" />
             </div>
           ) : notifications.length === 0 ? (
-            <div className="text-center py-12">
-              <Bell className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-              <p className="text-gray-600 dark:text-gray-400">No notifications</p>
+            <div className="empty-state m-5">
+              <Bell className="w-8 h-8 text-ink-400" />
+              <p className="font-display text-xl">All caught up</p>
+              <p className="text-sm text-ink-500">You'll see new updates here</p>
             </div>
           ) : (
-            <div>
+            <div className="divide-y divide-black/5 dark:divide-white/5">
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-4 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition ${
-                    !notification.is_read ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''
+                  className={`p-4 hover:bg-cyan-500/5 dark:hover:bg-white/5 cursor-pointer transition ${
+                    !notification.is_read ? 'bg-cyan-500/5 dark:bg-cyan-500/10' : ''
                   }`}
                   onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
+                        <h3 className="font-semibold text-ink-950 dark:text-white text-sm">
                           {notification.title}
                         </h3>
                         {!notification.is_read && (
-                          <div className="w-2 h-2 bg-indigo-600 rounded-full"></div>
+                          <span className="w-1.5 h-1.5 bg-cyan-500 rounded-full" />
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="text-sm text-ink-600 dark:text-ink-200">
                         {notification.message}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                      <p className="text-[11px] text-ink-500 dark:text-ink-300 mt-1">
                         {new Date(notification.created_at).toLocaleString()}
                       </p>
                     </div>
@@ -153,9 +157,9 @@ const NotificationsPanel = ({ isOpen, onClose }) => {
                         e.stopPropagation();
                         deleteNotification(notification.id);
                       }}
-                      className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+                      className="w-8 h-8 rounded-full grid place-items-center hover:bg-coral-500/10 text-ink-400 hover:text-coral-500 transition"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
