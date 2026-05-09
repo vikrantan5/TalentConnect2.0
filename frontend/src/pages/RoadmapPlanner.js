@@ -76,7 +76,7 @@ const RoadmapPlanner = () => {
     try {
       await roadmapService.complete(selectedRoadmap.id);
       await loadMyRoadmaps();
-      setMessage('Roadmap completed. Tokens awarded.');
+            setMessage('Roadmap marked as completed.');
     } catch (error) {
       setMessage(error?.response?.data?.detail || 'Failed to complete roadmap');
     }
@@ -227,7 +227,7 @@ const RoadmapPlanner = () => {
             </button>
 
             <p className="text-xs text-ink-500 dark:text-ink-300 pt-2 border-t border-black/5 dark:border-white/10" data-testid="roadmap-token-note">
-              Complete a roadmap to earn SkillTokens.
+               Track milestones and download your roadmap as a PDF anytime.
             </p>
           </form>
 

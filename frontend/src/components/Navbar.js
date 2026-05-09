@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import NotificationsPanel from './NotificationsPanel';
+import api from '../services/api';
 
 const NAV = [
   { path: '/dashboard',    label: 'Dashboard',   icon: LayoutDashboard },
@@ -31,8 +33,10 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [openMobile, setOpenMobile] = useState(false);
   const [openProfile, setOpenProfile] = useState(false);
+    const [openNotif, setOpenNotif] = useState(false);
+  const [notifCount, setNotifCount] = useState(0);
   const [query, setQuery] = useState('');
-  const notifCount = 3;
+
   const profileRef = useRef(null);
 
   useEffect(() => {
@@ -40,6 +44,25 @@ const Navbar = () => {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  
+  useEffect(() => {
+    let isMounted = true;
+    const loadCount = async () => {
+      try {
+        const res = await api.get('/api/notifications/count');
+        if (isMounted) setNotifCount(res.data?.unread_count ?? res.data?.count ?? 0);
+      } catch (_e) {
+        if (isMounted) setNotifCount(0);
+      }
+    };
+    if (user) {
+      loadCount();
+      const id = setInterval(loadCount, 30000);
+      return () => { isMounted = false; clearInterval(id); };
+    }
+    return () => { isMounted = false; };
+  }, [user, openNotif]);
 
   useEffect(() => {
     const onClick = (e) => {
@@ -153,15 +176,21 @@ const Navbar = () => {
             </Link> */}
 
             {/* Notifications */}
-            <button className="relative w-9 h-9 rounded-full glass grid place-items-center" data-testid="nav-bell">
+            <button
+              onClick={() => setOpenNotif(true)}
+              className="relative w-9 h-9 rounded-full glass grid place-items-center hover:shadow-glow transition"
+              data-testid="nav-bell"
+              aria-label="Open notifications"
+            >
               <Bell className="w-4 h-4" />
               {notifCount > 0 && (
                 <>
-                  <span className="absolute -top-0.5 -right-0.5 grid place-items-center min-w-[18px] h-[18px] px-1 rounded-full bg-coral-500 text-white text-[10px] font-bold">{notifCount}</span>
+                  <span className="absolute -top-0.5 -right-0.5 grid place-items-center min-w-[18px] h-[18px] px-1 rounded-full bg-coral-500 text-white text-[10px] font-bold">{notifCount > 99 ? '99+' : notifCount}</span>
                   <span className="absolute -top-0.5 -right-0.5 w-[18px] h-[18px] rounded-full bg-coral-500/60 animate-ping" />
                 </>
               )}
             </button>
+            <NotificationsPanel isOpen={openNotif} onClose={() => setOpenNotif(false)} />
 
             {/* Profile */}
             <div ref={profileRef} className="relative">

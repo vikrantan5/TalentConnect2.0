@@ -126,8 +126,7 @@ async def complete_roadmap(
             raise HTTPException(status_code=404, detail="Roadmap not found or unauthorized")
         
         return {
-            "message": "Congratulations! Roadmap completed successfully",
-            "tokens_earned": 200
+              "message": "Congratulations! Roadmap completed successfully"
         }
         
     except HTTPException:

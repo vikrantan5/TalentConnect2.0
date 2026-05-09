@@ -471,7 +471,7 @@ const Profile = () => {
             </Card>
 
             {/* Profile Completion */}
-            <Card className="p-5" data-testid="profile-completion-card">
+            {/* <Card className="p-5" data-testid="profile-completion-card">
               <SectionLabel>Profile Completion</SectionLabel>
               <div className="flex items-center justify-between mb-2">
                 <span className={cn('text-xs font-semibold px-2 py-0.5 rounded-full', completionPct === 100 ? 'bg-emerald-50 text-emerald-700' : 'bg-indigo-50 text-indigo-700')}>
@@ -493,7 +493,7 @@ const Profile = () => {
                   );
                 })}
               </div>
-            </Card>
+            </Card> */}
 
             {/* Connection Requests */}
             {connectionRequests.length > 0 && (
@@ -646,7 +646,7 @@ const Profile = () => {
             {activeTab === 'skills' && (
               <div className="space-y-5">
                 {/* Resume Upload */}
-                <Card className="p-7 bg-ink-950 text-white border-0 relative overflow-hidden" data-testid="resume-upload-card">
+                {/* <Card className="p-7 bg-ink-950 text-white border-0 relative overflow-hidden" data-testid="resume-upload-card">
                   <div className="absolute inset-0 opacity-70 pointer-events-none" style={{ background: 'radial-gradient(500px 280px at 100% -10%, rgba(255,106,91,.32), transparent 60%), radial-gradient(420px 260px at -10% 110%, rgba(34,211,238,.22), transparent 60%)' }} />
                   <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
@@ -672,7 +672,7 @@ const Profile = () => {
                       <p className="text-ink-300">Skills Found: {resumeResult.parse_result?.total_skills_found || 0} · Added: {resumeResult.auto_add_result?.added_count || 0} · Skipped: {resumeResult.auto_add_result?.skipped_count || 0}</p>
                     </div>
                   )}
-                </Card>
+                </Card> */}
 
                 {/* Skills Grid */}
                 <Card className="p-6" data-testid="skills-list-card">

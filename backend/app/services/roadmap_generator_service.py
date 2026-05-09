@@ -243,15 +243,7 @@ Make it practical, realistic, and tailored to their current skill level. Include
                 'is_active': False
             }).eq('id', roadmap_id).eq('user_id', user_id).execute()
             
-            # Award tokens for completing roadmap
-            from app.services.token_service import token_service
-            token_service.earn_tokens(
-                user_id=user_id,
-                amount=200,  # Bonus for completing a roadmap
-                reason='roadmap_completed',
-                reference_id=roadmap_id
-            )
-            
+ # No points/tokens awarded on roadmap completion
             logger.info(f"Roadmap {roadmap_id} completed by user {user_id}")
             
             return True
