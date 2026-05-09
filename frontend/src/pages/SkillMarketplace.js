@@ -727,13 +727,13 @@ const SkillMarketplace = () => {
                           </div>
 
                           <div className="px-6 pb-6">
-                            <button
+                            {/* <button
                               onClick={() => setFindMentorModal({ show: true, skill: skill.skill_name })}
                               className="btn btn-cyan w-full"
                             >
                               <Search className="w-4 h-4" />
                               Find Mentor
-                            </button>
+                            </button> */}
                           </div>
                         </div>
                       ))}
