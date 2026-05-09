@@ -1297,7 +1297,7 @@ const TaskMarketplace = () => {
                       </button>
                     )}
 
-                    {selectedTask.status === 'accepted' && selectedTask.creator_id === user?.id && (
+                    {/* {selectedTask.status === 'accepted' && selectedTask.creator_id === user?.id && (
                       <button
                         onClick={() => setPaymentModal(true)}
                         className="flex-1 btn btn-cyan py-3"
@@ -1305,7 +1305,7 @@ const TaskMarketplace = () => {
                       >
                         <Wallet className="w-5 h-5" /> Pay escrow
                       </button>
-                    )}
+                    )} */}
 
                     {selectedTask.status === 'submitted' && selectedTask.creator_id === user?.id && (
                       <>

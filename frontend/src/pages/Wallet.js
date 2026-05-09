@@ -3,7 +3,7 @@ import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import {
-  Coins,
+  Wallet as WalletIcon,
   TrendingUp,
   TrendingDown,
   ArrowUpRight,
@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
+  IndianRupee,
 } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -101,34 +102,35 @@ const Wallet = () => {
     currentPage * itemsPerPage
   );
 
+  const formatINR = (value) => {
+    const n = Number(value || 0);
+    return `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+  };
+
   const stats = [
     {
-      label: 'Current Balance',
-      value: tokenBalance?.balance || 0,
-      icon: Coins,
+      label: 'Wallet Balance',
+      value: formatINR(tokenBalance?.balance || 0),
+      icon: IndianRupee,
       iconBg: 'from-cyan-400 to-cyan-600',
-      suffix: ' tokens'
     },
     {
       label: 'Total Earned',
-      value: tokenBalance?.total_earned || 0,
+      value: formatINR(tokenBalance?.total_earned || 0),
       icon: TrendingUp,
       iconBg: 'from-emerald-400 to-cyan-500',
-      suffix: ' tokens'
     },
     {
       label: 'Total Spent',
-      value: tokenBalance?.total_spent || 0,
+      value: formatINR(tokenBalance?.total_spent || 0),
       icon: TrendingDown,
       iconBg: 'from-coral-400 to-coral-600',
-      suffix: ' tokens'
     },
     {
       label: 'Total Transactions',
       value: transactions.length,
       icon: Award,
       iconBg: 'from-indigo-400 to-indigo-600',
-      suffix: ''
     }
   ];
 
@@ -155,12 +157,12 @@ const Wallet = () => {
             />
             <div className="relative flex items-center justify-between flex-wrap gap-6">
               <div>
-                <span className="chip chip-cyan mb-3"><Coins className="w-3 h-3" /> wallet</span>
+                <span className="chip chip-cyan mb-3"><IndianRupee className="w-3 h-3" /> wallet</span>
                 <h1 className="font-display text-5xl md:text-6xl leading-[.95] tracking-tight">
-                  Your <span className="italic text-gradient-cyan">tokens</span>,<br />
+                  Your <span className="italic text-gradient-cyan">money</span>,<br />
                   <span className="italic text-gradient">your story</span>.
                 </h1>
-                <p className="mt-3 text-ink-300">Manage skill tokens and review every transaction.</p>
+                <p className="mt-3 text-ink-300">Track every rupee you earn from completed tasks and every transaction you make.</p>
               </div>
               <button onClick={loadWalletData} className="btn btn-ghost text-white border-white/15 bg-white/5 hover:bg-white/10">
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -186,7 +188,7 @@ const Wallet = () => {
                 <p className="mt-5 text-xs uppercase tracking-widest text-ink-500 dark:text-ink-300">{stat.label}</p>
                 <p className="font-display text-4xl mt-1 leading-none">
                   {stat.value}
-                  <span className="text-lg text-ink-500 dark:text-ink-300">{stat.suffix}</span>
+                 
                 </p>
               </div>
             );
@@ -253,12 +255,12 @@ const Wallet = () => {
             </div>
           ) : filteredTransactions.length === 0 ? (
             <div className="empty-state m-6">
-              <Coins className="w-10 h-10 text-ink-400" />
+              <IndianRupee className="w-10 h-10 text-ink-400" />
               <p className="font-display text-2xl">No transactions found</p>
               <p className="text-sm text-ink-500 max-w-sm">
                 {searchTerm || filter !== 'all'
                   ? 'Try adjusting your filters or search terms.'
-                  : 'Your transaction history will appear here as soon as you start earning.'}
+                  : 'Your transaction history will appear here as soon as you create or complete tasks.'}
               </p>
             </div>
           ) : (
@@ -281,12 +283,24 @@ const Wallet = () => {
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-ink-950 dark:text-white truncate capitalize">
-                            {transaction.reason?.replace(/_/g, ' ') || 'Transaction'}
-                          </h3>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-semibold text-ink-950 dark:text-white truncate capitalize">
+                              {transaction.reason?.replace(/_/g, ' ') || 'Transaction'}
+                            </h3>
+                            <span
+                              className={`text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                                isEarn
+                                  ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300'
+                                  : 'bg-coral-500/15 text-coral-600 dark:text-coral-300'
+                              }`}
+                              data-testid="transaction-badge"
+                            >
+                              {isEarn ? 'Credit' : 'Debit'}
+                            </span>
+                          </div>
                           <p className="text-xs text-ink-500 dark:text-ink-300 mt-0.5">
                             {transaction.created_at
-                              ? new Date(transaction.created_at).toLocaleString('en-US', {
+                              ? new Date(transaction.created_at).toLocaleString('en-IN', {
                                   month: 'short',
                                   day: 'numeric',
                                   year: 'numeric',
@@ -299,9 +313,9 @@ const Wallet = () => {
 
                         <div className="text-right">
                           <p className={`font-display text-3xl leading-none ${isEarn ? 'text-emerald-500' : 'text-coral-500'}`}>
-                            {isEarn ? '+' : '-'}{transaction.amount}
+                            {isEarn ? '+' : '-'}{formatINR(transaction.amount)}
                           </p>
-                          <p className="text-[10px] uppercase tracking-widest text-ink-500 mt-1">tokens</p>
+                          <p className="text-[10px] uppercase tracking-widest text-ink-500 mt-1">INR</p>
                         </div>
                       </div>
                     </div>

@@ -42,6 +42,7 @@ const Landing = () => {
           </div>
           <nav className="hidden md:flex items-center gap-7 text-sm text-ink-600 dark:text-ink-200">
             <a href="#features" className="hover:text-ink-950 dark:hover:text-white">Features</a>
+             <a href="#platform" className="hover:text-ink-950 dark:hover:text-white">Platform</a>
             <a href="#bento" className="hover:text-ink-950 dark:hover:text-white">Product</a>
             <a href="#pricing" className="hover:text-ink-950 dark:hover:text-white">Pricing</a>
             <a href="#faq" className="hover:text-ink-950 dark:hover:text-white">FAQ</a>
@@ -95,6 +96,7 @@ const Landing = () => {
 
           {/* Hero collage */}
           <div className="relative h-[560px]">
+            
             <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .25 }} className="absolute top-6 right-0 w-[380px] glass-strong rounded-3xl p-5 shadow-soft-lg rotate-[3deg]">
               <div className="flex items-center justify-between mb-3">
                 <span className="chip chip-cyan"><Brain className="w-3 h-3"/> AI match</span>
@@ -124,16 +126,101 @@ const Landing = () => {
               <p className="mt-3 font-display text-xl"><span className="text-gradient">12-day</span> streak 🔥</p>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: -40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .5 }} className="absolute bottom-0 right-6 w-[300px] bento p-5 bg-ink-950 text-white">
+            {/* <motion.div initial={{ opacity: 0, y: -40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .5 }} className="absolute bottom-0 right-6 w-[300px] bento p-5 bg-ink-950 text-white">
               <div className="flex items-center gap-2 text-xs text-cyan-300"><WalletIcon className="w-3.5 h-3.5"/> Wallet</div>
-              <p className="mt-2 font-display text-5xl">₹ 28,420</p>
+              <p className="mt-2 font-display text-5xl leading-tight">₹ 28,420</p>
               <div className="mt-4 flex items-center justify-between text-xs text-ink-300">
                 <span>+ ₹3,200 this week</span>
                 <span className="chip chip-cyan">Earnings up 18%</span>
               </div>
-            </motion.div>
+            </motion.div> */}
           </div>
         </motion.div>
+      </section>
+
+
+            {/* Platform Showcase — images section */}
+      <section id="platform" className="relative py-24" data-testid="platform-showcase">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="grid lg:grid-cols-[1fr_1.4fr] gap-12 items-end mb-12">
+            <div data-reveal>
+              <span className="chip chip-cyan mb-4"><Sparkles className="w-3 h-3"/> the platform</span>
+              <h2 className="font-display text-5xl md:text-6xl leading-[.95]">
+                A place built for <span className="italic text-gradient">real people</span>, real growth.
+              </h2>
+            </div>
+            <p data-reveal className="text-ink-600 dark:text-ink-200 text-lg">
+              From freelancers picking up a new craft, to mentors guiding the next generation — TalentConnect
+              is where ambition meets the right opportunity, every single day.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-12 gap-4 md:gap-5 auto-rows-[220px]">
+            {/* Big freelancer image */}
+            <div data-reveal className="col-span-12 md:col-span-7 row-span-2 relative rounded-3xl overflow-hidden shadow-soft-lg ring-1 ring-black/5 dark:ring-white/10 group">
+              <img
+                src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1400&q=80"
+                alt="Freelancer working from a modern co-working space"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-ink-950/80 via-ink-950/20 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-7 text-white">
+                <span className="chip chip-cyan"><Code2 className="w-3 h-3"/> freelancers</span>
+                <h3 className="font-display text-3xl md:text-4xl mt-3 leading-tight">Take on tasks. Get paid in real money.</h3>
+                <p className="mt-2 text-ink-200 text-sm max-w-md">Browse a live feed of paid micro-tasks posted by founders, designers and engineers worldwide.</p>
+              </div>
+            </div>
+
+            {/* Mentorship image */}
+            <div data-reveal className="col-span-6 md:col-span-5 relative rounded-3xl overflow-hidden ring-1 ring-black/5 dark:ring-white/10 group">
+              <img
+                src="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1000&q=80"
+                alt="Mentor explaining concepts to a learner"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-coral-600/80 via-coral-500/20 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                <span className="chip chip-coral"><Users className="w-3 h-3"/> mentorship</span>
+                <h3 className="font-display text-2xl mt-2">1-on-1 sessions, on demand.</h3>
+              </div>
+            </div>
+
+            {/* 3D / abstract illustration */}
+            <div data-reveal className="col-span-6 md:col-span-5 relative rounded-3xl overflow-hidden ring-1 ring-black/5 dark:ring-white/10 bg-ink-950 group">
+              <img
+                src="https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?auto=format&fit=crop&w=1000&q=80"
+                alt="3D abstract gradient art representing growth"
+                className="absolute inset-0 w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-tr from-ink-950/70 via-transparent to-cyan-400/20" />
+              <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                <span className="chip chip-cyan"><Brain className="w-3 h-3"/> ai-powered</span>
+                <h3 className="font-display text-2xl mt-2">Smart matches. Smarter roadmaps.</h3>
+              </div>
+            </div>
+
+            {/* Team / collaboration */}
+            <div data-reveal className="col-span-12 md:col-span-7 relative rounded-3xl overflow-hidden ring-1 ring-black/5 dark:ring-white/10 group">
+              <img
+                src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1400&q=80"
+                alt="Diverse team collaborating around a laptop"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-ink-950/85 via-ink-950/30 to-transparent" />
+              <div className="absolute inset-0 flex items-center p-7 md:p-10">
+                <div className="text-white max-w-md">
+                  <span className="chip chip-cyan"><Trophy className="w-3 h-3"/> teams</span>
+                  <h3 className="font-display text-3xl mt-2 leading-tight">Build, learn and ship — together.</h3>
+                  <p className="mt-2 text-ink-200 text-sm">Form skill-trade pods, run mock interviews, and climb the leaderboard as a team.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Logos marquee */}
@@ -222,15 +309,20 @@ const Landing = () => {
           <h2 data-reveal className="font-display text-5xl md:text-6xl mb-12 max-w-3xl">Loved by people who <span className="italic text-gradient">ship things</span>.</h2>
           <div className="grid md:grid-cols-3 gap-5">
             {[
-              { q: 'Felt like hiring a personal growth coach for the price of a coffee. My AI roadmap is scary accurate.', a: 'Nikhil R.', r: 'Software Eng · Bangalore' },
-              { q: 'I teach Figma 2 hours a week and learned Rust in exchange. No money ever left my account. Magic.', a: 'Amelia C.', r: 'Designer · Berlin' },
-              { q: "The leaderboard turned my study sessions into a sport. I'm climbing ranks and actually learning.', a: 'Sara P.', r: 'MBA Student · Mumbai" },
+              { q: 'Felt like hiring a personal growth coach for the price of a coffee. My AI roadmap is scary accurate.', a: 'Nikhil R.', r: 'Software Eng · Bangalore', img: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=200&q=80' },
+              { q: 'I teach Figma 2 hours a week and learned Rust in exchange. No money ever left my account. Magic.', a: 'Amelia C.', r: 'Designer · Berlin', img: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&q=80' },
+              { q: "The leaderboard turned my study sessions into a sport. I'm climbing ranks and actually learning.", a: 'Sara P.', r: 'MBA Student · Mumbai', img: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=200&q=80' },
             ].map((t, i) => (
               <div key={i} data-reveal className="bento p-7">
                 <Star className="w-5 h-5 text-amber-400 fill-current"/>
                 <p className="font-display text-2xl leading-snug mt-3">“{t.q}”</p>
-                <p className="mt-5 text-sm font-semibold">{t.a}</p>
-                <p className="text-xs text-ink-500">{t.r}</p>
+                <div className="mt-5 flex items-center gap-3">
+                  <img src={t.img} alt={t.a} className="w-11 h-11 rounded-full object-cover ring-2 ring-white/40" loading="lazy"/>
+                  <div>
+                    <p className="text-sm font-semibold">{t.a}</p>
+                    <p className="text-xs text-ink-500">{t.r}</p>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -238,7 +330,7 @@ const Landing = () => {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="py-28 border-t border-black/5 dark:border-white/10">
+      {/* <section id="pricing" className="py-28 border-t border-black/5 dark:border-white/10">
         <div className="mx-auto max-w-7xl px-6">
           <div className="max-w-xl mb-12">
             <span className="chip chip-cyan mb-4">pricing</span>
@@ -264,7 +356,7 @@ const Landing = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Final CTA */}
       <section className="py-32">
