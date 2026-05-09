@@ -4,9 +4,10 @@ import { motion } from 'framer-motion';
 import { Eye, EyeOff, ArrowRight, GraduationCap, Sun, Moon, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import GoogleAuthButton from '../components/GoogleAuthButton';
 
 const Login = () => {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -21,6 +22,15 @@ const Login = () => {
     setLoading(false);
     if (result.success) navigate('/dashboard');
     else setError(result.error || 'Login failed');
+  };
+
+  const handleGoogleCredential = async (credential) => {
+    setError('');
+    setLoading(true);
+    const result = await loginWithGoogle(credential);
+    setLoading(false);
+    if (result.success) navigate('/dashboard');
+    else setError(result.error || 'Google sign-in failed');
   };
 
   return (
@@ -100,10 +110,12 @@ const Login = () => {
 
           <div className="my-8 flex items-center gap-3 text-xs text-ink-400"><span className="flex-1 h-px bg-black/10 dark:bg-white/10"/> OR <span className="flex-1 h-px bg-black/10 dark:bg-white/10"/></div>
 
-          <button type="button" className="w-full btn btn-ghost py-3" data-testid="login-google">
-            <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.5 5.4 2.5 13.2l7.8 6.1C12.3 13.5 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.2-3.1-.5-4.5H24v9h12.7c-.5 3-2.2 5.6-4.8 7.3l7.4 5.8c4.3-4 7.2-10 7.2-17.6z"/><path fill="#FBBC05" d="M10.3 28.7c-.5-1.4-.8-2.9-.8-4.7s.3-3.3.8-4.7l-7.8-6.1C.9 16.7 0 20.2 0 24c0 3.8.9 7.3 2.5 10.8l7.8-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.8-5.8l-7.4-5.8c-2 1.4-4.6 2.3-8.4 2.3-6.3 0-11.7-4-13.7-9.7l-7.8 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
-            Continue with Google
-          </button>
+          <GoogleAuthButton
+            onCredential={handleGoogleCredential}
+            onError={(msg) => setError(msg)}
+            label="Continue with Google"
+            testId="login-google"
+          />
         </div>
       </div>
     </div>

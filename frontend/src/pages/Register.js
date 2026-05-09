@@ -4,9 +4,10 @@ import { motion } from 'framer-motion';
 import { Eye, EyeOff, ArrowRight, GraduationCap, Sun, Moon, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import GoogleAuthButton from '../components/GoogleAuthButton';
 
 const Register = () => {
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -33,6 +34,16 @@ const Register = () => {
     setLoading(false);
     if (result.success) navigate('/dashboard');
     else setError(result.error || 'Registration failed');
+  };
+
+  
+  const handleGoogleCredential = async (credential) => {
+    setError('');
+    setLoading(true);
+    const result = await loginWithGoogle(credential);
+    setLoading(false);
+    if (result.success) navigate('/dashboard');
+    else setError(result.error || 'Google sign-in failed');
   };
 
   return (
@@ -109,6 +120,14 @@ const Register = () => {
               {loading ? 'Creating…' : <>Create account <ArrowRight className="w-4 h-4"/></>}
             </button>
           </form>
+             <div className="my-8 flex items-center gap-3 text-xs text-ink-400"><span className="flex-1 h-px bg-black/10 dark:bg-white/10"/> OR <span className="flex-1 h-px bg-black/10 dark:bg-white/10"/></div>
+
+          <GoogleAuthButton
+            onCredential={handleGoogleCredential}
+            onError={(msg) => setError(msg)}
+            label="Sign up with Google"
+            testId="register-google"
+          />
         </div>
       </div>
     </div>

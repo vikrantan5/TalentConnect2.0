@@ -32,6 +32,8 @@ const Dashboard = () => {
   const [activeChart, setActiveChart] = useState('progress');
   const [tokenBalance, setTokenBalance] = useState(null);
   const [loadingTokens, setLoadingTokens] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(null);
+  const [loadingWallet, setLoadingWallet] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
 
@@ -45,6 +47,7 @@ const Dashboard = () => {
     loadRecommendedSkills();
     loadRecentActivities();
     loadTokenBalance();
+    loadWalletBalance();
     const timer = setTimeout(() => setShowWelcome(false), 5000);
     return () => clearTimeout(timer);
   }, []);
@@ -129,6 +132,23 @@ const Dashboard = () => {
       console.error('Error loading token balance:', error);
     }
     setLoadingTokens(false);
+  };
+
+  
+  const loadWalletBalance = async () => {
+    setLoadingWallet(true);
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const response = await axios.get(`${BACKEND_URL}/api/wallet/balance`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setWalletBalance(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading wallet balance:', error);
+    }
+    setLoadingWallet(false);
   };
 
   const getGreetingEmoji = () => {
@@ -245,9 +265,10 @@ const Dashboard = () => {
               { icon: Target, label: 'Skills Listed', value: stats.totalSkills, iconBg: 'from-indigo-400 to-indigo-600' },
               {
                 icon: Coins,
-                label: 'Skill Tokens',
-                value: loadingTokens ? '...' : (tokenBalance?.balance || 0),
+                label: 'Wallet Balance',
+                value: loadingWallet ? '...' : `₹${(walletBalance?.balance ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`,
                 iconBg: 'from-coral-400 to-coral-600',
+                isCurrency: true,
               },
             ].map((stat, index) => {
               const Icon = stat.icon;
@@ -268,7 +289,7 @@ const Dashboard = () => {
                   <div className="mt-4 h-1.5 rounded-full bg-black/5 dark:bg-white/10 overflow-hidden">
                     <div
                       className={`h-full bg-gradient-to-r ${stat.iconBg} rounded-full animate-progress`}
-                      style={{ width: `${Math.min(100, (Number(stat.value) / 100) * 100)}%` }}
+                      style={{ width: `${stat.isCurrency ? Math.min(100, ((walletBalance?.balance || 0) / 10000) * 100) : Math.min(100, (Number(stat.value) / 100) * 100)}%` }}
                     />
                   </div>
                 </div>

@@ -33,8 +33,8 @@ class LeaderboardService:
             # Delete existing entries for this week and category
             db.table('leaderboard_entries').delete().eq('category', category).eq('week_start_date', str(week_start)).execute()
             
-                # Get all users with their stats
-            users_result = db.table('users').select('id, username, total_sessions, average_rating, total_tasks_completed, total_ratings, total_skill_exchanges_completed').order('average_rating', desc=True).limit(limit).execute()
+                        # Get all users with their stats (exclude admin accounts)
+            users_result = db.table('users').select('id, username, role, total_sessions, average_rating, total_tasks_completed, total_ratings, total_skill_exchanges_completed').neq('role', 'admin').order('average_rating', desc=True).limit(limit).execute()
             
             # Calculate scores based on category - ONLY RATING MATTERS
             entries = []
@@ -84,13 +84,13 @@ class LeaderboardService:
             if result.data:
                 # Get user details including skill exchanges
                 user_ids = [entry['user_id'] for entry in result.data]
-                users_result = db.table('users').select('id, username, full_name, profile_photo, average_rating, total_sessions, trust_score, total_tasks_completed, total_skill_exchanges_completed').in_('id', user_ids).execute()
+                users_result = db.table('users').select('id, username, full_name, profile_photo, role, average_rating, total_sessions, trust_score, total_tasks_completed, total_skill_exchanges_completed').in_('id', user_ids).execute()
                 
                 users_dict = {user['id']: user for user in (users_result.data or [])}
                 
                 for entry in result.data:
                     user = users_dict.get(entry['user_id'])
-                    if user:
+                    if user and user.get('role') != 'admin':
                         leaderboard.append({
                             'rank': entry['rank'],
                             'user_id': entry['user_id'],
