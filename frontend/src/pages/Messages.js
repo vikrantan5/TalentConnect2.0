@@ -297,6 +297,28 @@ const Messages = () => {
   
   const getMessageText = (msg) => msg.text || msg.content || '';
 
+
+  
+  // Properly extract a meeting URL even if `[Session ID: …]` is glued to it.
+  // Stops on whitespace OR on the literal \"[Session\" marker that often follows.
+  const extractMeetingLink = (text) => {
+    if (!text) return null;
+    const match = text.match(/https?:\/\/[^\s\[]+/);
+    if (!match) return null;
+    // Trim trailing punctuation like ),. or \"
+    return match[0].replace(/[\),.\"'<>]+$/g, '');
+  };
+
+  const isValidUrl = (url) => {
+    if (!url) return false;
+    try {
+      const u = new URL(url);
+      return u.protocol === 'http:' || u.protocol === 'https:';
+    } catch (_e) {
+      return false;
+    }
+  };
+
   const isSessionMessage = (msg) =>
     ['session_request', 'session_update', 'meeting_link'].includes(msg.message_type);
 
@@ -471,13 +493,29 @@ const Messages = () => {
                                 </div>
                               )}
 
-                              {msg.message_type === 'meeting_link' && (
-                                <a href={msgText.match(/https?:\/\/[^\s]+/)?.[0]} target="_blank" rel="noopener noreferrer" className="block mt-3">
-                                  <button className="w-full btn btn-coral py-2 text-xs">
-                                    <Video className="w-3.5 h-3.5" /> Join meeting
-                                  </button>
-                                </a>
-                              )}
+                              {msg.message_type === 'meeting_link' && (() => {
+                                const meetingUrl = extractMeetingLink(msgText);
+                                if (!isValidUrl(meetingUrl)) {
+                                  return (
+                                    <div className="mt-3 text-xs text-coral-500">
+                                      Meeting link is invalid. Please ask the mentor to resend.
+                                    </div>
+                                  );
+                                }
+                                return (
+                                  <a
+                                    href={meetingUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block mt-3"
+                                    data-testid="message-join-meeting-link"
+                                  >
+                                    <button className="w-full btn btn-coral py-2 text-xs">
+                                      <Video className="w-3.5 h-3.5" /> Join meeting
+                                    </button>
+                                  </a>
+                                );
+                              })()}
                             </div>
                           </div>
                         );

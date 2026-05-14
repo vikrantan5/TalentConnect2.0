@@ -179,7 +179,15 @@ async def book_free_session(data: FreeSessionCreate, current_user_id: str = Depe
             elif data.skill_learn:
                 skill_info = f"📚 Learning: {data.skill_learn}"
 
-            session_message = f"📅 Session Request{data.message or 'I would like to book a session with you!'}{skill_info}📆 Date: {data.date}⏰ Time: {data.time}⏱️ Duration: {data.duration} minutes[Session ID: {session_id}]"
+            session_message = (
+                f"📅 Session Request"
+                f"{data.message or 'I would like to book a session with you!'}"
+                f"{skill_info}"
+                f"📆 Date: {data.date}"
+                f"⏰ Time: {data.time}"
+                f"⏱️ Duration: {data.duration} minutes"
+                f"[Session ID: {session_id}]"
+            )
             
             db.table('realtime_messages').insert({
                 'chat_id': chat_id,
@@ -368,8 +376,12 @@ async def update_free_session(session_id: str, data: FreeSessionUpdate, current_
                     'sender_id': current_user_id
                 }, f'session_{data.status}'))
 
-                return {"message": f"Session {data.status}", "session_id": session_id, "points_transferred": points_transferred, "meeting_link": meeting_link_value}
-
+        return {
+            "message": f"Session {data.status}",
+            "session_id": session_id,
+            "points_transferred": points_transferred,
+            "meeting_link": meeting_link_value,
+        }
     except HTTPException:
         raise
     except Exception as e:

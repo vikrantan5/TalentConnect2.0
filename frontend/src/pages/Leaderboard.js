@@ -45,10 +45,14 @@ const Leaderboard = () => {
         full_name: item.user?.full_name || item.full_name,
         profile_photo: item.user?.profile_photo || item.profile_photo,
         score: item.score,
-        trust_score: item.user?.trust_score || 0,
+        trust_score: item.trust_score ?? item.user?.trust_score ?? 0,
         stats: {
-          total_sessions: item.user?.total_sessions || 0,
-          average_rating: item.user?.average_rating || 0
+          total_sessions: item.stats?.total_sessions ?? item.user?.total_sessions ?? 0,
+          mentor_sessions: item.stats?.mentor_sessions ?? 0,
+          learner_sessions: item.stats?.learner_sessions ?? 0,
+          average_rating: item.stats?.average_rating ?? item.user?.average_rating ?? 0,
+          total_tasks_completed: item.stats?.total_tasks_completed ?? 0,
+          total_skill_exchanges_completed: item.stats?.total_skill_exchanges_completed ?? 0,
         }
       })) || [];
 
