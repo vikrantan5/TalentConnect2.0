@@ -388,8 +388,77 @@ async def update_free_session(session_id: str, data: FreeSessionUpdate, current_
         logger.error(f"Error updating session: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/{session_id}/attend")
+async def mark_learning_session_attended(session_id: str, current_user_id: str = Depends(get_current_user)):
+    """
+    NEW FLOW: Mark current user as having joined the meeting for a learning session
+    (1:1 Trades / Marketplace / AI Matching / Free Mentor session).
+    On first attendance, auto-complete the session and update leaderboard counters
+    ONCE so that ratings can be submitted right after the meeting opens.
+    """
+    try:
+        db = get_db()
+
+        session = db.table('learning_sessions').select('*').eq('id', session_id).execute()
+        if not session.data:
+            raise HTTPException(status_code=404, detail="Session not found")
+
+        s = session.data[0]
+        if s.get('mentor_id') != current_user_id and s.get('learner_id') != current_user_id:
+            raise HTTPException(status_code=403, detail="You are not part of this session")
+
+        already_completed = s.get('status') == 'completed'
+
+        if not already_completed:
+            db.table('learning_sessions').update({'status': 'completed'}).eq('id', session_id).execute()
+
+            # Idempotent leaderboard update — increment total_sessions for both users once
+            try:
+                for uid in (s.get('mentor_id'), s.get('learner_id')):
+                    if not uid:
+                        continue
+                    user_row = db.table('users').select('total_sessions').eq('id', uid).execute()
+                    if user_row.data:
+                        new_count = (user_row.data[0].get('total_sessions') or 0) + 1
+                        db.table('users').update({'total_sessions': new_count}).eq('id', uid).execute()
+            except Exception as e:
+                logger.error(f"Leaderboard update failed on attend: {e}")
+
+            # Notify the other participant
+            other_user_id = s.get('learner_id') if s.get('mentor_id') == current_user_id else s.get('mentor_id')
+            if other_user_id:
+                try:
+                    db.table('notifications').insert({
+                        'user_id': other_user_id,
+                        'title': 'Session In Progress',
+                        'message': 'Your session partner just joined the meeting. You can rate the session now.',
+                        'notification_type': 'session_attended',
+                        'reference_id': session_id,
+                        'reference_type': 'learning_session'
+                    }).execute()
+                except Exception as e:
+                    logger.warning(f"Notification insert failed: {e}")
+
+        other_user_id = s.get('learner_id') if s.get('mentor_id') == current_user_id else s.get('mentor_id')
+
+        return {
+            "message": "Attendance recorded. You can now rate this session.",
+            "session_id": session_id,
+            "status": "completed",
+            "can_rate": True,
+            "other_user_id": other_user_id,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error marking learning session attendance: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.patch("/{session_id}/meeting-link")
 async def add_meeting_link(session_id: str, data: MeetingLinkUpdate, current_user_id: str = Depends(get_current_user)):
+
     """Add Google Meet link to an accepted session"""
     try:
         db = get_db()

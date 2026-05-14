@@ -136,7 +136,7 @@ const SessionBooking = () => {
       const result = await sessionService.markSessionComplete(session.id);
       toast.success(result.message);
       await loadSessions();
-      if (result.both_completed && result.can_rate) {
+      if (result.can_rate) {
         setRatingSessionData({
           sessionId: session.id,
           receiverId: session.other_participant_id,
@@ -152,11 +152,46 @@ const SessionBooking = () => {
     }
   };
 
+  /**
+   * NEW FLOW: When user clicks "Join Meeting", mark the session as attended
+   * immediately. This auto-completes the session, updates leaderboard, and
+   * enables the "Rate Session" button. Works for ALL session types:
+   *  - skill_exchange (1:1 trades, skill exchange marketplace)
+   *  - learning (mentor bookings, marketplace bookings, AI matching)
+   */
+  const handleJoinMeeting = async (session) => {
+    try {
+      if (session.session_type === 'skill_exchange') {
+        await sessionService.markSkillExchangeAttended(session.id);
+      } else {
+        await sessionService.markLearningSessionAttended(session.id);
+      }
+      // Refresh so the "Rate" button appears
+      loadSessions();
+    } catch (error) {
+      // Non-blocking: still let the user open the meeting even if tracking fails
+      console.error('Attendance tracking failed:', error);
+    }
+  };
+
   const handleRatePartner = (session) => {
+    // Determine the rating target for ANY session type
+    let receiverId = session.other_participant_id;
+    let receiverName = session.other_participant_name;
+    if (session.session_type !== 'skill_exchange') {
+      // Learning session: rate the opposite role
+      if (session.role === 'mentor') {
+        receiverId = session.learner_id;
+        receiverName = session.learner_name || 'Learner';
+      } else {
+        receiverId = session.mentor_id;
+        receiverName = session.mentor_name || 'Mentor';
+      }
+    }
     setRatingSessionData({
       sessionId: session.id,
-      receiverId: session.other_participant_id,
-      receiverName: session.other_participant_name,
+      receiverId,
+      receiverName,
     });
     setShowRatingModal(true);
   };
@@ -513,12 +548,14 @@ const SessionBooking = () => {
 
                     {/* Action Buttons */}
                     <div className="flex gap-2 flex-wrap">
-                      {session.meeting_link && (session.status === 'scheduled' || session.status === 'accepted') && (
+                      {session.meeting_link && (session.status === 'scheduled' || session.status === 'accepted' || session.status === 'completed') && (
                         <a
                           href={session.meeting_link}
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={() => handleJoinMeeting(session)}
                           className="btn btn-cyan flex-1 min-w-[120px]"
+                          data-testid="join-meeting-button"
                         >
                           <Video className="w-4 h-4" />
                           Join Meeting
@@ -546,31 +583,18 @@ const SessionBooking = () => {
                         Details
                       </button>
 
-                      {session.session_type === 'skill_exchange' && session.status === 'scheduled' && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleMarkComplete(session);
-                          }}
-                          className="btn btn-coral flex-1 min-w-[140px]"
-                          data-testid="mark-complete-button"
-                        >
-                          <CheckCircle className="w-4 h-4" />
-                          Mark Complete
-                        </button>
-                      )}
-
-                      {session.status === 'completed' && session.session_type === 'skill_exchange' && (
+                      {/* Rate button — appears for ANY completed session (1:1 / skill exchange / marketplace / AI matching) */}
+                      {session.status === 'completed' && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleRatePartner(session);
                           }}
-                          className="btn btn-coral"
+                          className="btn btn-coral flex-1 min-w-[140px]"
                           data-testid="rate-partner-button"
                         >
                           <Star className="w-4 h-4" />
-                          Rate Partner
+                          Rate Session
                         </button>
                       )}
                     </div>
@@ -678,16 +702,32 @@ const SessionBooking = () => {
 
                 {/* Action Buttons */}
                 <div className="flex gap-3 mt-8 pt-6 border-t border-black/5 dark:border-white/10 flex-wrap">
-                  {selectedSession.meeting_link && (selectedSession.status === 'scheduled' || selectedSession.status === 'accepted') && (
+                  {selectedSession.meeting_link && (selectedSession.status === 'scheduled' || selectedSession.status === 'accepted' || selectedSession.status === 'completed') && (
                     <a
                       href={selectedSession.meeting_link}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => handleJoinMeeting(selectedSession)}
                       className="btn btn-cyan flex-1 min-w-[140px]"
+                      data-testid="details-join-meeting-button"
                     >
                       <Video className="w-4 h-4" />
                       Join Meeting
                     </a>
+                  )}
+
+                  {selectedSession.status === 'completed' && (
+                    <button
+                      onClick={() => {
+                        setShowDetails(false);
+                        handleRatePartner(selectedSession);
+                      }}
+                      className="btn btn-coral flex-1 min-w-[140px]"
+                      data-testid="details-rate-button"
+                    >
+                      <Star className="w-4 h-4" />
+                      Rate Session
+                    </button>
                   )}
 
                   {selectedSession && !selectedSession.meeting_link && selectedSession.role === 'mentor' && (

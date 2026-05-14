@@ -225,6 +225,91 @@ async def get_skill_exchange_sessions(current_user_id: str = Depends(get_current
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
+
+
+@router.post("/skill-exchange-session/{session_id}/attend")
+async def mark_skill_exchange_attended(
+    session_id: str,
+    current_user_id: str = Depends(get_current_user)
+):
+    """
+    NEW FLOW: Mark current participant as having joined the meeting.
+    On the FIRST attendance from ANY participant, auto-complete the session
+    and update leaderboard counters ONCE. Enables rating immediately.
+    """
+    try:
+        db = get_db()
+
+        session_result = db.table('skill_exchange_sessions').select('*').eq('id', session_id).execute()
+        if not session_result.data:
+            raise HTTPException(status_code=404, detail="Session not found")
+
+        session = session_result.data[0]
+
+        if current_user_id not in [session['participant1_id'], session['participant2_id']]:
+            raise HTTPException(status_code=403, detail="You are not a participant in this session")
+
+        already_completed = session.get('status') == 'completed'
+
+        if current_user_id == session['participant1_id']:
+            attendance_field = 'participant1_completed'
+            other_participant_id = session['participant2_id']
+        else:
+            attendance_field = 'participant2_completed'
+            other_participant_id = session['participant1_id']
+
+        # Update attendance flag + auto-complete on first join
+        update_data = {attendance_field: True}
+        if not already_completed:
+            update_data['status'] = 'completed'
+
+        db.table('skill_exchange_sessions').update(update_data).eq('id', session_id).execute()
+
+        # Idempotent leaderboard update — only increment if it wasn't completed before
+        if not already_completed:
+            try:
+                for pid in (session['participant1_id'], session['participant2_id']):
+                    user_row = db.table('users').select('total_skill_exchanges_completed, total_sessions').eq('id', pid).execute()
+                    if user_row.data:
+                        new_count = (user_row.data[0].get('total_skill_exchanges_completed') or 0) + 1
+                        new_sessions = (user_row.data[0].get('total_sessions') or 0) + 1
+                        db.table('users').update({
+                            'total_skill_exchanges_completed': new_count,
+                            'total_sessions': new_sessions
+                        }).eq('id', pid).execute()
+                logger.info(f"Leaderboard updated on attendance for session {session_id}")
+            except Exception as e:
+                logger.error(f"Error updating leaderboard on attendance: {str(e)}")
+
+            # Notify the other participant once
+            try:
+                db.table('notifications').insert({
+                    'user_id': other_participant_id,
+                    'title': 'Session In Progress',
+                    'message': 'Your partner just joined the meeting. Once you join, you can rate the session.',
+                    'notification_type': 'session_attended',
+                    'reference_id': session_id,
+                    'reference_type': 'skill_exchange_session'
+                }).execute()
+            except Exception as e:
+                logger.warning(f"Notification insert failed: {str(e)}")
+
+        return {
+            "message": "Attendance recorded. You can now rate this session.",
+            "session_id": session_id,
+            "status": "completed",
+            "can_rate": True,
+            "other_participant_id": other_participant_id,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error marking attendance: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/skill-exchange-session/{session_id}/complete")
 async def mark_skill_exchange_complete(
     session_id: str,
@@ -255,37 +340,26 @@ async def mark_skill_exchange_complete(
         
         # Update completion status
         update_data = {completion_field: True}
-        
-        # Check if both have completed
-        other_completion_field = 'participant2_completed' if completion_field == 'participant1_completed' else 'participant1_completed'
-        both_completed = session.get(other_completion_field, False)
-        
-        if both_completed:
+
+        # NEW FLOW: Auto-complete on first click (no longer require both participants)
+        already_completed = session.get('status') == 'completed'
+        both_completed = True  # Treat first click as full completion for response payload
+        if not already_completed:
             update_data['status'] = 'completed'
-            
-            # 🎯 UPDATE LEADERBOARD SCORES - Increment total_skill_exchanges_completed for BOTH users
+
+            # 🎯 UPDATE LEADERBOARD SCORES - increment once for both users
             try:
-                # Update participant 1
-                user1 = db.table('users').select('total_skill_exchanges_completed, total_sessions').eq('id', session['participant1_id']).execute()
-                if user1.data:
-                    new_count = (user1.data[0].get('total_skill_exchanges_completed') or 0) + 1
-                    new_sessions = (user1.data[0].get('total_sessions') or 0) + 1
-                    db.table('users').update({
-                        'total_skill_exchanges_completed': new_count,
-                        'total_sessions': new_sessions
-                    }).eq('id', session['participant1_id']).execute()
-                
-                # Update participant 2
-                user2 = db.table('users').select('total_skill_exchanges_completed, total_sessions').eq('id', session['participant2_id']).execute()
-                if user2.data:
-                    new_count = (user2.data[0].get('total_skill_exchanges_completed') or 0) + 1
-                    new_sessions = (user2.data[0].get('total_sessions') or 0) + 1
-                    db.table('users').update({
-                        'total_skill_exchanges_completed': new_count,
-                        'total_sessions': new_sessions
-                    }).eq('id', session['participant2_id']).execute()
-                
-                logger.info(f"✅ Leaderboard updated: Session {session_id} completed by both participants")
+                for pid in (session['participant1_id'], session['participant2_id']):
+                    user_row = db.table('users').select('total_skill_exchanges_completed, total_sessions').eq('id', pid).execute()
+                    if user_row.data:
+                        new_count = (user_row.data[0].get('total_skill_exchanges_completed') or 0) + 1
+                        new_sessions = (user_row.data[0].get('total_sessions') or 0) + 1
+                        db.table('users').update({
+                            'total_skill_exchanges_completed': new_count,
+                            'total_sessions': new_sessions
+                        }).eq('id', pid).execute()
+
+                logger.info(f"✅ Leaderboard updated: Session {session_id} completed")
             except Exception as e:
                 logger.error(f"Error updating leaderboard scores: {str(e)}")
         

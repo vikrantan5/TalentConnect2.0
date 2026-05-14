@@ -167,6 +167,17 @@ export const sessionService = {
     const response = await api.post(`/api/sessions/skill-exchange-session/${sessionId}/complete`);
     return response.data;
   },
+    // NEW FLOW: Mark a skill exchange session as attended (on Join Meeting click)
+  markSkillExchangeAttended: async (sessionId) => {
+    const response = await api.post(`/api/sessions/skill-exchange-session/${sessionId}/attend`);
+    return response.data;
+  },
+
+  // NEW FLOW: Mark a learning session (1:1 trade / marketplace / AI matching / mentor booking) as attended
+  markLearningSessionAttended: async (sessionId) => {
+    const response = await api.post(`/api/free-sessions/${sessionId}/attend`);
+    return response.data;
+  },
 };
 
 // ============================================

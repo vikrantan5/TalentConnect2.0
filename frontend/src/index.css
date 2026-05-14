@@ -366,6 +366,34 @@
            focus:border-cyan-400 focus:shadow-glow transition;
   }
   .dark .modern-input { @apply border-white/10 bg-white/5 text-white; }
+
+
+  
+  /* ============================================================
+     Native <select> dropdown — readable options in BOTH light & dark
+     ============================================================
+     Native <option> elements are rendered by the OS / browser and
+     do NOT inherit the parent select's color in dark mode, so we
+     force readable background + text colors here.
+  */
+  select option,
+  select optgroup {
+    background-color: #ffffff;
+    color: #0f172a; /* ink-950 */
+  }
+  .dark select option,
+  .dark select optgroup {
+    background-color: #0f172a; /* ink-950 */
+    color: #ffffff;
+  }
+  /* Make the native select itself readable in dark mode regardless of utility classes */
+  .dark select {
+    color: #ffffff;
+    color-scheme: dark;
+  }
+  select {
+    color-scheme: light;
+  }
 }
 
 @layer utilities {

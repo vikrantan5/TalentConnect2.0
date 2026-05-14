@@ -298,6 +298,25 @@ const Messages = () => {
   const getMessageText = (msg) => msg.text || msg.content || '';
 
 
+
+    // NEW FLOW: Mark learning session attended when \"Join meeting\" is clicked
+  // so that the session auto-completes and rating is enabled immediately.
+  const handleJoinFromMessage = async (sessionId) => {
+    if (!sessionId) return;
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        `${BACKEND_URL}/api/free-sessions/${sessionId}/attend`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } catch (error) {
+      // Non-blocking: even if tracking fails, allow user to open the link
+      console.error('Attendance tracking failed:', error);
+    }
+  };
+
+
   
   // Properly extract a meeting URL even if `[Session ID: …]` is glued to it.
   // Stops on whitespace OR on the literal \"[Session\" marker that often follows.
@@ -507,6 +526,7 @@ const Messages = () => {
                                     href={meetingUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
+                                     onClick={() => handleJoinFromMessage(sessionId)}
                                     className="block mt-3"
                                     data-testid="message-join-meeting-link"
                                   >
